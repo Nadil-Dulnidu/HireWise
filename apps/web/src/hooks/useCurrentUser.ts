@@ -23,7 +23,10 @@ export function useCurrentUser() {
     queryKey: ['currentUser', clerkUser?.id],
     queryFn: async () => {
       if (!isSignedIn) return null
-      const res = await apiClient.get<ApiResponse<UserProfile>>('/users/me')
+      const token = await getToken()
+      const res = await apiClient.get<ApiResponse<UserProfile>>('/users/me', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
       return res.data.data
     },
     enabled: isClerkLoaded && !!isSignedIn

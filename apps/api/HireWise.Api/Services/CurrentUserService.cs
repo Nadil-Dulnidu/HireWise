@@ -7,6 +7,8 @@ public interface ICurrentUserService
 {
     string? ClerkUserId { get; }
     string? Email { get; }
+    string? FirstName { get; }
+    string? LastName { get; }
     UserRole? Role { get; }
     Guid? UserId { get; }
     Guid? CompanyId { get; }
@@ -35,6 +37,16 @@ public class CurrentUserService : ICurrentUserService
     public string? Email =>
         User?.FindFirst(ClaimTypes.Email)?.Value ??
         User?.FindFirst("email")?.Value;
+
+    public string? FirstName =>
+        User?.FindFirst(ClaimTypes.GivenName)?.Value ??
+        User?.FindFirst("given_name")?.Value ??
+        User?.FindFirst("first_name")?.Value;
+
+    public string? LastName =>
+        User?.FindFirst(ClaimTypes.Surname)?.Value ??
+        User?.FindFirst("family_name")?.Value ??
+        User?.FindFirst("last_name")?.Value;
 
     public UserRole? Role
     {

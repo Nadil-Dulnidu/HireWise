@@ -9,11 +9,15 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 // Pages
 import { LandingPage } from '@/pages/LandingPage'
 import { PublicJobsPage } from '@/pages/jobs/PublicJobsPage'
+import { JobDetailPage } from '@/pages/jobs/JobDetailPage'
 import { SignInPage } from '@/pages/auth/SignInPage'
 import { SignUpPage } from '@/pages/auth/SignUpPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 import { CandidateDashboard } from '@/pages/candidate/CandidateDashboard'
 import { RecruiterDashboard } from '@/pages/recruiter/RecruiterDashboard'
+import { RecruiterJobsPage } from '@/pages/recruiter/RecruiterJobsPage'
+import { CreateEditJobPage } from '@/pages/recruiter/CreateEditJobPage'
+import { RecruiterCompanyPage } from '@/pages/recruiter/RecruiterCompanyPage'
 import { InterviewerDashboard } from '@/pages/interviewer/InterviewerDashboard'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 
@@ -24,7 +28,7 @@ export function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/jobs" element={<PublicJobsPage />} />
-        <Route path="/jobs/:id" element={<PublicJobsPage />} />
+        <Route path="/jobs/:id" element={<JobDetailPage />} />
       </Route>
 
       {/* Auth Pages */}
@@ -38,7 +42,7 @@ export function App() {
           <Route index element={<Navigate to="/candidate/dashboard" replace />} />
           <Route path="dashboard" element={<CandidateDashboard />} />
           <Route path="jobs" element={<PublicJobsPage />} />
-          <Route path="jobs/:id" element={<PublicJobsPage />} />
+          <Route path="jobs/:id" element={<JobDetailPage />} />
           <Route path="applications" element={<CandidateDashboard />} />
           <Route path="resume" element={<CandidateDashboard />} />
           <Route path="interviews" element={<CandidateDashboard />} />
@@ -52,10 +56,11 @@ export function App() {
         <Route path="/recruiter" element={<RecruiterLayout />}>
           <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
           <Route path="dashboard" element={<RecruiterDashboard />} />
-          <Route path="companies" element={<RecruiterDashboard />} />
-          <Route path="departments" element={<RecruiterDashboard />} />
-          <Route path="jobs" element={<RecruiterDashboard />} />
-          <Route path="jobs/new" element={<RecruiterDashboard />} />
+          <Route path="companies" element={<RecruiterCompanyPage />} />
+          <Route path="departments" element={<RecruiterCompanyPage />} />
+          <Route path="jobs" element={<RecruiterJobsPage />} />
+          <Route path="jobs/new" element={<CreateEditJobPage />} />
+          <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
           <Route path="applications" element={<RecruiterDashboard />} />
           <Route path="ai-evaluations" element={<RecruiterDashboard />} />
           <Route path="scheduling" element={<RecruiterDashboard />} />

@@ -86,6 +86,9 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IClerkWebhookService, ClerkWebhookService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
