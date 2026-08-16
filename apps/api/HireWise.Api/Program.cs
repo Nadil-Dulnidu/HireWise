@@ -189,12 +189,41 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 
-// Health check endpoint
-app.MapGet("/api/health", () => Results.Ok(new
+// Database Migration & Seed Pipeline on Startup
+if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup", false))
 {
-    status = "Healthy",
-    service = "HireWise.Api",
-    timestamp = DateTime.UtcNow
-}));
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await DbInitializer.InitializeAsync(db, app.Logger);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not apply automatic migrations on startup. Ensure database is running and reachable.");
+    }
+}
+
+// Health check endpoint
+app.MapGet("/api/health", async (ApplicationDbContext db) =>
+{
+    bool dbConnected = false;
+    try
+    {
+        dbConnected = await db.Database.CanConnectAsync();
+    }
+    catch
+    {
+        dbConnected = false;
+    }
+
+    return Results.Ok(new
+    {
+        status = dbConnected ? "Healthy" : "Degraded",
+        database = dbConnected ? "Connected" : "Disconnected",
+        service = "HireWise.Api",
+        timestamp = DateTime.UtcNow
+    });
+});
 
 app.Run();
