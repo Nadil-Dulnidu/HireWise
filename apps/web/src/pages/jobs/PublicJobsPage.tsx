@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { jobsApi } from '@/lib/api/jobs-api'
+import type { EmploymentType, ExperienceLevel } from '@/types/jobs'
 import {
   Briefcase,
   Search,
@@ -8,69 +11,59 @@ import {
   Building,
   Clock,
   Filter,
-  ArrowRight
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 export function PublicJobsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedType, setSelectedType] = useState('ALL')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
 
-  const sampleJobs = [
-    {
-      id: '1',
-      title: 'Senior Full Stack Engineer (React + .NET)',
-      company: 'CloudScale Technologies',
-      location: 'San Francisco, CA / Remote',
-      type: 'FULL_TIME',
-      level: 'SENIOR',
-      salary: '$140k - $180k',
-      posted: '2 days ago',
-      tags: ['React', 'TypeScript', 'C#', '.NET 8', 'PostgreSQL']
-    },
-    {
-      id: '2',
-      title: 'Staff Machine Learning Engineer',
-      company: 'NeuralPulse AI',
-      location: 'New York, NY / Hybrid',
-      type: 'FULL_TIME',
-      level: 'LEAD',
-      salary: '$180k - $230k',
-      posted: '3 days ago',
-      tags: ['Python', 'LangGraph', 'PyTorch', 'FastAPI', 'GCP Vertex']
-    },
-    {
-      id: '3',
-      title: 'Distributed Systems Backend Architect',
-      company: 'FinTech Grid',
-      location: 'Austin, TX / Remote',
-      type: 'FULL_TIME',
-      level: 'SENIOR',
-      salary: '$160k - $210k',
-      posted: 'Just now',
-      tags: ['Go', 'C#', 'Microservices', 'Kafka', 'PostgreSQL']
-    },
-    {
-      id: '4',
-      title: 'Frontend UI/UX Engineer',
-      company: 'Veloce Labs',
-      location: 'Remote',
-      type: 'CONTRACT',
-      level: 'MID',
-      salary: '$100k - $130k',
-      posted: '5 days ago',
-      tags: ['React 19', 'TailwindCSS', 'shadcn/ui', 'TypeScript']
-    }
-  ]
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
+  const [activeSearch, setActiveSearch] = useState(initialSearch)
+  const [selectedType, setSelectedType] = useState<string>('ALL')
+  const [selectedLevel, setSelectedLevel] = useState<string>('ALL')
+  const [page, setPage] = useState(1)
+  const pageSize = 10
 
-  const filteredJobs = sampleJobs.filter((job) => {
-    const matchesSearch =
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    const matchesType = selectedType === 'ALL' || job.type === selectedType
-    return matchesSearch && matchesType
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['publicJobs', activeSearch, selectedType, selectedLevel, page],
+    queryFn: () =>
+      jobsApi.getPublicJobs({
+        search: activeSearch || undefined,
+        employmentType: selectedType !== 'ALL' ? (selectedType as EmploymentType) : undefined,
+        experienceLevel: selectedLevel !== 'ALL' ? (selectedLevel as ExperienceLevel) : undefined,
+        page,
+        pageSize
+      }),
+    staleTime: 30000
   })
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setActiveSearch(searchTerm)
+    setPage(1)
+    if (searchTerm) {
+      setSearchParams({ search: searchTerm })
+    } else {
+      setSearchParams({})
+    }
+  }
+
+  const formatSalary = (min?: number | null, max?: number | null, currency = 'USD') => {
+    if (!min && !max) return 'Competitive salary'
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0
+    })
+    if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}`
+    if (min) return `From ${formatter.format(min)}`
+    return `Up to ${formatter.format(max!)}`
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 space-y-8">
@@ -83,96 +76,188 @@ export function PublicJobsPage() {
           Explore Technical Openings
         </h1>
         <p className="text-sm text-slate-400 max-w-2xl">
-          Discover verified engineering roles evaluated with intelligent AI matching and direct recruiter scheduling.
+          Discover verified engineering roles evaluated with intelligent AI matching, structured interview rubrics, and automated calendar scheduling.
         </p>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full flex items-center pl-3">
-          <Search className="h-5 w-5 text-slate-400 shrink-0" />
+      <form onSubmit={handleSearchSubmit} className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full flex items-center pl-3 bg-slate-900/50 rounded-xl border border-slate-800">
+          <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <input
             type="text"
-            placeholder="Search by title, company, or technology tag..."
+            placeholder="Search by role title, technology, or company name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="w-full bg-transparent px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Employment Type */}
+          <div className="flex items-center gap-1.5 bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-2">
+            <Filter className="h-3.5 w-3.5 text-slate-400" />
+            <select
+              value={selectedType}
+              onChange={(e) => {
+                setSelectedType(e.target.value)
+                setPage(1)
+              }}
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL" className="bg-slate-900">All Employment Types</option>
+              <option value="FULL_TIME" className="bg-slate-900">Full-time</option>
+              <option value="PART_TIME" className="bg-slate-900">Part-time</option>
+              <option value="CONTRACT" className="bg-slate-900">Contract</option>
+              <option value="INTERNSHIP" className="bg-slate-900">Internship</option>
+            </select>
+          </div>
+
+          {/* Experience Level */}
+          <div className="flex items-center gap-1.5 bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-2">
+            <select
+              value={selectedLevel}
+              onChange={(e) => {
+                setSelectedLevel(e.target.value)
+                setPage(1)
+              }}
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL" className="bg-slate-900">All Experience Levels</option>
+              <option value="ENTRY" className="bg-slate-900">Entry Level</option>
+              <option value="MID" className="bg-slate-900">Mid Level</option>
+              <option value="SENIOR" className="bg-slate-900">Senior Level</option>
+              <option value="LEAD" className="bg-slate-900">Lead / Principal</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-semibold text-white transition shadow-md shadow-blue-600/25"
           >
-            <option value="ALL">All Contract Types</option>
-            <option value="FULL_TIME">Full-time</option>
-            <option value="CONTRACT">Contract</option>
-            <option value="PART_TIME">Part-time</option>
-            <option value="INTERNSHIP">Internship</option>
-          </select>
+            Search
+          </button>
         </div>
-      </div>
+      </form>
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="py-20 flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+          <p className="text-sm text-slate-400">Loading technical job opportunities...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="glass-card p-6 rounded-2xl border border-red-500/20 bg-red-500/5 text-center space-y-2">
+          <AlertCircle className="h-6 w-6 text-red-400 mx-auto" />
+          <h3 className="text-sm font-semibold text-white">Failed to load jobs</h3>
+          <p className="text-xs text-slate-400">{(error as Error)?.message || 'An error occurred while fetching job postings.'}</p>
+        </div>
+      )}
 
       {/* Job Cards */}
-      <div className="space-y-4">
-        {filteredJobs.map((job) => (
-          <div
-            key={job.id}
-            className="glass-card p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition flex flex-col md:flex-row md:items-center justify-between gap-6"
-          >
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-bold text-white hover:text-blue-400 transition">
-                    {job.title}
-                  </h3>
-                  <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
-                    {job.level}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                  <span className="flex items-center gap-1 text-slate-300 font-medium">
-                    <Building className="h-3.5 w-3.5 text-slate-500" /> {job.company}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-slate-500" /> {job.location}
-                  </span>
-                  <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                    <DollarSign className="h-3.5 w-3.5" /> {job.salary}
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-500">
-                    <Clock className="h-3.5 w-3.5" /> {job.posted}
-                  </span>
-                </div>
-              </div>
+      {!isLoading && !isError && (
+        <>
+          {data?.items && data.items.length > 0 ? (
+            <div className="space-y-4">
+              {data.items.map((job) => (
+                <div
+                  key={job.id}
+                  className="glass-card p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-xl hover:shadow-blue-500/5"
+                >
+                  <div className="space-y-3 flex-1">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={`/jobs/${job.id}`}
+                          className="text-lg font-bold text-white hover:text-blue-400 transition"
+                        >
+                          {job.title}
+                        </Link>
+                        <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
+                          {job.experienceLevel}
+                        </span>
+                        <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-purple-400 border border-purple-500/20">
+                          {job.employmentType.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-1">
+                        <span className="flex items-center gap-1 text-slate-300 font-medium">
+                          <Building className="h-3.5 w-3.5 text-slate-500" /> {job.companyName}
+                        </span>
+                        {job.departmentName && (
+                          <span className="text-slate-400">
+                            • {job.departmentName}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 text-slate-500" /> {job.location}
+                        </span>
+                        <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                          <DollarSign className="h-3.5 w-3.5" /> {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}
+                        </span>
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <Clock className="h-3.5 w-3.5" /> Posted {new Date(job.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
-                {job.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="rounded-lg bg-slate-900/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 border border-slate-800"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Link
+                      to={`/jobs/${job.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-200 transition"
+                    >
+                      View Details
+                    </Link>
+                    <Link
+                      to={`/jobs/${job.id}`}
+                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-semibold text-white transition shadow-md shadow-blue-600/20"
+                    >
+                      Apply with AI Match <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
 
-            <div className="flex md:flex-col items-center md:items-end justify-between gap-3 shrink-0">
-              <Link
-                to={`/candidate/jobs/${job.id}`}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-semibold text-white transition shadow-md shadow-blue-600/20"
-              >
-                Apply with AI Match <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              {/* Pagination controls */}
+              {data.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-6 border-t border-slate-800">
+                  <span className="text-xs text-slate-400">
+                    Showing page {data.page} of {data.totalPages} ({data.totalCount} total openings)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={!data.hasPreviousPage}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      disabled={!data.hasNextPage}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ) : (
+            <div className="glass-card p-12 rounded-2xl border border-slate-800 text-center space-y-3">
+              <Briefcase className="h-10 w-10 text-slate-600 mx-auto" />
+              <h3 className="text-base font-bold text-white">No technical openings found</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                No active job postings matched your current search filters. Try adjusting your search query or filters.
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

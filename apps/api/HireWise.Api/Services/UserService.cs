@@ -26,12 +26,14 @@ public class UserService : IUserService
 {
     private readonly ApplicationDbContext _db;
     private readonly IMapper _mapper;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(ApplicationDbContext db, IMapper mapper, ILogger<UserService> logger)
+    public UserService(ApplicationDbContext db, IMapper mapper, ICurrentUserService currentUserService, ILogger<UserService> logger)
     {
         _db = db;
         _mapper = mapper;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -43,7 +45,41 @@ public class UserService : IUserService
 
         if (user == null)
         {
-            return Result<UserDto>.NotFound($"User with Clerk ID {clerkUserId} not found in database.");
+            var email = _currentUserService.Email;
+
+            // Check if there is an existing user by email
+            if (!string.IsNullOrEmpty(email))
+            {
+                user = await _db.Users
+                    .Include(u => u.Company)
+                    .FirstOrDefaultAsync(u => u.Email == email, ct);
+
+                if (user != null)
+                {
+                    user.ClerkUserId = clerkUserId;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _db.SaveChangesAsync(ct);
+                    return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
+                }
+            }
+
+            // Auto-provision new user from authenticated claims
+            var role = _currentUserService.Role ?? UserRole.CANDIDATE;
+            user = new User
+            {
+                ClerkUserId = clerkUserId,
+                Email = !string.IsNullOrEmpty(email) ? email : $"{clerkUserId}@hirewise.dev",
+                FirstName = _currentUserService.FirstName ?? "User",
+                LastName = _currentUserService.LastName ?? "",
+                Role = role,
+                Status = UserStatus.ACTIVE,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role}", user.Id, user.Email, user.Role);
         }
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));

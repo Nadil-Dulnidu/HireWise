@@ -1,15 +1,34 @@
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { jobsApi, companiesApi } from '@/lib/api/jobs-api'
 import {
   Briefcase,
-  Users,
   Bot,
   Activity,
-  Plus
+  Plus,
+  Building,
+  ArrowRight
 } from 'lucide-react'
 
 export function RecruiterDashboard() {
   const { profile } = useCurrentUser()
+  const companyId = profile?.companyId
+
+  const { data: jobsData } = useQuery({
+    queryKey: ['recruiterJobsCount'],
+    queryFn: () => jobsApi.getRecruiterJobs({ pageSize: 100 }),
+    enabled: !!companyId
+  })
+
+  const { data: company } = useQuery({
+    queryKey: ['company', companyId],
+    queryFn: () => companiesApi.getCompanyById(companyId!),
+    enabled: !!companyId
+  })
+
+  const activeJobsCount = jobsData?.items?.filter((j) => j.status === 'OPEN').length ?? 0
+  const totalJobsCount = jobsData?.totalCount ?? 0
 
   return (
     <div className="space-y-8">
@@ -20,7 +39,11 @@ export function RecruiterDashboard() {
             Recruiter Workspace
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Company: <span className="text-white font-medium">{profile?.companyName || 'HireWise Global'}</span> • Role: Recruiter
+            Company:{' '}
+            <Link to="/recruiter/companies" className="text-purple-400 font-semibold hover:underline">
+              {company?.name || profile?.companyName || 'HireWise Organization'}
+            </Link>{' '}
+            • Role: Recruiter
           </p>
         </div>
 
@@ -37,12 +60,12 @@ export function RecruiterDashboard() {
       {/* Analytics KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Active Job Openings', value: '4', icon: Briefcase, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-          { label: 'Total Candidates', value: '18', icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-          { label: 'AI Evaluations Ready', value: '5', icon: Bot, color: 'text-pink-400', bg: 'bg-pink-500/10' },
-          { label: 'Pending Approvals', value: '3', icon: Activity, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+          { label: 'Active Job Openings', value: activeJobsCount.toString(), icon: Briefcase, color: 'text-purple-400', bg: 'bg-purple-500/10', link: '/recruiter/jobs' },
+          { label: 'Total Postings', value: totalJobsCount.toString(), icon: Building, color: 'text-blue-400', bg: 'bg-blue-500/10', link: '/recruiter/jobs' },
+          { label: 'AI Evaluations Ready', value: '5', icon: Bot, color: 'text-pink-400', bg: 'bg-pink-500/10', link: '/recruiter/ai-evaluations' },
+          { label: 'Pending Approvals', value: '3', icon: Activity, color: 'text-amber-400', bg: 'bg-amber-500/10', link: '/recruiter/scheduling' },
         ].map((kpi, i) => (
-          <div key={i} className="glass-card p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <Link key={i} to={kpi.link} className="glass-card p-5 rounded-xl border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
             <div>
               <p className="text-xs text-slate-400 font-medium">{kpi.label}</p>
               <h3 className="text-2xl font-bold text-white mt-1">{kpi.value}</h3>
@@ -50,7 +73,7 @@ export function RecruiterDashboard() {
             <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}>
               <kpi.icon className="h-5 w-5" />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -62,8 +85,8 @@ export function RecruiterDashboard() {
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Bot className="h-4 w-4 text-pink-400" /> Pending AI Hiring Recommendations
             </h3>
-            <Link to="/recruiter/ai-evaluations" className="text-xs font-semibold text-purple-400 hover:text-purple-300">
-              Review Queue
+            <Link to="/recruiter/ai-evaluations" className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+              Review Queue <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
