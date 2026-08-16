@@ -1,121 +1,97 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { PublicLayout } from '@/components/layouts/PublicLayout'
+import { CandidateLayout } from '@/components/layouts/CandidateLayout'
+import { RecruiterLayout } from '@/components/layouts/RecruiterLayout'
+import { InterviewerLayout } from '@/components/layouts/InterviewerLayout'
+import { AdminLayout } from '@/components/layouts/AdminLayout'
+import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 
-function App() {
-  const [count, setCount] = useState(0)
+// Pages
+import { LandingPage } from '@/pages/LandingPage'
+import { PublicJobsPage } from '@/pages/jobs/PublicJobsPage'
+import { SignInPage } from '@/pages/auth/SignInPage'
+import { SignUpPage } from '@/pages/auth/SignUpPage'
+import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
+import { CandidateDashboard } from '@/pages/candidate/CandidateDashboard'
+import { RecruiterDashboard } from '@/pages/recruiter/RecruiterDashboard'
+import { InterviewerDashboard } from '@/pages/interviewer/InterviewerDashboard'
+import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 
+export function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      {/* Public Pages */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/jobs" element={<PublicJobsPage />} />
+        <Route path="/jobs/:id" element={<PublicJobsPage />} />
+      </Route>
 
-      <div className="ticks"></div>
+      {/* Auth Pages */}
+      <Route path="/sign-in/*" element={<SignInPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* Candidate Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['CANDIDATE', 'ADMIN']} />}>
+        <Route path="/candidate" element={<CandidateLayout />}>
+          <Route index element={<Navigate to="/candidate/dashboard" replace />} />
+          <Route path="dashboard" element={<CandidateDashboard />} />
+          <Route path="jobs" element={<PublicJobsPage />} />
+          <Route path="jobs/:id" element={<PublicJobsPage />} />
+          <Route path="applications" element={<CandidateDashboard />} />
+          <Route path="resume" element={<CandidateDashboard />} />
+          <Route path="interviews" element={<CandidateDashboard />} />
+          <Route path="availability" element={<CandidateDashboard />} />
+          <Route path="profile" element={<CandidateDashboard />} />
+        </Route>
+      </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Recruiter Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} />}>
+        <Route path="/recruiter" element={<RecruiterLayout />}>
+          <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
+          <Route path="dashboard" element={<RecruiterDashboard />} />
+          <Route path="companies" element={<RecruiterDashboard />} />
+          <Route path="departments" element={<RecruiterDashboard />} />
+          <Route path="jobs" element={<RecruiterDashboard />} />
+          <Route path="jobs/new" element={<RecruiterDashboard />} />
+          <Route path="applications" element={<RecruiterDashboard />} />
+          <Route path="ai-evaluations" element={<RecruiterDashboard />} />
+          <Route path="scheduling" element={<RecruiterDashboard />} />
+          <Route path="interviews" element={<RecruiterDashboard />} />
+          <Route path="ai-workflows" element={<RecruiterDashboard />} />
+          <Route path="analytics" element={<RecruiterDashboard />} />
+        </Route>
+      </Route>
+
+      {/* Interviewer Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['INTERVIEWER', 'ADMIN']} />}>
+        <Route path="/interviewer" element={<InterviewerLayout />}>
+          <Route index element={<Navigate to="/interviewer/dashboard" replace />} />
+          <Route path="dashboard" element={<InterviewerDashboard />} />
+          <Route path="interviews" element={<InterviewerDashboard />} />
+          <Route path="availability" element={<InterviewerDashboard />} />
+          <Route path="history" element={<InterviewerDashboard />} />
+        </Route>
+      </Route>
+
+      {/* Admin Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminDashboard />} />
+          <Route path="companies" element={<AdminDashboard />} />
+          <Route path="audit-logs" element={<AdminDashboard />} />
+          <Route path="analytics" element={<AdminDashboard />} />
+          <Route path="settings" element={<AdminDashboard />} />
+        </Route>
+      </Route>
+
+      {/* Catch-all 404 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
