@@ -89,6 +89,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<HireWise.Api.Services.Storage.IStorageService, HireWise.Api.Services.Storage.LocalStorageService>();
+builder.Services.AddScoped<IResumeService, ResumeService>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddHttpClient<HireWise.Api.Services.Ai.IAiServiceClient, HireWise.Api.Services.Ai.AiServiceClient>();
 builder.Services.AddScoped<IClerkWebhookService, ClerkWebhookService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -96,6 +100,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<HireWise.Api.Mappings.MappingProfile>());
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateProfileRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HireWise.Api.Validators.Applications.ApplyJobRequestValidator>();
 
 // SignalR
 builder.Services.AddSignalR();
@@ -184,6 +189,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseIpRateLimiting();
 app.UseCors("FrontendCorsPolicy");
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();

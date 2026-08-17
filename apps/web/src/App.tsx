@@ -6,18 +6,30 @@ import { InterviewerLayout } from '@/components/layouts/InterviewerLayout'
 import { AdminLayout } from '@/components/layouts/AdminLayout'
 import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 
-// Pages
+// Public & Auth Pages
 import { LandingPage } from '@/pages/LandingPage'
 import { PublicJobsPage } from '@/pages/jobs/PublicJobsPage'
 import { JobDetailPage } from '@/pages/jobs/JobDetailPage'
 import { SignInPage } from '@/pages/auth/SignInPage'
 import { SignUpPage } from '@/pages/auth/SignUpPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
+
+// Candidate Pages
 import { CandidateDashboard } from '@/pages/candidate/CandidateDashboard'
+import { CandidateApplicationsPage } from '@/pages/candidate/CandidateApplicationsPage'
+import { CandidateApplicationDetailPage } from '@/pages/candidate/CandidateApplicationDetailPage'
+import { CandidateResumePage } from '@/pages/candidate/CandidateResumePage'
+import { CandidateProfilePage } from '@/pages/candidate/CandidateProfilePage'
+
+// Recruiter Pages
 import { RecruiterDashboard } from '@/pages/recruiter/RecruiterDashboard'
 import { RecruiterJobsPage } from '@/pages/recruiter/RecruiterJobsPage'
 import { CreateEditJobPage } from '@/pages/recruiter/CreateEditJobPage'
 import { RecruiterCompanyPage } from '@/pages/recruiter/RecruiterCompanyPage'
+import { RecruiterApplicationsPage } from '@/pages/recruiter/RecruiterApplicationsPage'
+import { RecruiterApplicationDetailPage } from '@/pages/recruiter/RecruiterApplicationDetailPage'
+
+// Interviewer & Admin Pages
 import { InterviewerDashboard } from '@/pages/interviewer/InterviewerDashboard'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 
@@ -43,11 +55,12 @@ export function App() {
           <Route path="dashboard" element={<CandidateDashboard />} />
           <Route path="jobs" element={<PublicJobsPage />} />
           <Route path="jobs/:id" element={<JobDetailPage />} />
-          <Route path="applications" element={<CandidateDashboard />} />
-          <Route path="resume" element={<CandidateDashboard />} />
+          <Route path="applications" element={<CandidateApplicationsPage />} />
+          <Route path="applications/:id" element={<CandidateApplicationDetailPage />} />
+          <Route path="resume" element={<CandidateResumePage />} />
           <Route path="interviews" element={<CandidateDashboard />} />
           <Route path="availability" element={<CandidateDashboard />} />
-          <Route path="profile" element={<CandidateDashboard />} />
+          <Route path="profile" element={<CandidateProfilePage />} />
         </Route>
       </Route>
 
@@ -61,7 +74,8 @@ export function App() {
           <Route path="jobs" element={<RecruiterJobsPage />} />
           <Route path="jobs/new" element={<CreateEditJobPage />} />
           <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
-          <Route path="applications" element={<RecruiterDashboard />} />
+          <Route path="applications" element={<RecruiterApplicationsPage />} />
+          <Route path="applications/:id" element={<RecruiterApplicationDetailPage />} />
           <Route path="ai-evaluations" element={<RecruiterDashboard />} />
           <Route path="scheduling" element={<RecruiterDashboard />} />
           <Route path="interviews" element={<RecruiterDashboard />} />
