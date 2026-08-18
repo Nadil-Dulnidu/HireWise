@@ -52,7 +52,8 @@ public class CurrentUserService : ICurrentUserService
 
     public string? ClerkOrganizationId =>
         User?.FindFirst("org_id")?.Value ??
-        User?.FindFirst("organization_id")?.Value;
+        User?.FindFirst("organization_id")?.Value ??
+        _httpContextAccessor.HttpContext?.Request.Headers["X-Clerk-Org-Id"].FirstOrDefault();
 
     public string? OrgRole =>
         User?.FindFirst("org_role")?.Value;
@@ -62,7 +63,8 @@ public class CurrentUserService : ICurrentUserService
         get
         {
             var roleStr = User?.FindFirst(ClaimTypes.Role)?.Value ??
-                          User?.FindFirst("role")?.Value;
+                          User?.FindFirst("role")?.Value ??
+                          _httpContextAccessor.HttpContext?.Request.Headers["X-Clerk-Role"].FirstOrDefault();
 
             if (string.IsNullOrEmpty(roleStr))
             {

@@ -7,6 +7,9 @@ namespace HireWise.Api.Services.Ai;
 public interface IAiServiceClient
 {
     Task<bool> TriggerApplicationEvaluationAsync(Guid applicationId, string jobTitle, string jobDescription, string jobRequirements, string resumeUrl, CancellationToken ct = default);
+    Task<JsonElement?> GetWorkflowDetailsAsync(Guid workflowId, CancellationToken ct = default);
+    Task<JsonElement?> GetWorkflowStepsAsync(Guid workflowId, CancellationToken ct = default);
+    Task<JsonElement?> GetWorkflowStatusAsync(Guid workflowId, CancellationToken ct = default);
 }
 
 public class AiServiceClient : IAiServiceClient
@@ -70,6 +73,69 @@ public class AiServiceClient : IAiServiceClient
         {
             _logger.LogError(ex, "Failed to connect to AI Service for Application {ApplicationId}. Will fallback gracefully.", applicationId);
             return false;
+        }
+    }
+
+    public async Task<JsonElement?> GetWorkflowDetailsAsync(Guid workflowId, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/v1/workflows/{workflowId}/details", ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.Clone();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch workflow details from AI Service for {WorkflowId}", workflowId);
+            return null;
+        }
+    }
+
+    public async Task<JsonElement?> GetWorkflowStepsAsync(Guid workflowId, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/v1/workflows/{workflowId}/steps", ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.Clone();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch workflow steps from AI Service for {WorkflowId}", workflowId);
+            return null;
+        }
+    }
+
+    public async Task<JsonElement?> GetWorkflowStatusAsync(Guid workflowId, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/v1/workflows/{workflowId}", ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.Clone();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch workflow status from AI Service for {WorkflowId}", workflowId);
+            return null;
         }
     }
 }
