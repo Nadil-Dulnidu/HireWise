@@ -1,0 +1,34 @@
+# Build results & Binaries
+bin/
+obj/
+dist/
+build/
+.venv/
+node_modules/
+
+# Environment files & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!.env.*.example
+
+# IDE & Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+
+# OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log

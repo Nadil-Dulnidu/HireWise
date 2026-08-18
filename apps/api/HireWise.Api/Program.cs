@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
+using DotNetEnv;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HireWise.Api.Data;
@@ -13,6 +14,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+
+// 0. Load .env file (traverses current and parent directories)
+DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,9 +31,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // 2. Database Context
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration["ConnectionStrings__DefaultConnection"]
     ?? "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
+
+var connectionString = ParseConnectionString(rawConnectionString);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -40,6 +47,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 3. Authentication & Clerk JWT Configuration
 var clerkAuthority = builder.Configuration["Clerk:Authority"]
     ?? builder.Configuration["CLERK_AUTHORITY"]
+    ?? builder.Configuration["Clerk__Authority"]
     ?? "https://clerk.hirewise.dev";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -48,7 +56,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = clerkAuthority;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = !builder.Environment.IsDevelopment() || !string.IsNullOrEmpty(builder.Configuration["Clerk:Authority"]),
+            ValidateIssuer = !builder.Environment.IsDevelopment() 
+                || !string.IsNullOrEmpty(builder.Configuration["Clerk:Authority"]) 
+                || !string.IsNullOrEmpty(builder.Configuration["CLERK_AUTHORITY"]),
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
@@ -118,8 +128,15 @@ builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 // 7. CORS
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:4173" };
+var allowedOriginsConfig = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var allowedOriginsEnv = builder.Configuration["CORS_ALLOWED_ORIGINS"]
+    ?? builder.Configuration["Cors__AllowedOrigins"];
+
+var allowedOrigins = (allowedOriginsConfig != null && allowedOriginsConfig.Length > 0)
+    ? allowedOriginsConfig
+    : (allowedOriginsEnv != null
+        ? allowedOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        : new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:4173" });
 
 builder.Services.AddCors(options =>
 {
@@ -204,7 +221,10 @@ app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 
 // Database Migration & Seed Pipeline on Startup
-if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup", false))
+var applyMigrations = app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup", false)
+    || app.Configuration.GetValue<bool>("DATABASE_APPLY_MIGRATIONS_ON_STARTUP", false);
+
+if (applyMigrations)
 {
     try
     {
@@ -241,3 +261,42 @@ app.MapGet("/api/health", async (ApplicationDbContext db) =>
 });
 
 app.Run();
+
+// Helper method to parse PostgreSQL URIs or standard ADO.NET connection strings
+static string ParseConnectionString(string connectionStringOrUrl)
+{
+    if (string.IsNullOrWhiteSpace(connectionStringOrUrl))
+        return connectionStringOrUrl;
+
+    if (connectionStringOrUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        connectionStringOrUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        try
+        {
+            var uri = new Uri(connectionStringOrUrl);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+            var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+            var database = uri.AbsolutePath.TrimStart('/');
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var host = uri.Host;
+
+            var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+            {
+                Host = host,
+                Port = port,
+                Database = database,
+                Username = username,
+                Password = password
+            };
+
+            return npgsqlBuilder.ConnectionString;
+        }
+        catch
+        {
+            return connectionStringOrUrl;
+        }
+    }
+
+    return connectionStringOrUrl;
+}

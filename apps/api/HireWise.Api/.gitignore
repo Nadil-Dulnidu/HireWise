@@ -131,3 +131,11 @@ $RECYCLE.BIN/
 .DS_Store
 
 _NCrunch*
+
+# Environment files & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!.env.*.example
