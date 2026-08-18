@@ -81,6 +81,42 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CandidateProfileImageUrl, opt => opt.MapFrom(src => src.Candidate.ProfileImageUrl))
             .ForMember(dest => dest.HasInterviewScheduled, opt => opt.MapFrom(src => src.Interview != null))
             .ForMember(dest => dest.InterviewId, opt => opt.MapFrom(src => src.Interview != null ? src.Interview.Id : (Guid?)null));
+
+        // Interview Mappings
+        CreateMap<Interview, DTOs.Interviews.InterviewDto>()
+            .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Job.Title))
+            .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Job.CompanyId))
+            .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Job.Company.Name))
+            .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => $"{src.Candidate.FirstName} {src.Candidate.LastName}".Trim()))
+            .ForMember(dest => dest.CandidateEmail, opt => opt.MapFrom(src => src.Candidate.Email))
+            .ForMember(dest => dest.CandidateProfileImageUrl, opt => opt.MapFrom(src => src.Candidate.ProfileImageUrl))
+            .ForMember(dest => dest.InterviewerName, opt => opt.MapFrom(src => $"{src.Interviewer.FirstName} {src.Interviewer.LastName}".Trim()))
+            .ForMember(dest => dest.InterviewerEmail, opt => opt.MapFrom(src => src.Interviewer.Email))
+            .ForMember(dest => dest.HasFeedback, opt => opt.MapFrom(src => src.Feedback != null))
+            .ForMember(dest => dest.OverallRating, opt => opt.MapFrom(src => src.Feedback != null ? (decimal?)src.Feedback.OverallRating : null))
+            .ForMember(dest => dest.Recommendation, opt => opt.MapFrom(src => src.Feedback != null ? (Models.Enums.RecommendationType?)src.Feedback.Recommendation : null));
+
+        CreateMap<Interview, DTOs.Interviews.InterviewDetailDto>()
+            .IncludeBase<Interview, DTOs.Interviews.InterviewDto>()
+            .ForMember(dest => dest.JobDescription, opt => opt.MapFrom(src => src.Job.Description))
+            .ForMember(dest => dest.CandidatePhone, opt => opt.MapFrom(src => src.Candidate.Phone))
+            .ForMember(dest => dest.Feedback, opt => opt.MapFrom(src => src.Feedback))
+            .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.Questions));
+
+        CreateMap<DTOs.Interviews.CreateInterviewRequest, Interview>();
+
+        // Interview Question Mappings
+        CreateMap<InterviewQuestion, DTOs.Interviews.InterviewQuestionDto>();
+
+        // Interview Feedback Mappings
+        CreateMap<InterviewFeedback, DTOs.Interviews.InterviewFeedbackDto>()
+            .ForMember(dest => dest.InterviewerName, opt => opt.MapFrom(src => src.Interviewer != null ? $"{src.Interviewer.FirstName} {src.Interviewer.LastName}".Trim() : string.Empty));
+
+        // Availability Mappings
+        CreateMap<AvailabilitySlot, DTOs.Availability.AvailabilitySlotDto>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? $"{src.User.FirstName} {src.User.LastName}".Trim() : string.Empty));
+
+        CreateMap<DTOs.Availability.CreateAvailabilitySlotRequest, AvailabilitySlot>();
     }
 }
 

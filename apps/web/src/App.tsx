@@ -20,6 +20,9 @@ import { CandidateApplicationsPage } from '@/pages/candidate/CandidateApplicatio
 import { CandidateApplicationDetailPage } from '@/pages/candidate/CandidateApplicationDetailPage'
 import { CandidateResumePage } from '@/pages/candidate/CandidateResumePage'
 import { CandidateProfilePage } from '@/pages/candidate/CandidateProfilePage'
+import { CandidateInterviewsPage } from '@/pages/candidate/CandidateInterviewsPage'
+import { CandidateInterviewDetailPage } from '@/pages/candidate/CandidateInterviewDetailPage'
+import { CandidateAvailabilityPage } from '@/pages/candidate/CandidateAvailabilityPage'
 
 // Recruiter Pages
 import { RecruiterDashboard } from '@/pages/recruiter/RecruiterDashboard'
@@ -28,9 +31,16 @@ import { CreateEditJobPage } from '@/pages/recruiter/CreateEditJobPage'
 import { RecruiterCompanyPage } from '@/pages/recruiter/RecruiterCompanyPage'
 import { RecruiterApplicationsPage } from '@/pages/recruiter/RecruiterApplicationsPage'
 import { RecruiterApplicationDetailPage } from '@/pages/recruiter/RecruiterApplicationDetailPage'
+import { RecruiterInterviewsPage } from '@/pages/recruiter/RecruiterInterviewsPage'
+import { RecruiterInterviewDetailPage } from '@/pages/recruiter/RecruiterInterviewDetailPage'
+import { RecruiterSchedulingPage } from '@/pages/recruiter/RecruiterSchedulingPage'
 
 // Interviewer & Admin Pages
 import { InterviewerDashboard } from '@/pages/interviewer/InterviewerDashboard'
+import { InterviewerInterviewsPage } from '@/pages/interviewer/InterviewerInterviewsPage'
+import { InterviewerInterviewDetailPage } from '@/pages/interviewer/InterviewerInterviewDetailPage'
+import { InterviewerAvailabilityPage } from '@/pages/interviewer/InterviewerAvailabilityPage'
+import { InterviewerHistoryPage } from '@/pages/interviewer/InterviewerHistoryPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 
 export function App() {
@@ -58,8 +68,9 @@ export function App() {
           <Route path="applications" element={<CandidateApplicationsPage />} />
           <Route path="applications/:id" element={<CandidateApplicationDetailPage />} />
           <Route path="resume" element={<CandidateResumePage />} />
-          <Route path="interviews" element={<CandidateDashboard />} />
-          <Route path="availability" element={<CandidateDashboard />} />
+          <Route path="interviews" element={<CandidateInterviewsPage />} />
+          <Route path="interviews/:id" element={<CandidateInterviewDetailPage />} />
+          <Route path="availability" element={<CandidateAvailabilityPage />} />
           <Route path="profile" element={<CandidateProfilePage />} />
         </Route>
       </Route>
@@ -77,8 +88,9 @@ export function App() {
           <Route path="applications" element={<RecruiterApplicationsPage />} />
           <Route path="applications/:id" element={<RecruiterApplicationDetailPage />} />
           <Route path="ai-evaluations" element={<RecruiterDashboard />} />
-          <Route path="scheduling" element={<RecruiterDashboard />} />
-          <Route path="interviews" element={<RecruiterDashboard />} />
+          <Route path="scheduling" element={<RecruiterSchedulingPage />} />
+          <Route path="interviews" element={<RecruiterInterviewsPage />} />
+          <Route path="interviews/:id" element={<RecruiterInterviewDetailPage />} />
           <Route path="ai-workflows" element={<RecruiterDashboard />} />
           <Route path="analytics" element={<RecruiterDashboard />} />
         </Route>
@@ -89,9 +101,10 @@ export function App() {
         <Route path="/interviewer" element={<InterviewerLayout />}>
           <Route index element={<Navigate to="/interviewer/dashboard" replace />} />
           <Route path="dashboard" element={<InterviewerDashboard />} />
-          <Route path="interviews" element={<InterviewerDashboard />} />
-          <Route path="availability" element={<InterviewerDashboard />} />
-          <Route path="history" element={<InterviewerDashboard />} />
+          <Route path="interviews" element={<InterviewerInterviewsPage />} />
+          <Route path="interviews/:id" element={<InterviewerInterviewDetailPage />} />
+          <Route path="availability" element={<InterviewerAvailabilityPage />} />
+          <Route path="history" element={<InterviewerHistoryPage />} />
         </Route>
       </Route>
 
