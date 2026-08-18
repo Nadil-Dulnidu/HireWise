@@ -22,9 +22,11 @@ public class UserContextMiddleware
             var clerkUserId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? context.User.FindFirst("sub")?.Value;
             var role = context.User.FindFirst(ClaimTypes.Role)?.Value
-                ?? context.User.FindFirst("role")?.Value;
+                ?? context.User.FindFirst("role")?.Value
+                ?? context.Request.Headers["X-Clerk-Role"].FirstOrDefault();
             var orgId = context.User.FindFirst("org_id")?.Value
-                ?? context.User.FindFirst("organization_id")?.Value;
+                ?? context.User.FindFirst("organization_id")?.Value
+                ?? context.Request.Headers["X-Clerk-Org-Id"].FirstOrDefault();
             var orgRole = context.User.FindFirst("org_role")?.Value;
 
             // Ensure NameIdentifier claim is present

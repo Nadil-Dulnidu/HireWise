@@ -16,6 +16,7 @@ public interface IUserService
     Task<PagedResult<UserDto>> GetUsersAsync(UserFilterRequest request, CancellationToken ct = default);
     Task<Result<UserDto>> UpdateProfileAsync(string clerkUserId, UpdateProfileRequest request, CancellationToken ct = default);
     Task<Result<UserDto>> UpdateRoleAsync(Guid id, UserRole newRole, CancellationToken ct = default);
+    Task<Result<UserDto>> SetSelfRoleAsync(string clerkUserId, UserRole newRole, CancellationToken ct = default);
     Task<Result<bool>> DeactivateUserAsync(Guid id, CancellationToken ct = default);
     Task<Result<bool>> BanUserAsync(Guid id, string? reason, CancellationToken ct = default);
     Task<Result<List<UserDto>>> GetInterviewersByCompanyAsync(Guid companyId, CancellationToken ct = default);
@@ -87,24 +88,63 @@ public class UserService : IUserService
                 user.Id, user.Email, user.Role, user.Status);
         }
 
-        // Self-healing org sync: If user has Clerk Org claim but no linked Company in DB, link immediately
-        if (!user.CompanyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkOrganizationId))
+        // Self-healing org & role sync: Link company and correct role if user belongs to an org or created one
+        var orgId = _currentUserService.ClerkOrganizationId;
+        Company? company = null;
+
+        if (!string.IsNullOrEmpty(orgId))
         {
-            var company = await _db.Companies.FirstOrDefaultAsync(c => c.ClerkOrganizationId == _currentUserService.ClerkOrganizationId, ct);
-            if (company != null)
+            company = await _db.Companies.FirstOrDefaultAsync(c => c.ClerkOrganizationId == orgId, ct);
+        }
+
+        if (company == null && !user.CompanyId.HasValue)
+        {
+            // Check if this user created any company in the DB
+            company = await _db.Companies.FirstOrDefaultAsync(c => c.CreatedByUserId == user.Id, ct);
+        }
+
+        if (company != null)
+        {
+            var explicitRole = _currentUserService.Role;
+            var targetRole = explicitRole ?? (user.Role == UserRole.CANDIDATE ? UserRole.RECRUITER : user.Role);
+
+            // If explicit role is CANDIDATE or user has no orgRole, preserve CANDIDATE role
+            if (explicitRole == UserRole.CANDIDATE || (user.Role == UserRole.CANDIDATE && string.IsNullOrEmpty(_currentUserService.OrgRole)))
+            {
+                targetRole = UserRole.CANDIDATE;
+            }
+
+            var shouldUpdate = user.CompanyId != company.Id || user.Role != targetRole || user.Status != UserStatus.ACTIVE || company.CreatedByUserId == null;
+
+            if (shouldUpdate && targetRole != UserRole.CANDIDATE)
             {
                 user.CompanyId = company.Id;
                 user.Company = company;
-                if (user.Role == UserRole.CANDIDATE || user.Role == UserRole.RECRUITER)
-                {
-                    user.Role = _currentUserService.Role ?? UserRole.RECRUITER;
-                }
+                user.Role = targetRole;
                 user.Status = UserStatus.ACTIVE;
                 user.UpdatedAt = DateTime.UtcNow;
+
+                if (company.CreatedByUserId == null && targetRole == UserRole.RECRUITER)
+                {
+                    company.CreatedByUserId = user.Id;
+                    company.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("Self-healed user {UserId} linking to Company {CompanyId} via Clerk Org {OrgId}",
-                    user.Id, company.Id, _currentUserService.ClerkOrganizationId);
+                _logger.LogInformation("Self-healed user {UserId} linking to Company {CompanyId} as {Role}",
+                    user.Id, company.Id, user.Role);
             }
+        }
+        else if (_currentUserService.Role.HasValue && _currentUserService.Role.Value != user.Role)
+        {
+            user.Role = _currentUserService.Role.Value;
+            if (user.Role == UserRole.CANDIDATE || user.Role == UserRole.ADMIN)
+            {
+                user.Status = UserStatus.ACTIVE;
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("Self-healed user {UserId} role to {Role}", user.Id, user.Role);
         }
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
@@ -208,6 +248,40 @@ public class UserService : IUserService
         user.Role = newRole;
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Role updated to {Role} for user {UserId}", newRole, user.Id);
+
+        return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
+    }
+
+    public async Task<Result<UserDto>> SetSelfRoleAsync(string clerkUserId, UserRole newRole, CancellationToken ct = default)
+    {
+        var user = await _db.Users
+            .Include(u => u.Company)
+            .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId, ct);
+
+        if (user == null)
+        {
+            return Result<UserDto>.NotFound("User not found.");
+        }
+
+        user.Role = newRole;
+        if (newRole == UserRole.CANDIDATE)
+        {
+            user.Status = UserStatus.ACTIVE;
+            user.CompanyId = null;
+            user.Company = null;
+        }
+        else if (newRole == UserRole.RECRUITER)
+        {
+            user.Status = user.CompanyId.HasValue ? UserStatus.ACTIVE : UserStatus.ONBOARDING;
+        }
+        else if (newRole == UserRole.INTERVIEWER || newRole == UserRole.ADMIN)
+        {
+            user.Status = UserStatus.ACTIVE;
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Self-updated role to {Role} for user {UserId} ({Email})", newRole, user.Id, user.Email);
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }

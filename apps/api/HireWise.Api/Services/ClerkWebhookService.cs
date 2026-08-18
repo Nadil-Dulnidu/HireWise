@@ -177,37 +177,69 @@ public class ClerkWebhookService : IClerkWebhookService
         var existingCompany = await _db.Companies.IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.ClerkOrganizationId == data.Id, ct);
 
-        if (existingCompany != null)
-        {
-            _logger.LogInformation("Company for Clerk Org {OrgId} already exists. Skipping creation.", data.Id);
-            return;
-        }
-
-        // Find creator user if available
+        // Find or create creator user if available
         User? creatorUser = null;
         if (!string.IsNullOrEmpty(data.CreatedBy))
         {
             creatorUser = await _db.Users.FirstOrDefaultAsync(u => u.ClerkUserId == data.CreatedBy, ct);
+            if (creatorUser == null)
+            {
+                creatorUser = new User
+                {
+                    ClerkUserId = data.CreatedBy,
+                    Email = $"{data.CreatedBy}@hirewise.dev",
+                    FirstName = "Recruiter",
+                    LastName = "",
+                    Role = UserRole.RECRUITER,
+                    Status = UserStatus.ACTIVE,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _db.Users.Add(creatorUser);
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation("Auto-created creator user {UserId} from Org creation event", creatorUser.Id);
+            }
         }
 
-        var company = new Company
+        Company company;
+        if (existingCompany != null)
         {
-            ClerkOrganizationId = data.Id,
-            Name = data.Name,
-            Slug = data.Slug ?? data.Name.ToLower().Replace(" ", "-"),
-            LogoUrl = data.LogoUrl ?? data.ImageUrl,
-            CreatedByUserId = creatorUser?.Id,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            company = existingCompany;
+            company.Name = data.Name;
+            company.Slug = data.Slug ?? data.Name.ToLower().Replace(" ", "-");
+            if (!string.IsNullOrEmpty(data.LogoUrl ?? data.ImageUrl))
+            {
+                company.LogoUrl = data.LogoUrl ?? data.ImageUrl;
+            }
+            if (creatorUser != null)
+            {
+                company.CreatedByUserId = creatorUser.Id;
+            }
+            company.UpdatedAt = DateTime.UtcNow;
+            _logger.LogInformation("Updated existing Company {CompanyId} ('{CompanyName}') from Clerk Org {OrgId}",
+                company.Id, company.Name, company.ClerkOrganizationId);
+        }
+        else
+        {
+            company = new Company
+            {
+                ClerkOrganizationId = data.Id,
+                Name = data.Name,
+                Slug = data.Slug ?? data.Name.ToLower().Replace(" ", "-"),
+                LogoUrl = data.LogoUrl ?? data.ImageUrl,
+                CreatedByUserId = creatorUser?.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
-        _db.Companies.Add(company);
-        await _db.SaveChangesAsync(ct);
+            _db.Companies.Add(company);
+            await _db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Auto-created Company {CompanyId} ('{CompanyName}') from Clerk Org {OrgId}",
-            company.Id, company.Name, company.ClerkOrganizationId);
+            _logger.LogInformation("Auto-created Company {CompanyId} ('{CompanyName}') from Clerk Org {OrgId}",
+                company.Id, company.Name, company.ClerkOrganizationId);
+        }
 
-        // If creator was in ONBOARDING status, promote to ACTIVE with RECRUITER role and link to Company
+        // Link creator to Company with RECRUITER role and ACTIVE status
         if (creatorUser != null)
         {
             creatorUser.CompanyId = company.Id;
@@ -216,7 +248,7 @@ public class ClerkWebhookService : IClerkWebhookService
             creatorUser.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Assigned creator user {UserId} to Company {CompanyId} and set status to ACTIVE",
+            _logger.LogInformation("Assigned creator user {UserId} to Company {CompanyId} and set status to ACTIVE with role RECRUITER",
                 creatorUser.Id, company.Id);
         }
     }
@@ -280,17 +312,28 @@ public class ClerkWebhookService : IClerkWebhookService
         var company = await _db.Companies.FirstOrDefaultAsync(c => c.ClerkOrganizationId == orgId, ct);
         if (company == null)
         {
-            _logger.LogWarning("Company with Clerk Org {OrgId} not found when adding member {ClerkUserId}", orgId, clerkUserId);
-            return;
+            // If membership arrives before organization.created, pre-create the company record
+            company = new Company
+            {
+                ClerkOrganizationId = orgId,
+                Name = data.Organization?.Name ?? "Company Workspace",
+                Slug = data.Organization?.Slug ?? orgId.ToLower(),
+                LogoUrl = data.Organization?.LogoUrl ?? data.Organization?.ImageUrl,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.Companies.Add(company);
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("Pre-created Company {CompanyId} from membership event for Org {OrgId}",
+                company.Id, orgId);
         }
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId, ct);
+        var assignedRole = data.Role == "org:admin" ? UserRole.RECRUITER : UserRole.INTERVIEWER;
+
         if (user == null)
         {
-            // Auto-create user from membership public_user_data
             var email = data.PublicUserData?.Identifier ?? $"{clerkUserId}@hirewise.dev";
-            var assignedRole = data.Role == "org:admin" ? UserRole.RECRUITER : UserRole.INTERVIEWER;
-
             user = new User
             {
                 ClerkUserId = clerkUserId,
@@ -306,20 +349,28 @@ public class ClerkWebhookService : IClerkWebhookService
             };
 
             _db.Users.Add(user);
-            await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Auto-created member User {UserId} with role {Role} in Company {CompanyId}",
-                user.Id, user.Role, company.Id);
-            return;
+        }
+        else
+        {
+            user.CompanyId = company.Id;
+            user.Role = assignedRole;
+            user.Status = UserStatus.ACTIVE;
+            user.UpdatedAt = DateTime.UtcNow;
+            if (data.PublicUserData != null)
+            {
+                if (!string.IsNullOrEmpty(data.PublicUserData.FirstName) && string.IsNullOrEmpty(user.FirstName))
+                    user.FirstName = data.PublicUserData.FirstName;
+                if (!string.IsNullOrEmpty(data.PublicUserData.LastName) && string.IsNullOrEmpty(user.LastName))
+                    user.LastName = data.PublicUserData.LastName;
+                if (!string.IsNullOrEmpty(data.PublicUserData.ProfileImageUrl ?? data.PublicUserData.ImageUrl))
+                    user.ProfileImageUrl = data.PublicUserData.ProfileImageUrl ?? data.PublicUserData.ImageUrl;
+            }
         }
 
-        // Link existing user to company
-        user.CompanyId = company.Id;
-        user.Status = UserStatus.ACTIVE;
-        if (user.Role == UserRole.CANDIDATE)
+        if (assignedRole == UserRole.RECRUITER && company.CreatedByUserId == null)
         {
-            user.Role = data.Role == "org:admin" ? UserRole.RECRUITER : UserRole.INTERVIEWER;
+            company.CreatedByUserId = user.Id;
         }
-        user.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Assigned User {UserId} ({Email}) to Company {CompanyId} as {Role}",

@@ -1,10 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SignUp } from '@clerk/clerk-react'
 import { Sparkles, User, Building, UserCheck } from 'lucide-react'
 import type { UserRole } from '@/types/auth'
 
 export function SignUpPage() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('CANDIDATE')
+  const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
+    return (localStorage.getItem('hirewise_selected_role') as UserRole) || 'CANDIDATE'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('hirewise_selected_role', selectedRole)
+  }, [selectedRole])
+
+  const handleRoleChange = (role: UserRole) => {
+    setSelectedRole(role)
+    localStorage.setItem('hirewise_selected_role', role)
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0b0f19] px-4 py-12">
@@ -21,7 +32,7 @@ export function SignUpPage() {
         <div className="grid grid-cols-3 gap-3 p-1.5 rounded-2xl glass-panel border border-slate-800">
           <button
             type="button"
-            onClick={() => setSelectedRole('CANDIDATE')}
+            onClick={() => handleRoleChange('CANDIDATE')}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition text-xs font-medium ${
               selectedRole === 'CANDIDATE'
                 ? 'bg-blue-600/20 text-blue-400 border border-blue-500/40 shadow-sm'
@@ -35,7 +46,7 @@ export function SignUpPage() {
 
           <button
             type="button"
-            onClick={() => setSelectedRole('RECRUITER')}
+            onClick={() => handleRoleChange('RECRUITER')}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition text-xs font-medium ${
               selectedRole === 'RECRUITER'
                 ? 'bg-purple-600/20 text-purple-400 border border-purple-500/40 shadow-sm'
@@ -49,7 +60,7 @@ export function SignUpPage() {
 
           <button
             type="button"
-            onClick={() => setSelectedRole('INTERVIEWER')}
+            onClick={() => handleRoleChange('INTERVIEWER')}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition text-xs font-medium ${
               selectedRole === 'INTERVIEWER'
                 ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
@@ -67,24 +78,9 @@ export function SignUpPage() {
             routing="path"
             path="/sign-up"
             signInUrl="/sign-in"
-            afterSignUpUrl={
-              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
-              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
-              '/interviewer/dashboard'
-            }
-            fallbackRedirectUrl={
-              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
-              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
-              '/interviewer/dashboard'
-            }
-            forceRedirectUrl={
-              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
-              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
-              '/interviewer/dashboard'
-            }
-            unsafeMetadata={{
-              role: selectedRole
-            }}
+            afterSignUpUrl="/auth-redirect"
+            fallbackRedirectUrl="/auth-redirect"
+            forceRedirectUrl="/auth-redirect"
             appearance={{
               elements: {
                 card: 'glass-panel border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90 text-white',

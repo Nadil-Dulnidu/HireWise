@@ -57,6 +57,24 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserDto>.Ok(result.Value!, "Profile updated successfully"));
     }
 
+    [HttpPut("me/role")]
+    public async Task<IActionResult> UpdateSelfRole([FromBody] UpdateUserRoleRequest request, CancellationToken ct)
+    {
+        var clerkUserId = _currentUserService.ClerkUserId;
+        if (string.IsNullOrEmpty(clerkUserId))
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Authenticated user identifier not found in claims."));
+        }
+
+        var result = await _userService.SetSelfRoleAsync(clerkUserId, request.Role, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to update role"));
+        }
+
+        return Ok(ApiResponse<UserDto>.Ok(result.Value!, "User role updated successfully"));
+    }
+
     [HttpGet]
     [Authorize(Roles = "ADMIN,RECRUITER")]
     public async Task<IActionResult> GetUsers([FromQuery] UserFilterRequest request, CancellationToken ct)

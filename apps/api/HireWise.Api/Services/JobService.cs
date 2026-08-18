@@ -112,16 +112,21 @@ public class JobService : IJobService
             return Result<JobDto>.NotFound($"Job with ID {id} not found.");
         }
 
-        // Access check: Public users can only see OPEN jobs.
-        if (!isStaff && job.Status != JobStatus.OPEN)
+        // If the job is OPEN, it is public and accessible to everyone (candidates, guests, staff).
+        if (job.Status == JobStatus.OPEN)
+        {
+            return Result<JobDto>.Success(_mapper.Map<JobDto>(job));
+        }
+
+        // Non-public jobs (DRAFT, PAUSED, CLOSED) can only be viewed by staff belonging to the company or Admins.
+        if (!isStaff)
         {
             return Result<JobDto>.NotFound($"Job with ID {id} not found.");
         }
 
-        // Staff check: Recruiter must belong to the job's company unless Admin
-        if (isStaff && userCompanyId.HasValue && job.CompanyId != userCompanyId.Value)
+        if (userCompanyId.HasValue && job.CompanyId != userCompanyId.Value)
         {
-            return Result<JobDto>.Forbidden("You do not have access to view jobs from another company.");
+            return Result<JobDto>.Forbidden("You do not have access to view private jobs from another company.");
         }
 
         return Result<JobDto>.Success(_mapper.Map<JobDto>(job));

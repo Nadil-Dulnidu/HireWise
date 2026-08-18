@@ -1,15 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreateOrganization, useOrganizationList } from '@clerk/clerk-react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { Building2, Sparkles, Users, CheckCircle2, Loader2 } from 'lucide-react'
+import { Building2, Sparkles, Users, CheckCircle2, Loader2, User, ArrowRight } from 'lucide-react'
 
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const [isSwitching, setIsSwitching] = useState(false)
   const { userMemberships, isLoaded: isOrgListLoaded } = useOrganizationList({
     userMemberships: { infinite: true }
   })
-  const { profile, status, clerkUser, isLoading: isUserLoading } = useCurrentUser()
+  const { profile, status, role, clerkUser, changeRole, isLoading: isUserLoading } = useCurrentUser()
 
   const hasExistingOrg =
     (userMemberships?.data && userMemberships.data.length > 0) ||
@@ -18,23 +19,41 @@ export function OnboardingPage() {
     status === 'ACTIVE'
 
   useEffect(() => {
-    if (isOrgListLoaded && !isUserLoading && hasExistingOrg) {
+    if (!isUserLoading && role === 'CANDIDATE') {
+      navigate('/candidate/dashboard', { replace: true })
+      return
+    }
+
+    if (isOrgListLoaded && !isUserLoading && hasExistingOrg && role === 'RECRUITER') {
       navigate('/recruiter/dashboard', { replace: true })
     }
-  }, [isOrgListLoaded, isUserLoading, hasExistingOrg, navigate])
+  }, [isOrgListLoaded, isUserLoading, hasExistingOrg, role, navigate])
 
-  if (!isOrgListLoaded || isUserLoading) {
+  const handleSwitchToCandidate = async () => {
+    setIsSwitching(true)
+    try {
+      await changeRole('CANDIDATE')
+      navigate('/candidate/dashboard', { replace: true })
+    } catch (err) {
+      console.error('Failed to switch to candidate:', err)
+      setIsSwitching(false)
+    }
+  }
+
+  if (!isOrgListLoaded || isUserLoading || isSwitching) {
     return (
       <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center px-4">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-          <p className="text-sm text-slate-400">Verifying workspace credentials...</p>
+          <p className="text-sm text-slate-400">
+            {isSwitching ? 'Switching to Candidate account...' : 'Verifying workspace credentials...'}
+          </p>
         </div>
       </div>
     )
   }
 
-  if (hasExistingOrg) {
+  if (hasExistingOrg && role === 'RECRUITER') {
     return (
       <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center px-4">
         <div className="flex flex-col items-center gap-4">
@@ -96,10 +115,29 @@ export function OnboardingPage() {
               </div>
             </div>
           </div>
+
+          {/* Escape Hatch for Candidates */}
+          <div className="pt-4 border-t border-slate-800">
+            <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-500/20 space-y-2">
+              <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold">
+                <User className="h-4 w-4" /> Not an Employer / Recruiter?
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Looking to explore jobs, submit resumes, or attend technical interviews?
+              </p>
+              <button
+                type="button"
+                onClick={handleSwitchToCandidate}
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 px-3 py-2 text-xs font-medium text-blue-300 transition"
+              >
+                Continue as Job Seeker (Candidate) <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Right Side: Clerk CreateOrganization Component */}
-        <div className="lg:col-span-7 flex justify-center">
+        <div className="lg:col-span-7 flex flex-col items-center">
           <div className="w-full max-w-md">
             <CreateOrganization
               routing="path"

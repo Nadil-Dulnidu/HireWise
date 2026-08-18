@@ -37,6 +37,8 @@ import { RecruiterApplicationDetailPage } from '@/pages/recruiter/RecruiterAppli
 import { RecruiterInterviewsPage } from '@/pages/recruiter/RecruiterInterviewsPage'
 import { RecruiterInterviewDetailPage } from '@/pages/recruiter/RecruiterInterviewDetailPage'
 import { RecruiterSchedulingPage } from '@/pages/recruiter/RecruiterSchedulingPage'
+import { RecruiterAiEvaluationsPage } from '@/pages/recruiter/RecruiterAiEvaluationsPage'
+import { RecruiterAiWorkflowsPage } from '@/pages/recruiter/RecruiterAiWorkflowsPage'
 
 // Interviewer & Admin Pages
 import { InterviewerDashboard } from '@/pages/interviewer/InterviewerDashboard'
@@ -98,11 +100,11 @@ export function App() {
           <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
           <Route path="applications" element={<RecruiterApplicationsPage />} />
           <Route path="applications/:id" element={<RecruiterApplicationDetailPage />} />
-          <Route path="ai-evaluations" element={<RecruiterDashboard />} />
+          <Route path="ai-evaluations" element={<RecruiterAiEvaluationsPage />} />
           <Route path="scheduling" element={<RecruiterSchedulingPage />} />
           <Route path="interviews" element={<RecruiterInterviewsPage />} />
           <Route path="interviews/:id" element={<RecruiterInterviewDetailPage />} />
-          <Route path="ai-workflows" element={<RecruiterDashboard />} />
+          <Route path="ai-workflows" element={<RecruiterAiWorkflowsPage />} />
           <Route path="analytics" element={<RecruiterDashboard />} />
         </Route>
       </Route>
