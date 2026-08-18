@@ -43,6 +43,8 @@ public static class DbInitializer
                 var company1 = new Company
                 {
                     Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                    ClerkOrganizationId = "org_seed_cloudscale",
+                    Slug = "cloudscale-technologies",
                     Name = "CloudScale Technologies",
                     Description = "Global leader in distributed cloud compute and resilient multi-region infrastructure.",
                     Website = "https://cloudscale.io",
@@ -57,6 +59,8 @@ public static class DbInitializer
                 var company2 = new Company
                 {
                     Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    ClerkOrganizationId = "org_seed_neuralpulse",
+                    Slug = "neuralpulse-ai",
                     Name = "NeuralPulse AI",
                     Description = "Pioneering multi-agent orchestration, LLM reasoning architectures, and agentic workflows.",
                     Website = "https://neuralpulse.ai",
@@ -71,6 +75,8 @@ public static class DbInitializer
                 var company3 = new Company
                 {
                     Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    ClerkOrganizationId = "org_seed_fintechgrid",
+                    Slug = "fintech-grid",
                     Name = "FinTech Grid",
                     Description = "High-throughput, ultra-low-latency financial transaction settlement rails.",
                     Website = "https://fintechgrid.com",

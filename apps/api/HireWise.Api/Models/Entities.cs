@@ -9,7 +9,7 @@ public class User : BaseEntity
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.CANDIDATE;
-    public UserStatus Status { get; set; } = UserStatus.PENDING_APPROVAL;
+    public UserStatus Status { get; set; } = UserStatus.ONBOARDING;
     public Guid? CompanyId { get; set; }
     public string? ProfileImageUrl { get; set; }
     public string? Phone { get; set; }
@@ -26,6 +26,8 @@ public class User : BaseEntity
 
 public class Company : BaseEntity
 {
+    public string ClerkOrganizationId { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }

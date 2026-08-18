@@ -10,7 +10,7 @@ public enum UserRole
 
 public enum UserStatus
 {
-    PENDING_APPROVAL,
+    ONBOARDING,
     ACTIVE,
     INACTIVE
 }

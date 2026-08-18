@@ -5,6 +5,8 @@ namespace HireWise.Api.DTOs.Companies;
 public class CompanyDto
 {
     public Guid Id { get; set; }
+    public string ClerkOrganizationId { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }
@@ -23,6 +25,8 @@ public class CompanyDto
 
 public class CreateCompanyRequest
 {
+    public string? ClerkOrganizationId { get; set; }
+    public string? Slug { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }
@@ -35,6 +39,7 @@ public class CreateCompanyRequest
 public class UpdateCompanyRequest
 {
     public string Name { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public string? Description { get; set; }
     public string? LogoUrl { get; set; }
     public string? Website { get; set; }

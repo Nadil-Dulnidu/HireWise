@@ -15,11 +15,11 @@ public interface IUserService
     Task<Result<UserDto>> GetUserByIdAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<UserDto>> GetUsersAsync(UserFilterRequest request, CancellationToken ct = default);
     Task<Result<UserDto>> UpdateProfileAsync(string clerkUserId, UpdateProfileRequest request, CancellationToken ct = default);
-    Task<Result<UserDto>> ApproveUserAsync(Guid id, ApproveUserRequest request, CancellationToken ct = default);
     Task<Result<UserDto>> UpdateRoleAsync(Guid id, UserRole newRole, CancellationToken ct = default);
-    Task<Result<UserDto>> AssignCompanyAsync(Guid id, Guid companyId, CancellationToken ct = default);
     Task<Result<bool>> DeactivateUserAsync(Guid id, CancellationToken ct = default);
+    Task<Result<bool>> BanUserAsync(Guid id, string? reason, CancellationToken ct = default);
     Task<Result<List<UserDto>>> GetInterviewersByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<Result<List<TeamMemberDto>>> GetTeamMembersAsync(Guid companyId, CancellationToken ct = default);
 }
 
 public class UserService : IUserService
@@ -65,6 +65,10 @@ public class UserService : IUserService
 
             // Auto-provision new user from authenticated claims
             var role = _currentUserService.Role ?? UserRole.CANDIDATE;
+            var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN) 
+                ? UserStatus.ACTIVE 
+                : UserStatus.ONBOARDING;
+
             user = new User
             {
                 ClerkUserId = clerkUserId,
@@ -72,14 +76,15 @@ public class UserService : IUserService
                 FirstName = _currentUserService.FirstName ?? "User",
                 LastName = _currentUserService.LastName ?? "",
                 Role = role,
-                Status = UserStatus.ACTIVE,
+                Status = status,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role}", user.Id, user.Email, user.Role);
+            _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role} and status {Status}",
+                user.Id, user.Email, user.Role, user.Status);
         }
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
@@ -169,33 +174,6 @@ public class UserService : IUserService
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
-    public async Task<Result<UserDto>> ApproveUserAsync(Guid id, ApproveUserRequest request, CancellationToken ct = default)
-    {
-        var user = await _db.Users
-            .Include(u => u.Company)
-            .FirstOrDefaultAsync(u => u.Id == id, ct);
-
-        if (user == null)
-        {
-            return Result<UserDto>.NotFound("User not found.");
-        }
-
-        user.Status = UserStatus.ACTIVE;
-        if (request.Role.HasValue)
-        {
-            user.Role = request.Role.Value;
-        }
-        if (request.CompanyId.HasValue)
-        {
-            user.CompanyId = request.CompanyId.Value;
-        }
-
-        await _db.SaveChangesAsync(ct);
-        _logger.LogInformation("User {UserId} ({Email}) approved with role {Role} and status {Status}", user.Id, user.Email, user.Role, user.Status);
-
-        return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
-    }
-
     public async Task<Result<UserDto>> UpdateRoleAsync(Guid id, UserRole newRole, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -210,30 +188,6 @@ public class UserService : IUserService
         user.Role = newRole;
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Role updated to {Role} for user {UserId}", newRole, user.Id);
-
-        return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
-    }
-
-    public async Task<Result<UserDto>> AssignCompanyAsync(Guid id, Guid companyId, CancellationToken ct = default)
-    {
-        var user = await _db.Users
-            .Include(u => u.Company)
-            .FirstOrDefaultAsync(u => u.Id == id, ct);
-
-        if (user == null)
-        {
-            return Result<UserDto>.NotFound("User not found.");
-        }
-
-        var companyExists = await _db.Companies.AnyAsync(c => c.Id == companyId, ct);
-        if (!companyExists)
-        {
-            return Result<UserDto>.NotFound("Company not found.");
-        }
-
-        user.CompanyId = companyId;
-        await _db.SaveChangesAsync(ct);
-        _logger.LogInformation("User {UserId} assigned to company {CompanyId}", user.Id, companyId);
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
@@ -253,6 +207,24 @@ public class UserService : IUserService
         return Result<bool>.Success(true);
     }
 
+    public async Task<Result<bool>> BanUserAsync(Guid id, string? reason, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+        if (user == null)
+        {
+            return Result<bool>.NotFound("User not found.");
+        }
+
+        user.Status = UserStatus.INACTIVE;
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        _logger.LogWarning("User {UserId} was banned by admin. Reason: {Reason}", user.Id, reason ?? "No reason provided");
+
+        return Result<bool>.Success(true);
+    }
+
     public async Task<Result<List<UserDto>>> GetInterviewersByCompanyAsync(Guid companyId, CancellationToken ct = default)
     {
         var interviewers = await _db.Users
@@ -261,5 +233,30 @@ public class UserService : IUserService
             .ToListAsync(ct);
 
         return Result<List<UserDto>>.Success(interviewers);
+    }
+
+    public async Task<Result<List<TeamMemberDto>>> GetTeamMembersAsync(Guid companyId, CancellationToken ct = default)
+    {
+        var members = await _db.Users
+            .Where(u => u.CompanyId == companyId)
+            .Select(u => new TeamMemberDto
+            {
+                Id = u.Id,
+                ClerkUserId = u.ClerkUserId,
+                Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Role = u.Role,
+                Status = u.Status,
+                ProfileImageUrl = u.ProfileImageUrl,
+                AssignedInterviewsCount = u.AssignedInterviews.Count(i => !i.IsDeleted),
+                CompletedFeedbacksCount = u.SubmittedFeedbacks.Count(),
+                CreatedAt = u.CreatedAt
+            })
+            .OrderBy(u => u.Role == UserRole.RECRUITER ? 0 : 1)
+            .ThenBy(u => u.FirstName)
+            .ToListAsync(ct);
+
+        return Result<List<TeamMemberDto>>.Success(members);
     }
 }

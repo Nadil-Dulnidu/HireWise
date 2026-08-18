@@ -25,7 +25,9 @@ import { CandidateInterviewDetailPage } from '@/pages/candidate/CandidateIntervi
 import { CandidateAvailabilityPage } from '@/pages/candidate/CandidateAvailabilityPage'
 
 // Recruiter Pages
+import { OnboardingPage } from '@/pages/recruiter/OnboardingPage'
 import { RecruiterDashboard } from '@/pages/recruiter/RecruiterDashboard'
+import { TeamPage } from '@/pages/recruiter/TeamPage'
 import { RecruiterJobsPage } from '@/pages/recruiter/RecruiterJobsPage'
 import { CreateEditJobPage } from '@/pages/recruiter/CreateEditJobPage'
 import { RecruiterCompanyPage } from '@/pages/recruiter/RecruiterCompanyPage'
@@ -58,6 +60,11 @@ export function App() {
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+      {/* Recruiter Onboarding (Standalone) */}
+      <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} allowOnboarding={true} />}>
+        <Route path="/recruiter/onboarding/*" element={<OnboardingPage />} />
+      </Route>
+
       {/* Candidate Routes */}
       <Route element={<ProtectedRoute allowedRoles={['CANDIDATE', 'ADMIN']} />}>
         <Route path="/candidate" element={<CandidateLayout />}>
@@ -75,13 +82,14 @@ export function App() {
         </Route>
       </Route>
 
-      {/* Recruiter Routes */}
+      {/* Recruiter Workspace Routes */}
       <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} />}>
         <Route path="/recruiter" element={<RecruiterLayout />}>
           <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
           <Route path="dashboard" element={<RecruiterDashboard />} />
           <Route path="companies" element={<RecruiterCompanyPage />} />
           <Route path="departments" element={<RecruiterCompanyPage />} />
+          <Route path="team" element={<TeamPage />} />
           <Route path="jobs" element={<RecruiterJobsPage />} />
           <Route path="jobs/new" element={<CreateEditJobPage />} />
           <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
