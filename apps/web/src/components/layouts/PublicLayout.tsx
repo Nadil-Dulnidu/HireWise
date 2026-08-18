@@ -34,7 +34,7 @@ export function PublicLayout() {
             {isSignedIn ? (
               <div className="flex items-center gap-4">
                 <Link
-                  to="/candidate/dashboard"
+                  to="/auth-redirect"
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition shadow-lg shadow-blue-600/25 flex items-center gap-1.5"
                 >
                   Dashboard <ArrowRight className="h-4 w-4" />

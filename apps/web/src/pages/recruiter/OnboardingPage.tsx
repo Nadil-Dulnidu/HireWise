@@ -1,7 +1,50 @@
-import { CreateOrganization } from '@clerk/clerk-react'
-import { Building2, Sparkles, Users, CheckCircle2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { CreateOrganization, useOrganizationList } from '@clerk/clerk-react'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { Building2, Sparkles, Users, CheckCircle2, Loader2 } from 'lucide-react'
 
 export function OnboardingPage() {
+  const navigate = useNavigate()
+  const { userMemberships, isLoaded: isOrgListLoaded } = useOrganizationList({
+    userMemberships: { infinite: true }
+  })
+  const { profile, status, clerkUser, isLoading: isUserLoading } = useCurrentUser()
+
+  const hasExistingOrg =
+    (userMemberships?.data && userMemberships.data.length > 0) ||
+    (clerkUser?.organizationMemberships && clerkUser.organizationMemberships.length > 0) ||
+    !!profile?.companyId ||
+    status === 'ACTIVE'
+
+  useEffect(() => {
+    if (isOrgListLoaded && !isUserLoading && hasExistingOrg) {
+      navigate('/recruiter/dashboard', { replace: true })
+    }
+  }, [isOrgListLoaded, isUserLoading, hasExistingOrg, navigate])
+
+  if (!isOrgListLoaded || isUserLoading) {
+    return (
+      <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center px-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+          <p className="text-sm text-slate-400">Verifying workspace credentials...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (hasExistingOrg) {
+    return (
+      <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center px-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+          <p className="text-sm text-slate-400">Redirecting to your recruiter dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center px-4 py-12">
       <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -62,6 +105,7 @@ export function OnboardingPage() {
               routing="path"
               path="/recruiter/onboarding"
               afterCreateOrganizationUrl="/recruiter/dashboard"
+              skipInvitationScreen={true}
               appearance={{
                 elements: {
                   card: 'glass-panel border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90 text-white',
@@ -80,3 +124,4 @@ export function OnboardingPage() {
     </div>
   )
 }
+

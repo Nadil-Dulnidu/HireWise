@@ -87,6 +87,26 @@ public class UserService : IUserService
                 user.Id, user.Email, user.Role, user.Status);
         }
 
+        // Self-healing org sync: If user has Clerk Org claim but no linked Company in DB, link immediately
+        if (!user.CompanyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkOrganizationId))
+        {
+            var company = await _db.Companies.FirstOrDefaultAsync(c => c.ClerkOrganizationId == _currentUserService.ClerkOrganizationId, ct);
+            if (company != null)
+            {
+                user.CompanyId = company.Id;
+                user.Company = company;
+                if (user.Role == UserRole.CANDIDATE || user.Role == UserRole.RECRUITER)
+                {
+                    user.Role = _currentUserService.Role ?? UserRole.RECRUITER;
+                }
+                user.Status = UserStatus.ACTIVE;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation("Self-healed user {UserId} linking to Company {CompanyId} via Clerk Org {OrgId}",
+                    user.Id, company.Id, _currentUserService.ClerkOrganizationId);
+            }
+        }
+
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 

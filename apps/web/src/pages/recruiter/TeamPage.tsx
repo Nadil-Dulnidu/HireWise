@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { OrganizationProfile } from '@clerk/clerk-react'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { getTeamMembers } from '@/lib/api/users-api'
 import {
   Users,
@@ -17,10 +18,12 @@ import {
 export function TeamPage() {
   const [activeTab, setActiveTab] = useState<'roster' | 'clerk-org'>('roster')
   const [searchTerm, setSearchTerm] = useState('')
+  const { profile } = useCurrentUser()
 
   const { data: team = [], isLoading } = useQuery({
-    queryKey: ['team-members'],
-    queryFn: () => getTeamMembers(),
+    queryKey: ['team-members', profile?.companyId],
+    queryFn: () => getTeamMembers(profile?.companyId),
+    enabled: true
   })
 
   const totalMembers = team.length

@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles, allowOnboarding = false }: ProtectedRouteProps) {
-  const { isSignedIn, isLoading, role, status } = useCurrentUser()
+  const { isSignedIn, isLoading, role, status, clerkUser } = useCurrentUser()
   const location = useLocation()
 
   if (isLoading) {
@@ -52,8 +52,9 @@ export function ProtectedRoute({ allowedRoles, allowOnboarding = false }: Protec
     )
   }
 
-  // Recruiter in ONBOARDING state needs to create a Clerk Organization
-  if (status === 'ONBOARDING' && role === 'RECRUITER' && !allowOnboarding && location.pathname !== '/recruiter/onboarding') {
+  // Recruiter in ONBOARDING state needs to create a Clerk Organization (only if they don't already have one)
+  const hasClerkOrg = !!(clerkUser?.organizationMemberships && clerkUser.organizationMemberships.length > 0)
+  if (status === 'ONBOARDING' && role === 'RECRUITER' && !hasClerkOrg && !allowOnboarding && location.pathname !== '/recruiter/onboarding') {
     return <Navigate to="/recruiter/onboarding" replace />
   }
 

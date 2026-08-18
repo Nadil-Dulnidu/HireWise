@@ -17,7 +17,7 @@ public class UserContextMiddleware
 
     public async Task InvokeAsync(HttpContext context, IMemoryCache memoryCache, IServiceProvider serviceProvider)
     {
-        if (context.User.Identity?.IsAuthenticated == true)
+        if (context.User.Identity?.IsAuthenticated == true && context.User.Identity is ClaimsIdentity identity)
         {
             var clerkUserId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? context.User.FindFirst("sub")?.Value;
@@ -25,10 +25,49 @@ public class UserContextMiddleware
                 ?? context.User.FindFirst("role")?.Value;
             var orgId = context.User.FindFirst("org_id")?.Value
                 ?? context.User.FindFirst("organization_id")?.Value;
+            var orgRole = context.User.FindFirst("org_role")?.Value;
 
+            // Ensure NameIdentifier claim is present
+            if (context.User.FindFirst(ClaimTypes.NameIdentifier) == null && !string.IsNullOrEmpty(clerkUserId))
+            {
+                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, clerkUserId));
+            }
+
+            // Resolve role from org_role or DB lookup if not present in token claims
+            if (string.IsNullOrEmpty(role))
+            {
+                if (!string.IsNullOrEmpty(orgRole))
+                {
+                    role = orgRole == "org:admin" ? "RECRUITER" : "INTERVIEWER";
+                }
+                else if (!string.IsNullOrEmpty(clerkUserId))
+                {
+                    var roleCacheKey = $"UserRole_{clerkUserId}";
+                    if (!memoryCache.TryGetValue(roleCacheKey, out string? cachedRole))
+                    {
+                        using var scope = serviceProvider.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        var dbUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId);
+                        if (dbUser != null)
+                        {
+                            cachedRole = dbUser.Role.ToString();
+                            memoryCache.Set(roleCacheKey, cachedRole, TimeSpan.FromMinutes(5));
+                        }
+                    }
+                    role = cachedRole;
+                }
+
+                if (!string.IsNullOrEmpty(role))
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                    identity.AddClaim(new Claim("role", role));
+                }
+            }
+
+            // Resolve CompanyId from Clerk Org or DB User
+            Guid? resolvedCompanyId = null;
             if (!string.IsNullOrEmpty(orgId))
             {
-                // Cache org_id to CompanyId mapping for high performance
                 var cacheKey = $"ClerkOrgId_CompanyId_{orgId}";
                 if (!memoryCache.TryGetValue(cacheKey, out Guid companyId))
                 {
@@ -42,12 +81,41 @@ public class UserContextMiddleware
                     {
                         companyId = company.Id;
                         memoryCache.Set(cacheKey, companyId, TimeSpan.FromMinutes(10));
-                        context.Items["CompanyId"] = companyId;
+                        resolvedCompanyId = companyId;
                     }
                 }
                 else
                 {
-                    context.Items["CompanyId"] = companyId;
+                    resolvedCompanyId = companyId;
+                }
+            }
+            else if (!string.IsNullOrEmpty(clerkUserId))
+            {
+                var userCompCacheKey = $"UserCompanyId_{clerkUserId}";
+                if (!memoryCache.TryGetValue(userCompCacheKey, out Guid userCompId))
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var dbUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId);
+                    if (dbUser?.CompanyId != null)
+                    {
+                        userCompId = dbUser.CompanyId.Value;
+                        memoryCache.Set(userCompCacheKey, userCompId, TimeSpan.FromMinutes(5));
+                        resolvedCompanyId = userCompId;
+                    }
+                }
+                else
+                {
+                    resolvedCompanyId = userCompId;
+                }
+            }
+
+            if (resolvedCompanyId.HasValue)
+            {
+                context.Items["CompanyId"] = resolvedCompanyId.Value;
+                if (context.User.FindFirst("company_id") == null)
+                {
+                    identity.AddClaim(new Claim("company_id", resolvedCompanyId.Value.ToString()));
                 }
             }
 

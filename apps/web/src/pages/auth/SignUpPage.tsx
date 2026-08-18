@@ -69,7 +69,17 @@ export function SignUpPage() {
             signInUrl="/sign-in"
             afterSignUpUrl={
               selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
-              selectedRole === 'RECRUITER' ? '/recruiter/onboarding' :
+              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
+              '/interviewer/dashboard'
+            }
+            fallbackRedirectUrl={
+              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
+              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
+              '/interviewer/dashboard'
+            }
+            forceRedirectUrl={
+              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
+              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
               '/interviewer/dashboard'
             }
             unsafeMetadata={{

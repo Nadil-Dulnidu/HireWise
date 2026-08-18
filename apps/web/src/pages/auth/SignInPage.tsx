@@ -18,7 +18,9 @@ export function SignInPage() {
             routing="path"
             path="/sign-in"
             signUpUrl="/sign-up"
-            afterSignInUrl="/candidate/dashboard"
+            fallbackRedirectUrl="/auth-redirect"
+            forceRedirectUrl="/auth-redirect"
+            afterSignInUrl="/auth-redirect"
             appearance={{
               elements: {
                 card: 'glass-panel border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90 text-white',

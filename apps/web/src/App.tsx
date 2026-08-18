@@ -12,6 +12,7 @@ import { PublicJobsPage } from '@/pages/jobs/PublicJobsPage'
 import { JobDetailPage } from '@/pages/jobs/JobDetailPage'
 import { SignInPage } from '@/pages/auth/SignInPage'
 import { SignUpPage } from '@/pages/auth/SignUpPage'
+import { AuthRedirectPage } from '@/pages/auth/AuthRedirectPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 
 // Candidate Pages
@@ -58,6 +59,8 @@ export function App() {
       {/* Auth Pages */}
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/auth-redirect" element={<AuthRedirectPage />} />
+      <Route path="/dashboard" element={<AuthRedirectPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Recruiter Onboarding (Standalone) */}
