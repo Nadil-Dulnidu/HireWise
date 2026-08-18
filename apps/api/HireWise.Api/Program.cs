@@ -95,12 +95,17 @@ builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddHttpClient<HireWise.Api.Services.Ai.IAiServiceClient, HireWise.Api.Services.Ai.AiServiceClient>();
 builder.Services.AddScoped<IClerkWebhookService, ClerkWebhookService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IInterviewService, InterviewService>();
+builder.Services.AddScoped<IInterviewFeedbackService, InterviewFeedbackService>();
+builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 
 // AutoMapper & FluentValidation
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<HireWise.Api.Mappings.MappingProfile>());
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateProfileRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HireWise.Api.Validators.Applications.ApplyJobRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HireWise.Api.Validators.Interviews.CreateInterviewRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HireWise.Api.Validators.Availability.CreateAvailabilitySlotRequestValidator>();
 
 // SignalR
 builder.Services.AddSignalR();
