@@ -12,6 +12,8 @@ public interface ICurrentUserService
     UserRole? Role { get; }
     Guid? UserId { get; }
     Guid? CompanyId { get; }
+    string? ClerkOrganizationId { get; }
+    string? OrgRole { get; }
     bool IsAuthenticated { get; }
     bool IsAdmin { get; }
     bool IsRecruiter { get; }
@@ -48,15 +50,31 @@ public class CurrentUserService : ICurrentUserService
         User?.FindFirst("family_name")?.Value ??
         User?.FindFirst("last_name")?.Value;
 
+    public string? ClerkOrganizationId =>
+        User?.FindFirst("org_id")?.Value ??
+        User?.FindFirst("organization_id")?.Value;
+
+    public string? OrgRole =>
+        User?.FindFirst("org_role")?.Value;
+
     public UserRole? Role
     {
         get
         {
             var roleStr = User?.FindFirst(ClaimTypes.Role)?.Value ??
-                          User?.FindFirst("role")?.Value ??
-                          User?.FindFirst("org_role")?.Value;
+                          User?.FindFirst("role")?.Value;
 
-            if (string.IsNullOrEmpty(roleStr)) return null;
+            if (string.IsNullOrEmpty(roleStr))
+            {
+                // Fallback to org_role mapping: org:admin -> RECRUITER, org:member -> INTERVIEWER
+                var orgRole = OrgRole;
+                if (!string.IsNullOrEmpty(orgRole))
+                {
+                    return orgRole == "org:admin" ? UserRole.RECRUITER : UserRole.INTERVIEWER;
+                }
+
+                return null;
+            }
 
             if (Enum.TryParse<UserRole>(roleStr, true, out var role))
             {
@@ -80,6 +98,12 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
+            // First check if set in HttpContext Items by middleware
+            if (_httpContextAccessor.HttpContext?.Items.TryGetValue("CompanyId", out var itemCompanyId) == true && itemCompanyId is Guid guid)
+            {
+                return guid;
+            }
+
             var companyIdStr = User?.FindFirst("company_id")?.Value;
             return Guid.TryParse(companyIdStr, out var id) ? id : null;
         }

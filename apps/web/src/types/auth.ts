@@ -1,6 +1,6 @@
 export type UserRole = 'ADMIN' | 'RECRUITER' | 'INTERVIEWER' | 'CANDIDATE'
 
-export type UserStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'INACTIVE'
+export type UserStatus = 'ONBOARDING' | 'ACTIVE' | 'INACTIVE'
 
 export interface UserProfile {
   id: string
@@ -13,8 +13,25 @@ export interface UserProfile {
   status: UserStatus
   companyId?: string
   companyName?: string
+  clerkOrganizationId?: string
+  orgRole?: string
   profileImageUrl?: string
   phone?: string
+  createdAt: string
+}
+
+export interface TeamMember {
+  id: string
+  clerkUserId: string
+  email: string
+  firstName: string
+  lastName: string
+  fullName: string
+  role: UserRole
+  status: UserStatus
+  profileImageUrl?: string
+  assignedInterviewsCount: number
+  completedFeedbacksCount: number
   createdAt: string
 }
 

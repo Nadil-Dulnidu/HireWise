@@ -44,7 +44,7 @@ export function SignUpPage() {
           >
             <Building className="h-5 w-5" />
             <span>Recruiter</span>
-            <span className="text-[10px] text-slate-500 font-normal">Requires Review</span>
+            <span className="text-[10px] text-slate-500 font-normal">Self-Service Setup</span>
           </button>
 
           <button
@@ -58,7 +58,7 @@ export function SignUpPage() {
           >
             <UserCheck className="h-5 w-5" />
             <span>Interviewer</span>
-            <span className="text-[10px] text-slate-500 font-normal">Requires Review</span>
+            <span className="text-[10px] text-slate-500 font-normal">Team Member</span>
           </button>
         </div>
 
@@ -68,6 +68,16 @@ export function SignUpPage() {
             path="/sign-up"
             signInUrl="/sign-in"
             afterSignUpUrl={
+              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
+              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
+              '/interviewer/dashboard'
+            }
+            fallbackRedirectUrl={
+              selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
+              selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
+              '/interviewer/dashboard'
+            }
+            forceRedirectUrl={
               selectedRole === 'CANDIDATE' ? '/candidate/dashboard' :
               selectedRole === 'RECRUITER' ? '/recruiter/dashboard' :
               '/interviewer/dashboard'

@@ -12,6 +12,7 @@ public interface ICompanyService
 {
     Task<PagedResult<CompanyDto>> GetCompaniesAsync(CompanyFilterRequest request, CancellationToken ct = default);
     Task<Result<CompanyDto>> GetCompanyByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Result<CompanyDto>> GetCompanyByClerkOrgIdAsync(string clerkOrgId, CancellationToken ct = default);
     Task<Result<CompanyDto>> CreateCompanyAsync(CreateCompanyRequest request, Guid? createdByUserId, CancellationToken ct = default);
     Task<Result<CompanyDto>> UpdateCompanyAsync(Guid id, UpdateCompanyRequest request, CancellationToken ct = default);
     Task<Result> DeleteCompanyAsync(Guid id, CancellationToken ct = default);
@@ -83,6 +84,24 @@ public class CompanyService : ICompanyService
         return Result<CompanyDto>.Success(_mapper.Map<CompanyDto>(company));
     }
 
+    public async Task<Result<CompanyDto>> GetCompanyByClerkOrgIdAsync(string clerkOrgId, CancellationToken ct = default)
+    {
+        var company = await _db.Companies
+            .Include(c => c.CreatedByUser)
+            .Include(c => c.Employees)
+            .Include(c => c.Departments)
+            .Include(c => c.Jobs)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.ClerkOrganizationId == clerkOrgId, ct);
+
+        if (company == null)
+        {
+            return Result<CompanyDto>.NotFound($"Company for Clerk Organization '{clerkOrgId}' not found.");
+        }
+
+        return Result<CompanyDto>.Success(_mapper.Map<CompanyDto>(company));
+    }
+
     public async Task<Result<CompanyDto>> CreateCompanyAsync(CreateCompanyRequest request, Guid? createdByUserId, CancellationToken ct = default)
     {
         // Check for duplicate company name
@@ -93,6 +112,12 @@ public class CompanyService : ICompanyService
         }
 
         var company = _mapper.Map<Company>(request);
+        company.ClerkOrganizationId = !string.IsNullOrEmpty(request.ClerkOrganizationId) 
+            ? request.ClerkOrganizationId 
+            : $"org_{Guid.NewGuid():N}";
+        company.Slug = !string.IsNullOrEmpty(request.Slug) 
+            ? request.Slug 
+            : request.Name.ToLower().Replace(" ", "-");
         company.CreatedByUserId = createdByUserId;
         company.CreatedAt = DateTime.UtcNow;
         company.UpdatedAt = DateTime.UtcNow;
@@ -100,7 +125,8 @@ public class CompanyService : ICompanyService
         _db.Companies.Add(company);
         await _db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Created company '{CompanyName}' (ID: {CompanyId})", company.Name, company.Id);
+        _logger.LogInformation("Created company '{CompanyName}' (ID: {CompanyId}, ClerkOrg: {ClerkOrgId})",
+            company.Name, company.Id, company.ClerkOrganizationId);
 
         // If the creating user is a recruiter without a company, auto-assign
         if (createdByUserId.HasValue)
@@ -135,6 +161,7 @@ public class CompanyService : ICompanyService
         }
 
         _mapper.Map(request, company);
+        if (!string.IsNullOrEmpty(request.Slug)) company.Slug = request.Slug;
         company.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);

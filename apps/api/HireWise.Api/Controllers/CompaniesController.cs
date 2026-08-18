@@ -12,11 +12,16 @@ public class CompaniesController : ControllerBase
 {
     private readonly ICompanyService _companyService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserService _userService;
 
-    public CompaniesController(ICompanyService companyService, ICurrentUserService currentUserService)
+    public CompaniesController(
+        ICompanyService companyService, 
+        ICurrentUserService currentUserService,
+        IUserService userService)
     {
         _companyService = companyService;
         _currentUserService = currentUserService;
+        _userService = userService;
     }
 
     [HttpGet]
@@ -25,6 +30,57 @@ public class CompaniesController : ControllerBase
     {
         var result = await _companyService.GetCompaniesAsync(request, ct);
         return Ok(ApiResponse<PagedResult<CompanyDto>>.Ok(result));
+    }
+
+    [HttpGet("my-company")]
+    [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    public async Task<IActionResult> GetMyCompany(CancellationToken ct)
+    {
+        var companyId = _currentUserService.CompanyId;
+
+        if (!companyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkUserId))
+        {
+            var userResult = await _userService.GetCurrentUserAsync(_currentUserService.ClerkUserId, ct);
+            if (userResult.IsSuccess)
+            {
+                companyId = userResult.Value?.CompanyId;
+            }
+        }
+
+        if (!companyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkOrganizationId))
+        {
+            var orgResult = await _companyService.GetCompanyByClerkOrgIdAsync(_currentUserService.ClerkOrganizationId, ct);
+            if (orgResult.IsSuccess)
+            {
+                return Ok(ApiResponse<CompanyDto>.Ok(orgResult.Value!));
+            }
+        }
+
+        if (!companyId.HasValue)
+        {
+            return NotFound(ApiResponse<object>.Fail("No associated company or organization found for the current user."));
+        }
+
+        var result = await _companyService.GetCompanyByIdAsync(companyId.Value, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Company not found"));
+        }
+
+        return Ok(ApiResponse<CompanyDto>.Ok(result.Value!));
+    }
+
+    [HttpGet("by-org/{clerkOrgId}")]
+    [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    public async Task<IActionResult> GetCompanyByOrg(string clerkOrgId, CancellationToken ct)
+    {
+        var result = await _companyService.GetCompanyByClerkOrgIdAsync(clerkOrgId, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Company not found for this organization"));
+        }
+
+        return Ok(ApiResponse<CompanyDto>.Ok(result.Value!));
     }
 
     [HttpGet("{id:guid}")]
@@ -57,7 +113,7 @@ public class CompaniesController : ControllerBase
     [Authorize(Roles = "ADMIN,RECRUITER")]
     public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyRequest request, CancellationToken ct)
     {
-        if (_currentUserService.IsRecruiter && _currentUserService.CompanyId != id)
+        if (_currentUserService.IsRecruiter && _currentUserService.CompanyId.HasValue && _currentUserService.CompanyId.Value != id)
         {
             return StatusCode(403, ApiResponse<object>.Fail("You do not have permission to update another company."));
         }

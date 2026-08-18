@@ -61,6 +61,8 @@ public class ApplicationDbContext : DbContext
         // Company
         modelBuilder.Entity<Company>(entity =>
         {
+            entity.HasIndex(e => e.ClerkOrganizationId).IsUnique();
+            entity.HasIndex(e => e.Slug);
             entity.HasIndex(e => e.Name);
             entity.HasOne(e => e.CreatedByUser)
                 .WithMany()

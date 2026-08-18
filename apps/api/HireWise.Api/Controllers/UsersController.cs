@@ -84,19 +84,6 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserDto>.Ok(result.Value!));
     }
 
-    [HttpPut("{id:guid}/approve")]
-    [Authorize(Roles = "ADMIN")]
-    public async Task<IActionResult> ApproveUser(Guid id, [FromBody] ApproveUserRequest request, CancellationToken ct)
-    {
-        var result = await _userService.ApproveUserAsync(id, request, ct);
-        if (!result.IsSuccess)
-        {
-            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to approve user"));
-        }
-
-        return Ok(ApiResponse<UserDto>.Ok(result.Value!, "User approved successfully"));
-    }
-
     [HttpPut("{id:guid}/role")]
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateUserRoleRequest request, CancellationToken ct)
@@ -108,25 +95,6 @@ public class UsersController : ControllerBase
         }
 
         return Ok(ApiResponse<UserDto>.Ok(result.Value!, "User role updated successfully"));
-    }
-
-    [HttpPut("{id:guid}/company")]
-    [Authorize(Roles = "ADMIN,RECRUITER")]
-    public async Task<IActionResult> AssignCompany(Guid id, [FromBody] AssignUserCompanyRequest request, CancellationToken ct)
-    {
-        // Recruiter can only assign to their own company
-        if (_currentUserService.IsRecruiter && _currentUserService.CompanyId.HasValue && _currentUserService.CompanyId.Value != request.CompanyId)
-        {
-            return Forbid();
-        }
-
-        var result = await _userService.AssignCompanyAsync(id, request.CompanyId, ct);
-        if (!result.IsSuccess)
-        {
-            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to assign company"));
-        }
-
-        return Ok(ApiResponse<UserDto>.Ok(result.Value!, "Company assigned successfully"));
     }
 
     [HttpPut("{id:guid}/deactivate")]
@@ -142,6 +110,19 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, "User deactivated successfully"));
     }
 
+    [HttpPut("{id:guid}/ban")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> BanUser(Guid id, [FromBody] BanUserRequest request, CancellationToken ct)
+    {
+        var result = await _userService.BanUserAsync(id, request.Reason, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to ban user"));
+        }
+
+        return Ok(ApiResponse<bool>.Ok(true, "User banned successfully"));
+    }
+
     [HttpGet("interviewers")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
     public async Task<IActionResult> GetInterviewers([FromQuery] Guid? companyId, CancellationToken ct)
@@ -154,5 +135,28 @@ public class UsersController : ControllerBase
 
         var result = await _userService.GetInterviewersByCompanyAsync(targetCompanyId.Value, ct);
         return Ok(ApiResponse<List<UserDto>>.Ok(result.Value!));
+    }
+
+    [HttpGet("team")]
+    [Authorize(Roles = "ADMIN,RECRUITER")]
+    public async Task<IActionResult> GetTeamMembers([FromQuery] Guid? companyId, CancellationToken ct)
+    {
+        var targetCompanyId = companyId ?? _currentUserService.CompanyId;
+        if (!targetCompanyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkUserId))
+        {
+            var userResult = await _userService.GetCurrentUserAsync(_currentUserService.ClerkUserId, ct);
+            if (userResult.IsSuccess)
+            {
+                targetCompanyId = userResult.Value?.CompanyId;
+            }
+        }
+
+        if (!targetCompanyId.HasValue)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Company / Organization context is required to fetch team members."));
+        }
+
+        var result = await _userService.GetTeamMembersAsync(targetCompanyId.Value, ct);
+        return Ok(ApiResponse<List<TeamMemberDto>>.Ok(result.Value!));
     }
 }
