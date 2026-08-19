@@ -138,4 +138,6 @@ _NCrunch*
 .env.*.local
 *.env
 !.env.example
-!.env.*.example
+!.env.*.example
+
+*google-service-account*.json

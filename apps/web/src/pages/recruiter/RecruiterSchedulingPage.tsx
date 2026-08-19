@@ -5,6 +5,8 @@ import { apiClient } from '@/lib/api-client'
 import { applicationsApi } from '@/lib/api/applications-api'
 import { interviewsApi } from '@/lib/api/interviews-api'
 import { availabilityApi } from '@/lib/api/availability-api'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { getInterviewers } from '@/lib/api/users-api'
 import {
   Calendar,
   Clock,
@@ -13,18 +15,21 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
-  Plus
+  Plus,
+  UserPlus
 } from 'lucide-react'
 import type { ApiResponse, PagedResult } from '@/types/auth'
 import {
   type CreateInterviewRequest,
   getDayLabel,
-  formatTimeDisplay
+  formatTimeDisplay,
+  normalizeDayOfWeek
 } from '@/types/interviews'
 
 export function RecruiterSchedulingPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { profile } = useCurrentUser()
 
   const [selectedAppId, setSelectedAppId] = useState<string>('')
   const [selectedInterviewerId, setSelectedInterviewerId] = useState<string>('')
@@ -42,9 +47,18 @@ export function RecruiterSchedulingPage() {
   })
 
   // Fetch company interviewers
-  const { data: interviewersData, isLoading: interviewersLoading } = useQuery({
-    queryKey: ['companyInterviewers'],
+  const { data: interviewersData = [], isLoading: interviewersLoading } = useQuery({
+    queryKey: ['companyInterviewers', profile?.companyId],
     queryFn: async () => {
+      try {
+        const interviewersList = await getInterviewers(profile?.companyId)
+        if (interviewersList && interviewersList.length > 0) {
+          return interviewersList
+        }
+      } catch (err) {
+        console.warn('Direct interviewers fetch fallback to /users:', err)
+      }
+
       const res = await apiClient.get<ApiResponse<PagedResult<any>>>('/users', {
         params: { role: 'INTERVIEWER', pageSize: 50 }
       })
@@ -59,6 +73,55 @@ export function RecruiterSchedulingPage() {
     enabled: !!selectedInterviewerId
   })
 
+  // Check if selected time falls outside the interviewer's configured slots
+  const isOutsideAvailability = (() => {
+    if (!startDate || !startTime || !endTime || interviewerAvailability.length === 0) {
+      return false
+    }
+
+    const chosenDate = new Date(`${startDate}T${startTime}:00Z`)
+    const chosenDayOfWeek = chosenDate.getUTCDay()
+    const reqStart = `${startTime}:00`
+    const reqEnd = `${endTime}:00`
+
+    const isMatch = interviewerAvailability.some((slot) => {
+      if (slot.specificDate) {
+        return slot.specificDate === startDate && slot.startTime <= reqStart && slot.endTime >= reqEnd
+      }
+      return normalizeDayOfWeek(slot.dayOfWeek) === chosenDayOfWeek && slot.startTime <= reqStart && slot.endTime >= reqEnd
+    })
+
+    return !isMatch
+  })()
+
+  const handleApplySlot = (slot: any) => {
+    const sParts = (slot.startTime || '10:00').split(':')
+    const eParts = (slot.endTime || '16:00').split(':')
+    const sTime = `${sParts[0]}:${sParts[1]}`
+    
+    // Set 1-hour session by default within slot range
+    const startH = parseInt(sParts[0], 10)
+    const endH = parseInt(eParts[0], 10)
+    let eTime = `${String(Math.min(startH + 1, endH)).padStart(2, '0')}:${sParts[1]}`
+    if (sTime >= eTime) {
+      eTime = `${eParts[0]}:${eParts[1]}`
+    }
+
+    setStartTime(sTime)
+    setEndTime(eTime)
+
+    if (slot.specificDate) {
+      setStartDate(slot.specificDate)
+    } else {
+      const targetDay = normalizeDayOfWeek(slot.dayOfWeek)
+      const now = new Date()
+      let daysToAdd = (targetDay - now.getUTCDay() + 7) % 7
+      if (daysToAdd === 0) daysToAdd = 7
+      const nextDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysToAdd))
+      setStartDate(nextDate.toISOString().split('T')[0])
+    }
+  }
+
   const createInterviewMutation = useMutation({
     mutationFn: (data: CreateInterviewRequest) => interviewsApi.createInterview(data),
     onSuccess: () => {
@@ -67,7 +130,7 @@ export function RecruiterSchedulingPage() {
       navigate('/recruiter/interviews')
     },
     onError: (err: any) => {
-      setErrorMsg(err.response?.data?.error || 'Failed to schedule interview.')
+      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Failed to schedule interview.')
     }
   })
 
@@ -169,12 +232,30 @@ export function RecruiterSchedulingPage() {
 
               {/* Interviewer Selector */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  Assigned Interviewer
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Assigned Interviewer
+                  </label>
+                  <Link
+                    to="/recruiter/team"
+                    className="text-[11px] text-purple-400 hover:text-purple-300 inline-flex items-center gap-1"
+                  >
+                    <UserPlus className="h-3 w-3" /> Manage Staff
+                  </Link>
+                </div>
                 {interviewersLoading ? (
                   <div className="p-3 text-xs text-slate-400 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-purple-400" /> Loading interviewers...
+                  </div>
+                ) : interviewers.length === 0 ? (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+                    <span>No active interviewers assigned to your organization yet.</span>
+                    <Link
+                      to="/recruiter/team"
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 text-[11px] font-medium transition"
+                    >
+                      Invite Interviewer
+                    </Link>
                   </div>
                 ) : (
                   <select
@@ -183,10 +264,10 @@ export function RecruiterSchedulingPage() {
                     className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
                     required
                   >
-                    <option value="">-- Select Company Interviewer --</option>
+                    <option value="">-- Select Company Interviewer ({interviewers.length} available) --</option>
                     {interviewers.map((user: any) => (
                       <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName} ({user.email})
+                        {user.fullName || `${user.firstName} ${user.lastName}`} ({user.email})
                       </option>
                     ))}
                   </select>
@@ -230,6 +311,19 @@ export function RecruiterSchedulingPage() {
                 </div>
               </div>
 
+              {/* Outside Availability Live Warning */}
+              {isOutsideAvailability && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="font-semibold block">Outside Interviewer's Published Hours</span>
+                    <span className="text-[11px] text-amber-300/80">
+                      The selected time window ({startTime} – {endTime} UTC on {startDate}) does not match this interviewer's availability schedule. Click one of the slots on the right to apply.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Meeting Link */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">
@@ -263,7 +357,7 @@ export function RecruiterSchedulingPage() {
 
               <button
                 type="submit"
-                disabled={createInterviewMutation.isPending}
+                disabled={createInterviewMutation.isPending || isOutsideAvailability}
                 className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-purple-950 mt-2"
               >
                 {createInterviewMutation.isPending ? (
@@ -303,18 +397,31 @@ export function RecruiterSchedulingPage() {
               </div>
             ) : (
               <div className="space-y-2 text-xs">
+                <p className="text-[11px] text-slate-400 mb-2">
+                  Click <strong>Apply</strong> on any slot below to automatically set the interview date & time.
+                </p>
                 {interviewerAvailability.map((slot) => (
                   <div
                     key={slot.id}
-                    className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 flex items-center justify-between"
+                    className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 flex items-center justify-between hover:border-purple-500/40 transition group"
                   >
-                    <span className="font-semibold text-purple-300 w-16">
-                      {getDayLabel(slot.dayOfWeek, true)}
-                    </span>
-                    <span className="text-white font-medium">
-                      {formatTimeDisplay(slot.startTime)} – {formatTimeDisplay(slot.endTime)}
-                    </span>
-                    <span className="text-[10px] text-slate-500">{slot.timezone}</span>
+                    <div>
+                      <div className="font-semibold text-purple-300">
+                        {getDayLabel(slot.dayOfWeek, false)}
+                      </div>
+                      <div className="text-white font-medium text-[11px] mt-0.5">
+                        {formatTimeDisplay(slot.startTime)} – {formatTimeDisplay(slot.endTime)}
+                        <span className="text-[10px] text-slate-500 ml-1.5">({slot.timezone})</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplySlot(slot)}
+                      className="px-2.5 py-1 rounded-lg bg-purple-600/20 group-hover:bg-purple-600 text-purple-300 group-hover:text-white border border-purple-500/30 text-[11px] font-medium transition"
+                    >
+                      Apply
+                    </button>
                   </div>
                 ))}
               </div>

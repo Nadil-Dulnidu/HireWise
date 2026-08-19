@@ -5,6 +5,7 @@ using HireWise.Api.DTOs.Common;
 using HireWise.Api.DTOs.Interviews;
 using HireWise.Api.Models;
 using HireWise.Api.Models.Enums;
+using HireWise.Api.Services.Integrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
@@ -21,17 +22,20 @@ public class InterviewFeedbackService : IInterviewFeedbackService
     private readonly ApplicationDbContext _db;
     private readonly IMapper _mapper;
     private readonly INotificationService _notificationService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<InterviewFeedbackService> _logger;
 
     public InterviewFeedbackService(
         ApplicationDbContext db,
         IMapper mapper,
         INotificationService notificationService,
+        IEmailService emailService,
         ILogger<InterviewFeedbackService> logger)
     {
         _db = db;
         _mapper = mapper;
         _notificationService = notificationService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -130,6 +134,32 @@ public class InterviewFeedbackService : IInterviewFeedbackService
             "Application",
             interview.ApplicationId,
             ct);
+
+        // Send feedback submitted email to recruiter
+        if (interview.Job.CreatedByUserId != Guid.Empty)
+        {
+            var recruiter = await _db.Users.FirstOrDefaultAsync(u => u.Id == interview.Job.CreatedByUserId, ct);
+            if (recruiter != null)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendInterviewFeedbackSubmittedEmailAsync(
+                            recruiter.Email,
+                            $"{recruiter.FirstName} {recruiter.LastName}",
+                            $"{interview.Interviewer.FirstName} {interview.Interviewer.LastName}",
+                            $"{interview.Candidate.FirstName} {interview.Candidate.LastName}",
+                            interview.Job.Title,
+                            CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send feedback submitted email for Interview {InterviewId}", interview.Id);
+                    }
+                });
+            }
+        }
 
         var createdDto = await _db.InterviewFeedbacks
             .Include(f => f.Interviewer)

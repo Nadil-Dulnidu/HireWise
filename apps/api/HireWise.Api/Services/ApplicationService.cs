@@ -6,6 +6,7 @@ using HireWise.Api.DTOs.Common;
 using HireWise.Api.Models;
 using HireWise.Api.Models.Enums;
 using HireWise.Api.Services.Ai;
+using HireWise.Api.Services.Integrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
@@ -28,6 +29,7 @@ public class ApplicationService : IApplicationService
     private readonly IMapper _mapper;
     private readonly INotificationService _notificationService;
     private readonly IAiServiceClient _aiServiceClient;
+    private readonly IEmailService _emailService;
     private readonly ILogger<ApplicationService> _logger;
 
     public ApplicationService(
@@ -35,12 +37,14 @@ public class ApplicationService : IApplicationService
         IMapper mapper,
         INotificationService notificationService,
         IAiServiceClient aiServiceClient,
+        IEmailService emailService,
         ILogger<ApplicationService> logger)
     {
         _db = db;
         _mapper = mapper;
         _notificationService = notificationService;
         _aiServiceClient = aiServiceClient;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -128,6 +132,24 @@ public class ApplicationService : IApplicationService
                 application.Id,
                 ct);
         }
+
+        // 5b. Send Application Received Email
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendApplicationReceivedEmailAsync(
+                    candidate.Email,
+                    $"{candidate.FirstName} {candidate.LastName}",
+                    job.Title,
+                    job.Company.Name,
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send application received email to {Email}", candidate.Email);
+            }
+        });
 
         // 6. Transition to AI_REVIEW and trigger AI evaluation in background
         application.Status = ApplicationStatus.AI_REVIEW;
@@ -329,6 +351,24 @@ public class ApplicationService : IApplicationService
             "Application",
             application.Id,
             ct);
+
+        // Send status update email
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendApplicationStatusUpdateEmailAsync(
+                    application.Candidate.Email,
+                    $"{application.Candidate.FirstName} {application.Candidate.LastName}",
+                    application.Job.Title,
+                    newStatus.ToString(),
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send application status update email for Application {ApplicationId}", id);
+            }
+        });
 
         return Result<ApplicationDto>.Success(_mapper.Map<ApplicationDto>(application));
     }

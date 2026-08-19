@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { UserButton } from '@clerk/clerk-react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { NotificationDropdown } from '@/components/common/NotificationDropdown'
+import { notificationsApi } from '@/lib/api/notifications-api'
+import { useQuery } from '@tanstack/react-query'
 import {
   Sparkles,
   Bell,
@@ -27,6 +30,11 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
   const { profile } = useCurrentUser()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationsApi.getUnreadCount()
+  })
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0b0f19] text-slate-100">
@@ -129,15 +137,26 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
               API & AI Live
             </div>
 
-            {/* Notification Bell Button */}
-            <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition"
-              title="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-500"></span>
-            </button>
+            {/* Notification Bell Button & Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                title="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-md shadow-blue-500/50 animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <NotificationDropdown
+                isOpen={notificationsOpen}
+                onClose={() => setNotificationsOpen(false)}
+              />
+            </div>
           </div>
         </header>
 

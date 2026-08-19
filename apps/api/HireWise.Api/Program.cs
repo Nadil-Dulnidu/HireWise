@@ -8,11 +8,13 @@ using HireWise.Api.Data;
 using HireWise.Api.Hubs;
 using HireWise.Api.Middleware;
 using HireWise.Api.Services;
+using HireWise.Api.Services.Integrations;
 using HireWise.Api.Validators.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Resend;
 using Serilog;
 
 // 0. Load .env file (traverses current and parent directories)
@@ -21,7 +23,7 @@ DotNetEnv.Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Serilog Setup
-Log.Logger = new LoggerConfiguration()
+Serilog.Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] ({CorrelationId}) {Message:lj}{NewLine}{Exception}")
@@ -109,6 +111,20 @@ builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<IInterviewFeedbackService, InterviewFeedbackService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 
+// Integrations (Google Calendar & Resend)
+var resendApiKey = builder.Configuration["Resend:ApiKey"]
+    ?? builder.Configuration["RESEND_API_KEY"]
+    ?? "re_placeholder_key";
+
+builder.Services.AddOptions<ResendClientOptions>().Configure(options =>
+{
+    options.ApiToken = resendApiKey;
+});
+builder.Services.AddHttpClient<IResend, ResendClient>();
+
+builder.Services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // AutoMapper & FluentValidation
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<HireWise.Api.Mappings.MappingProfile>());
 builder.Services.AddFluentValidationAutoValidation();
@@ -155,6 +171,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
 // 9. Swagger / OpenAPI Setup with JWT Support
