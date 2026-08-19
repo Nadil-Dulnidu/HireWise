@@ -1,0 +1,311 @@
+import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Bell,
+  Sparkles,
+  Calendar,
+  FileText,
+  CheckCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2
+} from 'lucide-react'
+import { notificationsApi } from '@/lib/api/notifications-api'
+import type { AppNotification } from '@/lib/api/notifications-api'
+import { useSignalR } from '@/hooks/useSignalR'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
+
+interface NotificationDropdownProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownProps) {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { role, isSignedIn } = useCurrentUser()
+  const { subscribe } = useSignalR()
+
+  // Query notifications list
+  const {
+    data: notifications = [],
+    isLoading,
+    isError,
+    refetch
+  } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationsApi.getNotifications(30),
+    enabled: isOpen && !!isSignedIn,
+    staleTime: 10000
+  })
+
+  // Query unread count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationsApi.getUnreadCount(),
+    enabled: !!isSignedIn,
+    staleTime: 10000
+  })
+
+  // Mutation: Mark single as read
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+    }
+  })
+
+  // Mutation: Mark all as read
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+    }
+  })
+
+  // Listen to live SignalR events to invalidate query cache
+  useEffect(() => {
+    const handleNewNotification = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+    }
+
+    const unsubReceive = subscribe('ReceiveNotification', handleNewNotification)
+    const unsubInterview = subscribe('InterviewScheduled', handleNewNotification)
+    const unsubApp = subscribe('ApplicationUpdate', handleNewNotification)
+    const unsubAi = subscribe('AiEvaluationComplete', handleNewNotification)
+    const unsubApproval = subscribe('ApprovalRequired', handleNewNotification)
+    const unsubFeedback = subscribe('FeedbackSubmitted', handleNewNotification)
+
+    return () => {
+      unsubReceive()
+      unsubInterview()
+      unsubApp()
+      unsubAi()
+      unsubApproval()
+      unsubFeedback()
+    }
+  }, [subscribe, queryClient])
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  const handleNotificationClick = async (notification: AppNotification) => {
+    if (!notification.isRead) {
+      markAsReadMutation.mutate(notification.id)
+    }
+
+    onClose()
+
+    // Determine target route based on notification type and user role
+    if (notification.type === 'AI_EVALUATION_COMPLETE') {
+      navigate('/recruiter/ai-evaluations')
+    } else if (notification.type === 'INTERVIEW_SCHEDULED') {
+      if (notification.referenceId) {
+        navigate(role === 'CANDIDATE' ? `/candidate/interviews/${notification.referenceId}` : `/recruiter/interviews/${notification.referenceId}`)
+      } else {
+        navigate(role === 'CANDIDATE' ? '/candidate/interviews' : '/recruiter/interviews')
+      }
+    } else if (notification.type === 'APPLICATION_UPDATE' || notification.type === 'APPROVAL_REQUIRED') {
+      if (notification.referenceId) {
+        navigate(role === 'CANDIDATE' ? `/candidate/applications/${notification.referenceId}` : `/recruiter/applications/${notification.referenceId}`)
+      } else {
+        navigate(role === 'CANDIDATE' ? '/candidate/applications' : '/recruiter/applications')
+      }
+    } else if (notification.type === 'FEEDBACK_SUBMITTED') {
+      navigate('/recruiter/interviews')
+    }
+  }
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-800/80 bg-slate-900/50">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white">Notifications</h3>
+          {unreadCount > 0 && (
+            <span className="flex h-5 items-center justify-center rounded-full bg-blue-500/20 px-2 text-[11px] font-bold text-blue-400 border border-blue-500/30">
+              {unreadCount} new
+            </span>
+          )}
+        </div>
+
+        {unreadCount > 0 && (
+          <button
+            onClick={() => markAllAsReadMutation.mutate()}
+            disabled={markAllAsReadMutation.isPending}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-400 transition-colors disabled:opacity-50"
+          >
+            <CheckCheck className="w-3.5 h-3.5" />
+            <span>Mark all read</span>
+          </button>
+        )}
+      </div>
+
+      {/* Notifications List */}
+      <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-800/50">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-500 gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            <span className="text-xs">Loading notifications...</span>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <AlertTriangle className="w-6 h-6 text-amber-400 mb-2" />
+            <p className="text-xs text-slate-300">Could not load notifications</p>
+            <button
+              onClick={() => refetch()}
+              className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800/60 text-slate-500 mb-3">
+              <Bell className="w-6 h-6 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-300">All caught up!</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-[220px]">
+              You have no new notifications right now.
+            </p>
+          </div>
+        ) : (
+          notifications.map((item) => (
+            <NotificationItem
+              key={item.id}
+              notification={item}
+              onClick={() => handleNotificationClick(item)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function NotificationItem({
+  notification,
+  onClick
+}: {
+  notification: AppNotification
+  onClick: () => void
+}) {
+  const { title, message, type, isRead, createdAt } = notification
+
+  const config = {
+    APPLICATION_UPDATE: {
+      icon: FileText,
+      iconColor: 'text-blue-400',
+      bg: 'bg-blue-500/10'
+    },
+    INTERVIEW_SCHEDULED: {
+      icon: Calendar,
+      iconColor: 'text-emerald-400',
+      bg: 'bg-emerald-500/10'
+    },
+    AI_EVALUATION_COMPLETE: {
+      icon: Sparkles,
+      iconColor: 'text-purple-400',
+      bg: 'bg-purple-500/10'
+    },
+    APPROVAL_REQUIRED: {
+      icon: AlertTriangle,
+      iconColor: 'text-amber-400',
+      bg: 'bg-amber-500/10'
+    },
+    FEEDBACK_SUBMITTED: {
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-400',
+      bg: 'bg-emerald-500/10'
+    },
+    GENERAL: {
+      icon: Bell,
+      iconColor: 'text-slate-400',
+      bg: 'bg-slate-800'
+    }
+  }[type] || {
+    icon: Bell,
+    iconColor: 'text-slate-400',
+    bg: 'bg-slate-800'
+  }
+
+  const Icon = config.icon
+
+  // Format relative or date time
+  const timeAgo = formatTimeAgo(createdAt)
+
+  return (
+    <div
+      onClick={onClick}
+      className={`group relative flex items-start gap-3 p-3.5 cursor-pointer transition-colors ${
+        !isRead ? 'bg-blue-950/20 hover:bg-blue-900/30' : 'hover:bg-slate-800/40'
+      }`}
+    >
+      {/* Type Icon */}
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${config.bg} mt-0.5`}>
+        <Icon className={`w-4 h-4 ${config.iconColor}`} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pr-2">
+        <div className="flex items-center justify-between gap-1.5">
+          <h4 className={`text-xs font-semibold truncate ${!isRead ? 'text-white' : 'text-slate-300'}`}>
+            {title}
+          </h4>
+          <span className="text-[10px] text-slate-500 shrink-0">{timeAgo}</span>
+        </div>
+        <p className="text-xs text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">
+          {message}
+        </p>
+      </div>
+
+      {/* Unread indicator dot */}
+      {!isRead && (
+        <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1.5 shadow-sm shadow-blue-500/50"></span>
+      )}
+    </div>
+  )
+}
+
+function formatTimeAgo(dateString: string): string {
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  } catch {
+    return ''
+  }
+}

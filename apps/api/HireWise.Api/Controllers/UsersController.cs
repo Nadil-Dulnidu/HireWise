@@ -80,9 +80,22 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUsers([FromQuery] UserFilterRequest request, CancellationToken ct)
     {
         // If recruiter, only allow filtering by recruiter's company
-        if (_currentUserService.IsRecruiter && _currentUserService.CompanyId.HasValue)
+        if (_currentUserService.IsRecruiter)
         {
-            request.CompanyId = _currentUserService.CompanyId.Value;
+            var compId = _currentUserService.CompanyId;
+            if (!compId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkUserId))
+            {
+                var userResult = await _userService.GetCurrentUserAsync(_currentUserService.ClerkUserId, ct);
+                if (userResult.IsSuccess)
+                {
+                    compId = userResult.Value?.CompanyId;
+                }
+            }
+
+            if (compId.HasValue)
+            {
+                request.CompanyId = compId.Value;
+            }
         }
 
         var result = await _userService.GetUsersAsync(request, ct);
@@ -146,6 +159,15 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetInterviewers([FromQuery] Guid? companyId, CancellationToken ct)
     {
         var targetCompanyId = companyId ?? _currentUserService.CompanyId;
+        if (!targetCompanyId.HasValue && !string.IsNullOrEmpty(_currentUserService.ClerkUserId))
+        {
+            var userResult = await _userService.GetCurrentUserAsync(_currentUserService.ClerkUserId, ct);
+            if (userResult.IsSuccess)
+            {
+                targetCompanyId = userResult.Value?.CompanyId;
+            }
+        }
+
         if (!targetCompanyId.HasValue)
         {
             return BadRequest(ApiResponse<object>.Fail("Company ID is required to fetch interviewers."));

@@ -5,6 +5,7 @@ import { RecruiterLayout } from '@/components/layouts/RecruiterLayout'
 import { InterviewerLayout } from '@/components/layouts/InterviewerLayout'
 import { AdminLayout } from '@/components/layouts/AdminLayout'
 import { ProtectedRoute } from '@/components/common/ProtectedRoute'
+import { ToastContainer } from '@/components/common/ToastContainer'
 
 // Public & Auth Pages
 import { LandingPage } from '@/pages/LandingPage'
@@ -50,93 +51,96 @@ import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 
 export function App() {
   return (
-    <Routes>
-      {/* Public Pages */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/jobs" element={<PublicJobsPage />} />
-        <Route path="/jobs/:id" element={<JobDetailPage />} />
-      </Route>
-
-      {/* Auth Pages */}
-      <Route path="/sign-in/*" element={<SignInPage />} />
-      <Route path="/sign-up/*" element={<SignUpPage />} />
-      <Route path="/auth-redirect" element={<AuthRedirectPage />} />
-      <Route path="/dashboard" element={<AuthRedirectPage />} />
-      <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-      {/* Recruiter Onboarding (Standalone) */}
-      <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} allowOnboarding={true} />}>
-        <Route path="/recruiter/onboarding/*" element={<OnboardingPage />} />
-      </Route>
-
-      {/* Candidate Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['CANDIDATE', 'ADMIN']} />}>
-        <Route path="/candidate" element={<CandidateLayout />}>
-          <Route index element={<Navigate to="/candidate/dashboard" replace />} />
-          <Route path="dashboard" element={<CandidateDashboard />} />
-          <Route path="jobs" element={<PublicJobsPage />} />
-          <Route path="jobs/:id" element={<JobDetailPage />} />
-          <Route path="applications" element={<CandidateApplicationsPage />} />
-          <Route path="applications/:id" element={<CandidateApplicationDetailPage />} />
-          <Route path="resume" element={<CandidateResumePage />} />
-          <Route path="interviews" element={<CandidateInterviewsPage />} />
-          <Route path="interviews/:id" element={<CandidateInterviewDetailPage />} />
-          <Route path="availability" element={<CandidateAvailabilityPage />} />
-          <Route path="profile" element={<CandidateProfilePage />} />
+    <>
+      <ToastContainer />
+      <Routes>
+        {/* Public Pages */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/jobs" element={<PublicJobsPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
         </Route>
-      </Route>
 
-      {/* Recruiter Workspace Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} />}>
-        <Route path="/recruiter" element={<RecruiterLayout />}>
-          <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
-          <Route path="dashboard" element={<RecruiterDashboard />} />
-          <Route path="companies" element={<RecruiterCompanyPage />} />
-          <Route path="departments" element={<RecruiterCompanyPage />} />
-          <Route path="team" element={<TeamPage />} />
-          <Route path="jobs" element={<RecruiterJobsPage />} />
-          <Route path="jobs/new" element={<CreateEditJobPage />} />
-          <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
-          <Route path="applications" element={<RecruiterApplicationsPage />} />
-          <Route path="applications/:id" element={<RecruiterApplicationDetailPage />} />
-          <Route path="ai-evaluations" element={<RecruiterAiEvaluationsPage />} />
-          <Route path="scheduling" element={<RecruiterSchedulingPage />} />
-          <Route path="interviews" element={<RecruiterInterviewsPage />} />
-          <Route path="interviews/:id" element={<RecruiterInterviewDetailPage />} />
-          <Route path="ai-workflows" element={<RecruiterAiWorkflowsPage />} />
-          <Route path="analytics" element={<RecruiterDashboard />} />
+        {/* Auth Pages */}
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+        <Route path="/auth-redirect" element={<AuthRedirectPage />} />
+        <Route path="/dashboard" element={<AuthRedirectPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* Recruiter Onboarding (Standalone) */}
+        <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} allowOnboarding={true} />}>
+          <Route path="/recruiter/onboarding/*" element={<OnboardingPage />} />
         </Route>
-      </Route>
 
-      {/* Interviewer Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['INTERVIEWER', 'ADMIN']} />}>
-        <Route path="/interviewer" element={<InterviewerLayout />}>
-          <Route index element={<Navigate to="/interviewer/dashboard" replace />} />
-          <Route path="dashboard" element={<InterviewerDashboard />} />
-          <Route path="interviews" element={<InterviewerInterviewsPage />} />
-          <Route path="interviews/:id" element={<InterviewerInterviewDetailPage />} />
-          <Route path="availability" element={<InterviewerAvailabilityPage />} />
-          <Route path="history" element={<InterviewerHistoryPage />} />
+        {/* Candidate Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['CANDIDATE', 'ADMIN']} />}>
+          <Route path="/candidate" element={<CandidateLayout />}>
+            <Route index element={<Navigate to="/candidate/dashboard" replace />} />
+            <Route path="dashboard" element={<CandidateDashboard />} />
+            <Route path="jobs" element={<PublicJobsPage />} />
+            <Route path="jobs/:id" element={<JobDetailPage />} />
+            <Route path="applications" element={<CandidateApplicationsPage />} />
+            <Route path="applications/:id" element={<CandidateApplicationDetailPage />} />
+            <Route path="resume" element={<CandidateResumePage />} />
+            <Route path="interviews" element={<CandidateInterviewsPage />} />
+            <Route path="interviews/:id" element={<CandidateInterviewDetailPage />} />
+            <Route path="availability" element={<CandidateAvailabilityPage />} />
+            <Route path="profile" element={<CandidateProfilePage />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Admin Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<AdminDashboard />} />
-          <Route path="companies" element={<AdminDashboard />} />
-          <Route path="audit-logs" element={<AdminDashboard />} />
-          <Route path="analytics" element={<AdminDashboard />} />
-          <Route path="settings" element={<AdminDashboard />} />
+        {/* Recruiter Workspace Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'ADMIN']} />}>
+          <Route path="/recruiter" element={<RecruiterLayout />}>
+            <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
+            <Route path="dashboard" element={<RecruiterDashboard />} />
+            <Route path="companies" element={<RecruiterCompanyPage />} />
+            <Route path="departments" element={<RecruiterCompanyPage />} />
+            <Route path="team" element={<TeamPage />} />
+            <Route path="jobs" element={<RecruiterJobsPage />} />
+            <Route path="jobs/new" element={<CreateEditJobPage />} />
+            <Route path="jobs/:id/edit" element={<CreateEditJobPage />} />
+            <Route path="applications" element={<RecruiterApplicationsPage />} />
+            <Route path="applications/:id" element={<RecruiterApplicationDetailPage />} />
+            <Route path="ai-evaluations" element={<RecruiterAiEvaluationsPage />} />
+            <Route path="scheduling" element={<RecruiterSchedulingPage />} />
+            <Route path="interviews" element={<RecruiterInterviewsPage />} />
+            <Route path="interviews/:id" element={<RecruiterInterviewDetailPage />} />
+            <Route path="ai-workflows" element={<RecruiterAiWorkflowsPage />} />
+            <Route path="analytics" element={<RecruiterDashboard />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Catch-all 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Interviewer Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['INTERVIEWER', 'ADMIN']} />}>
+          <Route path="/interviewer" element={<InterviewerLayout />}>
+            <Route index element={<Navigate to="/interviewer/dashboard" replace />} />
+            <Route path="dashboard" element={<InterviewerDashboard />} />
+            <Route path="interviews" element={<InterviewerInterviewsPage />} />
+            <Route path="interviews/:id" element={<InterviewerInterviewDetailPage />} />
+            <Route path="availability" element={<InterviewerAvailabilityPage />} />
+            <Route path="history" element={<InterviewerHistoryPage />} />
+          </Route>
+        </Route>
+
+        {/* Admin Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminDashboard />} />
+            <Route path="companies" element={<AdminDashboard />} />
+            <Route path="audit-logs" element={<AdminDashboard />} />
+            <Route path="analytics" element={<AdminDashboard />} />
+            <Route path="settings" element={<AdminDashboard />} />
+          </Route>
+        </Route>
+
+        {/* Catch-all 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }
 
