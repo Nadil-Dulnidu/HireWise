@@ -1,30 +1,35 @@
 import uuid
-import httpx
 from datetime import datetime, timezone
 from typing import Dict, Any
-
-from langchain_core.messages import SystemMessage, HumanMessage
 
 from ai_service.core.logging import logger
 from ai_service.graph.state import EvaluationState
 from ai_service.db.repository import WorkflowRepository
-from ai_service.llm.client import get_structured_llm
+from ai_service.agents import (
+    JobDescriptionAnalysisAgent,
+    ResumeAnalysisAgent,
+    CandidateEvaluationAgent,
+    ValidationAgent,
+    InterviewQuestionGeneratorAgent,
+    InterviewSchedulingAgent
+)
 from ai_service.models.schemas import (
     JobAnalysis,
     ResumeAnalysis,
     CandidateEvaluation,
-    ValidationResult
-)
-from ai_service.prompts.templates import (
-    JOB_ANALYSIS_SYSTEM_PROMPT,
-    JOB_ANALYSIS_USER_PROMPT,
-    RESUME_ANALYSIS_SYSTEM_PROMPT,
-    RESUME_ANALYSIS_USER_PROMPT,
-    CANDIDATE_EVALUATION_SYSTEM_PROMPT,
-    CANDIDATE_EVALUATION_USER_PROMPT,
+    ValidationResult,
+    InterviewQuestionsPayload,
+    SchedulingRecommendation
 )
 
 repo = WorkflowRepository()
+
+job_agent = JobDescriptionAnalysisAgent()
+resume_agent = ResumeAnalysisAgent()
+eval_agent = CandidateEvaluationAgent()
+validation_agent = ValidationAgent()
+question_agent = InterviewQuestionGeneratorAgent()
+scheduling_agent = InterviewSchedulingAgent()
 
 async def job_analysis_node(state: EvaluationState) -> EvaluationState:
     """
@@ -37,20 +42,12 @@ async def job_analysis_node(state: EvaluationState) -> EvaluationState:
     if step_id:
         await repo.update_step(step_id, status="IN_PROGRESS", started_at=datetime.now(timezone.utc))
 
-    user_content = JOB_ANALYSIS_USER_PROMPT.format(
-        job_title=state.get("job_title", ""),
-        job_description=state.get("job_description", ""),
-        job_requirements=state.get("job_requirements", "")
-    )
-
-    llm = get_structured_llm(JobAnalysis)
-    messages = [
-        SystemMessage(content=JOB_ANALYSIS_SYSTEM_PROMPT),
-        HumanMessage(content=user_content)
-    ]
-
     try:
-        result: JobAnalysis = await llm.ainvoke(messages)
+        result: JobAnalysis = await job_agent.execute(
+            job_title=state.get("job_title", ""),
+            job_description=state.get("job_description", ""),
+            job_requirements=state.get("job_requirements", "")
+        )
         result_dict = result.model_dump()
 
         if step_id:
@@ -90,32 +87,11 @@ async def resume_analysis_node(state: EvaluationState) -> EvaluationState:
     if step_id:
         await repo.update_step(step_id, status="IN_PROGRESS", started_at=datetime.now(timezone.utc))
 
-    # Fetch resume text or fallback to URL context
-    resume_text = state.get("resume_raw_text") or ""
-    resume_url = state.get("candidate_resume_url") or ""
-
-    if not resume_text and resume_url:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                res = await client.get(resume_url)
-                if res.status_code == 200:
-                    resume_text = res.text[:8000] # Take first 8KB if raw text
-        except Exception:
-            resume_text = f"Resume document available at URL: {resume_url}"
-
-    if not resume_text:
-        resume_text = f"Candidate applied with resume link: {resume_url}"
-
-    user_content = RESUME_ANALYSIS_USER_PROMPT.format(resume_content=resume_text)
-
-    llm = get_structured_llm(ResumeAnalysis)
-    messages = [
-        SystemMessage(content=RESUME_ANALYSIS_SYSTEM_PROMPT),
-        HumanMessage(content=user_content)
-    ]
-
     try:
-        result: ResumeAnalysis = await llm.ainvoke(messages)
+        result: ResumeAnalysis = await resume_agent.execute(
+            resume_url=state.get("candidate_resume_url"),
+            raw_text=state.get("resume_raw_text")
+        )
         result_dict = result.model_dump()
 
         if step_id:
@@ -155,31 +131,17 @@ async def candidate_evaluation_node(state: EvaluationState) -> EvaluationState:
     if step_id:
         await repo.update_step(step_id, status="IN_PROGRESS", started_at=datetime.now(timezone.utc))
 
-    job = state.get("job_analysis") or {}
-    cand = state.get("resume_analysis") or {}
-
-    user_content = CANDIDATE_EVALUATION_USER_PROMPT.format(
-        job_title=job.get("title", state.get("job_title", "")),
-        required_skills=", ".join(job.get("required_skills", [])),
-        preferred_skills=", ".join(job.get("preferred_skills", [])),
-        min_years_experience=job.get("min_years_experience", 0),
-        technical_domains=", ".join(job.get("technical_domains", [])),
-        extracted_skills=", ".join(cand.get("extracted_skills", [])),
-        years_of_experience=cand.get("years_of_experience", 0.0),
-        education_history=", ".join(cand.get("education_history", [])),
-        project_highlights="; ".join(cand.get("project_highlights", [])),
-        certifications=", ".join(cand.get("certifications", [])),
-        executive_summary=cand.get("executive_summary", "")
-    )
-
-    llm = get_structured_llm(CandidateEvaluation)
-    messages = [
-        SystemMessage(content=CANDIDATE_EVALUATION_SYSTEM_PROMPT),
-        HumanMessage(content=user_content)
-    ]
+    job_dict = state.get("job_analysis") or {}
+    cand_dict = state.get("resume_analysis") or {}
 
     try:
-        result: CandidateEvaluation = await llm.ainvoke(messages)
+        job_analysis = JobAnalysis(**job_dict)
+        resume_analysis = ResumeAnalysis(**cand_dict)
+
+        result: CandidateEvaluation = await eval_agent.execute(
+            job_analysis=job_analysis,
+            resume_analysis=resume_analysis
+        )
         result_dict = result.model_dump()
 
         if step_id:
@@ -219,37 +181,19 @@ async def validation_node(state: EvaluationState) -> EvaluationState:
     if step_id:
         await repo.update_step(step_id, status="IN_PROGRESS", started_at=datetime.now(timezone.utc))
 
-    errors = []
-    warnings = []
-
     eval_data = state.get("candidate_evaluation")
     if not eval_data:
-        errors.append("Candidate evaluation artifact is missing.")
+        val_result = ValidationResult(
+            is_valid=False,
+            validation_errors=["Candidate evaluation artifact is missing."],
+            warnings=[],
+            confidence_score=0.0
+        )
     else:
-        score = eval_data.get("overall_match_score")
-        if score is None or not (0 <= score <= 100):
-            errors.append(f"Invalid overall_match_score: {score}. Must be between 0 and 100.")
-        
-        skill_score = eval_data.get("skill_match_percentage")
-        if skill_score is None or not (0 <= skill_score <= 100):
-            errors.append(f"Invalid skill_match_percentage: {skill_score}. Must be between 0 and 100.")
+        val_result = validation_agent.validate(eval_data, artifact_type="CandidateEvaluation")
 
-        rec = eval_data.get("recommendation")
-        if not rec or rec not in ("STRONG_HIRE", "HIRE", "NO_HIRE", "STRONG_NO_HIRE"):
-            errors.append(f"Invalid recommendation type: {rec}.")
-
-        reasoning = eval_data.get("recommendation_reasoning", "")
-        if len(reasoning.strip()) < 10:
-            warnings.append("Recommendation reasoning is brief or low detail.")
-
-    is_valid = len(errors) == 0
-    val_result = ValidationResult(
-        is_valid=is_valid,
-        validation_errors=errors,
-        warnings=warnings,
-        confidence_score=1.0 if is_valid else 0.0
-    )
     val_dict = val_result.model_dump()
+    is_valid = val_result.is_valid
 
     if step_id:
         await repo.update_step(step_id, status="COMPLETED" if is_valid else "FAILED", output_data=val_dict)
@@ -261,7 +205,7 @@ async def validation_node(state: EvaluationState) -> EvaluationState:
         completed_steps=["JOB_ANALYSIS", "RESUME_ANALYSIS", "CANDIDATE_EVALUATION", "VALIDATION"]
     )
 
-    logger.info(f"[{workflow_id}] Agent 4 Validation completed. is_valid={is_valid}, errors={errors}")
+    logger.info(f"[{workflow_id}] Agent 4 Validation completed. is_valid={is_valid}, errors={val_result.validation_errors}")
     return {
         **state,
         "validation_result": val_dict,

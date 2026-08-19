@@ -1,8 +1,9 @@
 """
 Google Gemini LLM Client wrapper with structured output binding.
-Supports both live Google Gemini API and graceful mock fallback for local testing.
+Supports both live Google Gemini API and intelligent mock simulation for local testing.
 """
-from typing import Type, TypeVar, Optional, Any
+import re
+from typing import Type, TypeVar, Optional, Any, List
 from pydantic import BaseModel
 from ai_service.core.config import settings
 from ai_service.core.logging import logger
@@ -10,7 +11,13 @@ from ai_service.models.schemas import (
     JobAnalysis,
     ResumeAnalysis,
     CandidateEvaluation,
-    RecommendationType
+    RecommendationType,
+    InterviewQuestionsPayload,
+    GeneratedQuestion,
+    QuestionCategory,
+    DifficultyLevel,
+    SchedulingRecommendation,
+    RecommendedSlot
 )
 
 T = TypeVar("T", bound=BaseModel)
@@ -24,7 +31,7 @@ def get_llm(temperature: float = 0.1):
     Initializes and returns LangChain ChatGoogleGenerativeAI instance.
     """
     if not is_google_api_configured():
-        logger.info("Google API Key not configured. Using Mock LLM fallback for local execution.")
+        logger.info("Google API Key not configured. Using Mock LLM simulation for local execution.")
         return None
 
     from langchain_google_genai import ChatGoogleGenerativeAI
@@ -38,61 +45,138 @@ def get_llm(temperature: float = 0.1):
 
 class MockStructuredLLM:
     """
-    Simulates structured agent responses when Google API Key is not yet configured.
-    Ensures complete LangGraph state machine runs deterministically in dev/test.
+    Simulates structured agent responses when Google API Key is not configured.
+    Dynamically extracts context from prompts to ensure realistic, deterministic test runs.
     """
     def __init__(self, schema_cls: Type[T]):
         self.schema_cls = schema_cls
 
     async def ainvoke(self, messages: Any) -> T:
-        msg_str = str(messages)
-        logger.info(f"MockStructuredLLM simulating output for schema: {self.schema_cls.__name__}")
+        msg_str = ""
+        if isinstance(messages, list):
+            for m in messages:
+                content = getattr(m, "content", str(m))
+                msg_str += f"\n{content}"
+        else:
+            msg_str = str(messages)
+
+        logger.info(f"MockStructuredLLM generating structured response for {self.schema_cls.__name__}")
 
         if self.schema_cls == JobAnalysis:
+            # Extract job title if present in prompt
+            title_match = re.search(r"Job Title:\s*(.+)", msg_str, re.IGNORECASE)
+            job_title = title_match.group(1).strip() if title_match else "Software Engineer"
+
+            tech_keywords = [
+                "react", "typescript", "javascript", "c#", "asp.net", ".net", "dotnet",
+                "python", "fastapi", "postgresql", "sql", "redis", "docker", "kubernetes",
+                "aws", "gcp", "azure", "go", "kafka", "graphql", "microservices"
+            ]
+            found_skills = [kw.capitalize() for kw in tech_keywords if kw in msg_str.lower()]
+            if not found_skills:
+                found_skills = ["Software Engineering", "Problem Solving"]
+
+            min_exp = 5 if "senior" in job_title.lower() or "lead" in job_title.lower() else (4 if "architect" in job_title.lower() else 2)
+
             return JobAnalysis(
-                title="Software Engineer",
-                required_skills=["C#", ".NET Core", "PostgreSQL", "React", "TypeScript"],
-                preferred_skills=["Docker", "Kubernetes", "LangGraph", "GCP"],
-                min_years_experience=3,
+                title=job_title,
+                required_skills=found_skills[:4],
+                preferred_skills=found_skills[4:7],
+                min_years_experience=min_exp,
                 education_level="Bachelor's in Computer Science or equivalent",
-                technical_domains=["Full Stack", "Cloud Backend", "Web Architecture"],
+                technical_domains=["Backend", "Cloud", "Distributed Systems"] if "backend" in job_title.lower() else ["Full Stack"],
                 key_responsibilities=[
-                    "Design and implement scalable microservices",
-                    "Build responsive React frontend interfaces",
-                    "Maintain CI/CD pipelines and deployment infrastructure"
+                    "Design and implement robust production microservices",
+                    "Collaborate with product and engineering teams to ship features",
+                    "Maintain automated testing pipelines and code quality"
                 ]
             )
 
         if self.schema_cls == ResumeAnalysis:
+            # Extract candidate name or skills
+            name_match = re.search(r"([A-Z][a-z]+ [A-Z][a-z]+)", msg_str)
+            name = name_match.group(1) if name_match else "Applicant"
+
+            tech_keywords = [
+                "react", "typescript", "javascript", "c#", "asp.net", ".net", "dotnet",
+                "python", "fastapi", "postgresql", "sql", "redis", "docker", "kubernetes",
+                "aws", "gcp", "azure", "go", "kafka", "graphql", "microservices"
+            ]
+            found_skills = [kw.capitalize() for kw in tech_keywords if kw in msg_str.lower()]
+            if not found_skills:
+                found_skills = ["Software Engineering", "Full Stack Development"]
+
+            exp_match = re.search(r"(\d+)\+?\s*years?", msg_str, re.IGNORECASE)
+            years = float(exp_match.group(1)) if exp_match else 4.0
+
             return ResumeAnalysis(
-                candidate_name="Alex Morgan",
-                extracted_skills=["C#", ".NET 8", "PostgreSQL", "React", "TypeScript", "Docker", "REST APIs"],
-                years_of_experience=4.5,
-                education_history=["B.S. in Computer Science - State University"],
+                candidate_name=name,
+                extracted_skills=found_skills,
+                years_of_experience=years,
+                education_history=["B.S. in Computer Science"],
                 project_highlights=[
-                    "Led migration of monolith API to .NET 8 microservices",
-                    "Built real-time dashboard using React, TypeScript, and WebSockets"
+                    "Engineered core backend APIs handling high-throughput production workloads",
+                    "Implemented CI/CD automation and containerized deployments"
                 ],
-                certifications=["AWS Certified Developer", "Azure Fundamentals"],
-                executive_summary="Experienced Full Stack .NET & React Engineer with strong background in distributed systems, PostgreSQL database design, and cloud deployments."
+                certifications=["Cloud Developer Certificate"],
+                executive_summary=f"Experienced engineer with {years} years of background across modern software architectures."
             )
 
         if self.schema_cls == CandidateEvaluation:
+            # Perform dynamic assessment based on prompt text
+            req_match = re.search(r"Required Skills:\s*(.+)", msg_str, re.IGNORECASE)
+            cand_skills_match = re.search(r"Extracted Skills:\s*(.+)", msg_str, re.IGNORECASE)
+            req_exp_match = re.search(r"Min Experience:\s*(\d+)", msg_str, re.IGNORECASE)
+            cand_exp_match = re.search(r"Years of Experience:\s*([\d\.]+)", msg_str, re.IGNORECASE)
+
+            req_skills = [s.strip().lower() for s in (req_match.group(1).split(",") if req_match else []) if s.strip()]
+            cand_skills = [s.strip().lower() for s in (cand_skills_match.group(1).split(",") if cand_skills_match else []) if s.strip()]
+            min_exp = float(req_exp_match.group(1)) if req_exp_match else 3.0
+            cand_exp = float(cand_exp_match.group(1)) if cand_exp_match else 3.0
+
+            if req_skills:
+                matches = set(req_skills).intersection(set(cand_skills))
+                skill_score = int((len(matches) / len(req_skills)) * 100)
+                missing = list(set(req_skills) - set(cand_skills))
+            else:
+                skill_score = 80
+                missing = []
+
+            exp_score = min(int((cand_exp / max(min_exp, 1.0)) * 100), 100)
+            overall_score = max(0, min(int(skill_score * 0.6 + exp_score * 0.4), 100))
+
+            if overall_score >= 80:
+                rec = RecommendationType.STRONG_HIRE
+            elif overall_score >= 65:
+                rec = RecommendationType.HIRE
+            elif overall_score >= 45:
+                rec = RecommendationType.NO_HIRE
+            else:
+                rec = RecommendationType.STRONG_NO_HIRE
+
+            gaps = [f"Missing required skill: {m}" for m in missing[:3]]
+            if cand_exp < min_exp:
+                gaps.append(f"Experience ({cand_exp} yrs) below requirement ({min_exp} yrs)")
+
             return CandidateEvaluation(
-                overall_match_score=88,
-                skill_match_percentage=90,
-                experience_match_percentage=85,
+                overall_match_score=overall_score,
+                skill_match_percentage=skill_score,
+                experience_match_percentage=exp_score,
                 strengths=[
-                    "Extensive practical experience in .NET 8 and React/TypeScript stack",
-                    "Strong background in PostgreSQL and microservices architecture",
-                    "Proven leadership in system modernization"
+                    f"Strong alignment in key technologies: {', '.join(cand_skills[:3]) if cand_skills else 'general engineering'}",
+                    f"Relevant professional background ({cand_exp:.1f} years)"
                 ],
-                identified_gaps=[
-                    "Limited explicit Kubernetes production experience"
-                ],
-                recommendation=RecommendationType.STRONG_HIRE,
-                recommendation_reasoning="Candidate meets all primary technical skill requirements and exceeds minimum years of experience. Demonstrated solid full-stack proficiency with excellent architecture alignment."
+                identified_gaps=gaps,
+                recommendation=rec,
+                recommendation_reasoning=f"Evaluated match at {overall_score}% with {skill_score}% skill overlap and {exp_score}% experience overlap. Recommended: {rec.value}."
             )
+
+        if self.schema_cls == InterviewQuestionsPayload:
+            from ai_service.agents.question_generator_agent import InterviewQuestionGeneratorAgent
+            q_agent = InterviewQuestionGeneratorAgent()
+            ja = JobAnalysis(title="Software Engineer", required_skills=["C#", "PostgreSQL", "React"])
+            ra = ResumeAnalysis(extracted_skills=["C#", "PostgreSQL", "React"])
+            return q_agent._deterministic_fallback(ja, ra)
 
         # Generic default instance
         return self.schema_cls.model_construct()
