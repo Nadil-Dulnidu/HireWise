@@ -30,7 +30,9 @@ class WorkflowRepository:
             {"step": 1, "name": "JOB_ANALYSIS", "agent": "Job Description Analysis Agent"},
             {"step": 2, "name": "RESUME_ANALYSIS", "agent": "Resume Analysis Agent"},
             {"step": 3, "name": "CANDIDATE_EVALUATION", "agent": "Candidate Evaluation & Ranking Agent"},
-            {"step": 4, "name": "VALIDATION", "agent": "Validation Agent"}
+            {"step": 4, "name": "VALIDATION", "agent": "Deterministic Validation Agent"},
+            {"step": 5, "name": "QUESTION_GENERATION", "agent": "Interview Question Generator Agent"},
+            {"step": 6, "name": "SCHEDULING", "agent": "Interview Scheduling Agent"}
         ])
 
         query = """
@@ -84,7 +86,7 @@ class WorkflowRepository:
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
-        completed_at = now if status in ("COMPLETED", "AWAITING_APPROVAL", "FAILED") else None
+        completed_at = now if status in ("COMPLETED", "AWAITING_APPROVAL", "AWAITING_SCHEDULE_APPROVAL", "FAILED", "REJECTED") else None
 
         query = """
         UPDATE "AiWorkflows"
@@ -200,14 +202,15 @@ class WorkflowRepository:
         status: str,
         output_data: Optional[Dict[str, Any]] = None,
         validation_data: Optional[Dict[str, Any]] = None,
-        started_at: Optional[datetime] = None
+        started_at: Optional[datetime] = None,
+        retry_count: Optional[int] = None
     ):
         """
-        Updates step execution status and payload.
+        Updates step execution status, retry count, and payload.
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
-        completed_at = now if status in ("COMPLETED", "FAILED", "SKIPPED") else None
+        completed_at = now if status in ("COMPLETED", "FAILED", "SKIPPED", "AWAITING_APPROVAL") else None
         output_json = json.dumps(output_data) if output_data is not None else None
         val_json = json.dumps(validation_data) if validation_data is not None else None
 
@@ -219,6 +222,7 @@ class WorkflowRepository:
             "ValidationResultJson" = COALESCE(%s, "ValidationResultJson"),
             "StartedAt" = COALESCE(%s, "StartedAt"),
             "CompletedAt" = COALESCE(%s, "CompletedAt"),
+            "RetryCount" = COALESCE(%s, "RetryCount"),
             "UpdatedAt" = %s
         WHERE "Id" = %s AND "IsDeleted" = FALSE;
         """
@@ -233,11 +237,74 @@ class WorkflowRepository:
                         val_json,
                         started_at,
                         completed_at,
+                        retry_count,
                         now,
                         str(step_id)
                     )
                 )
                 await conn.commit()
+
+    async def update_step_approval(
+        self,
+        step_id: uuid.UUID,
+        approval_status: str,
+        approved_by_user_id: Optional[uuid.UUID] = None,
+        approval_notes: Optional[str] = None
+    ):
+        """
+        Updates step human approval status, approver user ID, and notes.
+        """
+        pool = await get_db_pool()
+        now = datetime.now(timezone.utc)
+
+        query = """
+        UPDATE "AiWorkflowSteps"
+        SET
+            "ApprovalStatus" = %s,
+            "ApprovedByUserId" = %s,
+            "ApprovedAt" = %s,
+            "ApprovalNotes" = %s,
+            "UpdatedAt" = %s
+        WHERE "Id" = %s AND "IsDeleted" = FALSE;
+        """
+
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    query,
+                    (
+                        approval_status,
+                        str(approved_by_user_id) if approved_by_user_id else None,
+                        now,
+                        approval_notes,
+                        now,
+                        str(step_id)
+                    )
+                )
+                await conn.commit()
+
+    async def increment_step_retry(self, step_id: uuid.UUID) -> int:
+        """
+        Increments the RetryCount for a step and returns the new count.
+        """
+        pool = await get_db_pool()
+        now = datetime.now(timezone.utc)
+
+        query = """
+        UPDATE "AiWorkflowSteps"
+        SET
+            "RetryCount" = "RetryCount" + 1,
+            "UpdatedAt" = %s
+        WHERE "Id" = %s AND "IsDeleted" = FALSE
+        RETURNING "RetryCount";
+        """
+
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (now, str(step_id)))
+                row = await cur.fetchone()
+                await conn.commit()
+                return row[0] if row else 1
 
     async def get_steps(self, workflow_id: uuid.UUID) -> List[Dict[str, Any]]:
         """

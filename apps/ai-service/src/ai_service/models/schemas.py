@@ -105,6 +105,17 @@ class SchedulingRequest(BaseModel):
     duration_minutes: int = 45
     timezone: str = "UTC"
 
+# Approval Gate Request Schemas
+class EvaluationApprovalRequest(BaseModel):
+    decision: str = "APPROVED" # "APPROVED" or "REJECTED"
+    approved_by_user_id: Optional[uuid.UUID] = None
+    notes: Optional[str] = None
+
+class ScheduleConfirmationRequest(BaseModel):
+    selected_slot: RecommendedSlot
+    approved_by_user_id: Optional[uuid.UUID] = None
+    notes: Optional[str] = None
+
 # Workflow Request / Response Schemas
 class EvaluateApplicationRequest(BaseModel):
     application_id: uuid.UUID
@@ -112,6 +123,10 @@ class EvaluateApplicationRequest(BaseModel):
     job_description: str
     job_requirements: str
     candidate_resume_url: str
+    candidate_id: Optional[str] = None
+    interviewer_id: Optional[str] = None
+    candidate_slots: Optional[List[AvailabilitySlotInput]] = None
+    interviewer_slots: Optional[List[AvailabilitySlotInput]] = None
 
 class WorkflowResponse(BaseModel):
     workflow_id: uuid.UUID

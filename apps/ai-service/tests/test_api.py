@@ -47,7 +47,95 @@ async def test_workflows_evaluate_success():
             assert "workflow_id" in data
 
             assert mock_create_wf.call_count == 1
-            assert mock_create_step.call_count == 4
+            assert mock_create_step.call_count == 9
+            assert mock_run_graph.call_count == 1
+
+@pytest.mark.asyncio
+async def test_workflows_approve_evaluation_endpoint():
+    transport = ASGITransport(app=app)
+    headers = {"X-Api-Key": settings.AI_SERVICE_API_KEY}
+    wf_id = str(uuid.uuid4())
+    app_id = str(uuid.uuid4())
+
+    mock_wf_record = {
+        "Id": wf_id,
+        "ApplicationId": app_id,
+        "Status": "AWAITING_APPROVAL",
+        "CurrentStep": "RECRUITER_APPROVAL",
+        "FinalResultJson": '{"job_analysis": {}, "candidate_evaluation": {}}',
+        "CreatedAt": datetime.now(timezone.utc)
+    }
+
+    mock_steps = [
+        {"StepName": "EVALUATION_APPROVAL", "Id": str(uuid.uuid4())}
+    ]
+
+    with patch("ai_service.db.repository.WorkflowRepository.get_workflow", new_callable=AsyncMock, return_value=mock_wf_record), \
+         patch("ai_service.db.repository.WorkflowRepository.get_steps", new_callable=AsyncMock, return_value=mock_steps), \
+         patch("ai_service.db.repository.WorkflowRepository.update_step_approval", new_callable=AsyncMock), \
+         patch("ai_service.db.repository.WorkflowRepository.update_step", new_callable=AsyncMock), \
+         patch("ai_service.services.workflow_service.WorkflowService._run_workflow_graph", new_callable=AsyncMock) as mock_run_graph:
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/v1/workflows/{wf_id}/approve-evaluation",
+                json={"decision": "APPROVED", "notes": "Approved for interview"},
+                headers=headers
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "IN_PROGRESS"
+            assert data["current_step"] == "QUESTION_GENERATION"
+            assert mock_run_graph.call_count == 1
+
+@pytest.mark.asyncio
+async def test_workflows_confirm_schedule_endpoint():
+    transport = ASGITransport(app=app)
+    headers = {"X-Api-Key": settings.AI_SERVICE_API_KEY}
+    wf_id = str(uuid.uuid4())
+    app_id = str(uuid.uuid4())
+    base_time = datetime(2026, 9, 20, 14, 0, tzinfo=timezone.utc)
+
+    mock_wf_record = {
+        "Id": wf_id,
+        "ApplicationId": app_id,
+        "Status": "AWAITING_SCHEDULE_APPROVAL",
+        "CurrentStep": "SCHEDULE_APPROVAL",
+        "FinalResultJson": '{"interview_questions": {}, "scheduling_recommendation": {}}',
+        "CreatedAt": datetime.now(timezone.utc)
+    }
+
+    mock_steps = [
+        {"StepName": "SCHEDULE_APPROVAL", "Id": str(uuid.uuid4())}
+    ]
+
+    with patch("ai_service.db.repository.WorkflowRepository.get_workflow", new_callable=AsyncMock, return_value=mock_wf_record), \
+         patch("ai_service.db.repository.WorkflowRepository.get_steps", new_callable=AsyncMock, return_value=mock_steps), \
+         patch("ai_service.db.repository.WorkflowRepository.update_step_approval", new_callable=AsyncMock), \
+         patch("ai_service.db.repository.WorkflowRepository.update_step", new_callable=AsyncMock), \
+         patch("ai_service.services.workflow_service.WorkflowService._run_workflow_graph", new_callable=AsyncMock) as mock_run_graph:
+
+        payload = {
+            "selected_slot": {
+                "start_time": base_time.isoformat(),
+                "end_time": (base_time + timedelta(minutes=45)).isoformat(),
+                "interviewer_id": "int_1",
+                "candidate_id": "cand_1",
+                "score": 1.0
+            },
+            "notes": "Confirmed schedule"
+        }
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/v1/workflows/{wf_id}/confirm-schedule",
+                json=payload,
+                headers=headers
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "IN_PROGRESS"
+            assert data["current_step"] == "INTERVIEW_CREATION"
             assert mock_run_graph.call_count == 1
 
 @pytest.mark.asyncio
