@@ -1,6 +1,6 @@
 """
 API Routes for triggering and monitoring AI recruitment evaluation workflows,
-generating interview questions, and scheduling recommendations.
+generating interview questions, scheduling recommendations, and managing approval gates.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any
@@ -14,7 +14,9 @@ from ai_service.models.schemas import (
     InterviewQuestionsPayload,
     SchedulingRequest,
     SchedulingRecommendation,
-    ValidationResult
+    ValidationResult,
+    EvaluationApprovalRequest,
+    ScheduleConfirmationRequest
 )
 from ai_service.models.responses import WorkflowDetailResponse, StepResponse
 from ai_service.services.workflow_service import WorkflowService
@@ -38,10 +40,33 @@ async def trigger_evaluation_workflow(request: EvaluateApplicationRequest):
     2. Resume Analysis Agent
     3. Candidate Evaluation & Ranking Agent
     4. Deterministic Schema & Constraint Validation
-    5. Finalize & Notify ASP.NET API
+    5. Pauses at Recruiter Review Gate (AWAITING_APPROVAL)
     """
     response = await workflow_service.start_evaluation(request)
     return response
+
+@router.post("/{workflow_id}/approve-evaluation", response_model=WorkflowResponse)
+async def approve_candidate_evaluation(workflow_id: uuid.UUID, request: EvaluationApprovalRequest):
+    """
+    Approval Gate 1: Recruiter reviews AI evaluation.
+    - If decision == 'APPROVED': Resumes workflow to generate tailored interview questions and schedule slots.
+    - If decision == 'REJECTED': Terminates workflow with status REJECTED.
+    """
+    try:
+        return await workflow_service.submit_evaluation_approval(workflow_id, request)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+
+@router.post("/{workflow_id}/confirm-schedule", response_model=WorkflowResponse)
+async def confirm_interview_schedule(workflow_id: uuid.UUID, request: ScheduleConfirmationRequest):
+    """
+    Approval Gate 2: Recruiter / Candidate confirms selected interview slot.
+    Resumes workflow to finalize the Interview entity and mark workflow as COMPLETED.
+    """
+    try:
+        return await workflow_service.confirm_schedule_slot(workflow_id, request)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
 
 @router.post("/generate-questions", response_model=InterviewQuestionsPayload)
 async def generate_interview_questions(request: GenerateQuestionsRequest):
@@ -102,16 +127,3 @@ async def get_workflow_steps(workflow_id: uuid.UUID):
     Returns all executed and pending steps for a workflow.
     """
     return await workflow_service.get_workflow_steps(workflow_id)
-
-@router.post("/{workflow_id}/resume", response_model=WorkflowResponse)
-async def resume_workflow_after_approval(workflow_id: uuid.UUID):
-    """
-    Resumes a paused workflow following recruiter approval.
-    """
-    wf = await workflow_service.get_workflow_status(workflow_id)
-    if not wf:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"AiWorkflow with ID {workflow_id} not found."
-        )
-    return wf

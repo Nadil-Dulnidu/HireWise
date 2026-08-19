@@ -1,5 +1,5 @@
 """
-Workflow Service for triggering, monitoring, and managing LangGraph evaluation pipelines.
+Workflow Service for triggering, monitoring, approving, and resuming multi-agent recruitment pipelines.
 """
 import uuid
 import asyncio
@@ -11,7 +11,12 @@ from ai_service.core.logging import logger
 from ai_service.db.repository import WorkflowRepository
 from ai_service.graph.builder import build_evaluation_graph
 from ai_service.graph.state import EvaluationState
-from ai_service.models.schemas import EvaluateApplicationRequest, WorkflowResponse
+from ai_service.models.schemas import (
+    EvaluateApplicationRequest,
+    WorkflowResponse,
+    EvaluationApprovalRequest,
+    ScheduleConfirmationRequest
+)
 from ai_service.models.responses import WorkflowDetailResponse, StepResponse
 
 class WorkflowService:
@@ -33,19 +38,24 @@ class WorkflowService:
         now = datetime.now(timezone.utc)
 
         # 1. Create Workflow row in PostgreSQL
-        objective = f"AI Multi-Agent Recruitment Evaluation for '{request.job_title}'"
+        objective = f"AI Multi-Agent Recruitment Pipeline for '{request.job_title}'"
         await self.repo.create_workflow(
             workflow_id=workflow_id,
             application_id=app_id,
             objective=objective
         )
 
-        # 2. Pre-create the 4 execution steps
+        # 2. Pre-create the execution steps
         step_definitions = [
             ("JOB_ANALYSIS", "Job Description Analysis Agent", 1, {"job_title": request.job_title}),
             ("RESUME_ANALYSIS", "Resume Analysis Agent", 2, {"resume_url": request.candidate_resume_url}),
             ("CANDIDATE_EVALUATION", "Candidate Evaluation & Ranking Agent", 3, {}),
-            ("VALIDATION", "Deterministic Validation Agent", 4, {})
+            ("VALIDATION", "Deterministic Validation Agent", 4, {}),
+            ("EVALUATION_APPROVAL", "Recruiter Evaluation Review Gate", 5, {}),
+            ("QUESTION_GENERATION", "Interview Question Generator Agent", 6, {}),
+            ("SCHEDULING", "Interview Scheduling Agent", 7, {}),
+            ("SCHEDULE_APPROVAL", "Recruiter Schedule Confirmation Gate", 8, {}),
+            ("INTERVIEW_CREATION", "Interview Entity Finalization", 9, {})
         ]
 
         step_ids: Dict[str, str] = {}
@@ -62,6 +72,9 @@ class WorkflowService:
                 input_data=input_data
             )
 
+        c_slots_dump = [s.model_dump(mode="json") for s in request.candidate_slots] if request.candidate_slots else []
+        i_slots_dump = [s.model_dump(mode="json") for s in request.interviewer_slots] if request.interviewer_slots else []
+
         # 3. Assemble initial LangGraph state
         initial_state: EvaluationState = {
             "workflow_id": str(workflow_id),
@@ -71,7 +84,12 @@ class WorkflowService:
             "job_description": request.job_description,
             "job_requirements": request.job_requirements,
             "candidate_resume_url": request.candidate_resume_url,
-            "current_step": "JOB_ANALYSIS"
+            "candidate_id": request.candidate_id or str(app_id),
+            "interviewer_id": request.interviewer_id,
+            "candidate_slots": c_slots_dump,
+            "interviewer_slots": i_slots_dump,
+            "current_step": "JOB_ANALYSIS",
+            "status": "IN_PROGRESS"
         }
 
         # 4. Fire background execution of LangGraph
@@ -88,6 +106,146 @@ class WorkflowService:
             created_at=now
         )
 
+    async def submit_evaluation_approval(
+        self,
+        workflow_id: uuid.UUID,
+        request: EvaluationApprovalRequest
+    ) -> WorkflowResponse:
+        """
+        Processes human recruiter approval decision at Gate 1.
+        If APPROVED -> resumes LangGraph to generate interview questions and scheduling recommendations.
+        If REJECTED -> marks workflow as REJECTED.
+        """
+        wf = await self.repo.get_workflow(workflow_id)
+        if not wf:
+            raise ValueError(f"Workflow {workflow_id} not found.")
+
+        app_id = uuid.UUID(str(wf["ApplicationId"]))
+        steps = await self.repo.get_steps(workflow_id)
+        step_ids = {s["StepName"]: str(s["Id"]) for s in steps}
+
+        # Find approval step
+        eval_step_id = uuid.UUID(step_ids["EVALUATION_APPROVAL"]) if "EVALUATION_APPROVAL" in step_ids else None
+        if eval_step_id:
+            await self.repo.update_step_approval(
+                step_id=eval_step_id,
+                approval_status=request.decision.upper(),
+                approved_by_user_id=request.approved_by_user_id,
+                approval_notes=request.notes
+            )
+            await self.repo.update_step(
+                step_id=eval_step_id,
+                status="COMPLETED" if request.decision.upper() == "APPROVED" else "REJECTED"
+            )
+
+        final_result = json.loads(wf["FinalResultJson"]) if isinstance(wf.get("FinalResultJson"), str) else wf.get("FinalResultJson") or {}
+
+        if request.decision.upper() == "REJECTED":
+            await self.repo.update_workflow_status(
+                workflow_id=workflow_id,
+                status="REJECTED",
+                current_step="REJECTED"
+            )
+            return WorkflowResponse(
+                workflow_id=workflow_id,
+                application_id=app_id,
+                status="REJECTED",
+                current_step="REJECTED",
+                created_at=wf["CreatedAt"]
+            )
+
+        # Build resume state to proceed to Stage 2 (Question Generation)
+        resume_state: EvaluationState = {
+            "workflow_id": str(workflow_id),
+            "application_id": str(app_id),
+            "step_ids": step_ids,
+            "job_analysis": final_result.get("job_analysis"),
+            "resume_analysis": final_result.get("resume_analysis"),
+            "candidate_evaluation": final_result.get("candidate_evaluation"),
+            "validation_result": final_result.get("validation_result"),
+            "evaluation_approved": True,
+            "evaluation_approval_notes": request.notes,
+            "evaluation_approved_by": str(request.approved_by_user_id) if request.approved_by_user_id else None,
+            "current_step": "QUESTION_GENERATION",
+            "status": "IN_PROGRESS"
+        }
+
+        graph = self._get_graph()
+        asyncio.create_task(self._run_workflow_graph(graph, resume_state, workflow_id))
+
+        logger.info(f"[{workflow_id}] Resumed workflow into Stage 2 (Question Generation & Scheduling) following approval.")
+
+        return WorkflowResponse(
+            workflow_id=workflow_id,
+            application_id=app_id,
+            status="IN_PROGRESS",
+            current_step="QUESTION_GENERATION",
+            created_at=wf["CreatedAt"]
+        )
+
+    async def confirm_schedule_slot(
+        self,
+        workflow_id: uuid.UUID,
+        request: ScheduleConfirmationRequest
+    ) -> WorkflowResponse:
+        """
+        Processes human schedule slot confirmation at Gate 2.
+        Resumes LangGraph to finalize interview entity and complete workflow.
+        """
+        wf = await self.repo.get_workflow(workflow_id)
+        if not wf:
+            raise ValueError(f"Workflow {workflow_id} not found.")
+
+        app_id = uuid.UUID(str(wf["ApplicationId"]))
+        steps = await self.repo.get_steps(workflow_id)
+        step_ids = {s["StepName"]: str(s["Id"]) for s in steps}
+
+        sched_step_id = uuid.UUID(step_ids["SCHEDULE_APPROVAL"]) if "SCHEDULE_APPROVAL" in step_ids else None
+        if sched_step_id:
+            await self.repo.update_step_approval(
+                step_id=sched_step_id,
+                approval_status="APPROVED",
+                approved_by_user_id=request.approved_by_user_id,
+                approval_notes=request.notes
+            )
+            await self.repo.update_step(
+                step_id=sched_step_id,
+                status="COMPLETED",
+                output_data=request.selected_slot.model_dump(mode="json")
+            )
+
+        final_result = json.loads(wf["FinalResultJson"]) if isinstance(wf.get("FinalResultJson"), str) else wf.get("FinalResultJson") or {}
+
+        resume_state: EvaluationState = {
+            "workflow_id": str(workflow_id),
+            "application_id": str(app_id),
+            "step_ids": step_ids,
+            "job_analysis": final_result.get("job_analysis"),
+            "resume_analysis": final_result.get("resume_analysis"),
+            "candidate_evaluation": final_result.get("candidate_evaluation"),
+            "interview_questions": final_result.get("interview_questions"),
+            "scheduling_recommendation": final_result.get("scheduling_recommendation"),
+            "selected_slot": request.selected_slot.model_dump(mode="json"),
+            "schedule_approved": True,
+            "schedule_approval_notes": request.notes,
+            "schedule_approved_by": str(request.approved_by_user_id) if request.approved_by_user_id else None,
+            "current_step": "INTERVIEW_CREATION",
+            "status": "IN_PROGRESS"
+        }
+
+        graph = self._get_graph()
+        asyncio.create_task(self._run_workflow_graph(graph, resume_state, workflow_id))
+
+        logger.info(f"[{workflow_id}] Resumed workflow into finalization following schedule confirmation.")
+
+        return WorkflowResponse(
+            workflow_id=workflow_id,
+            application_id=app_id,
+            status="IN_PROGRESS",
+            current_step="INTERVIEW_CREATION",
+            created_at=wf["CreatedAt"]
+        )
+
     async def _run_workflow_graph(self, graph, initial_state: EvaluationState, workflow_id: uuid.UUID):
         """
         Background worker executing the LangGraph compiled state machine.
@@ -95,7 +253,7 @@ class WorkflowService:
         logger.info(f"[{workflow_id}] Starting LangGraph state machine execution...")
         try:
             result = await graph.ainvoke(initial_state)
-            logger.info(f"[{workflow_id}] LangGraph execution completed with current_step={result.get('current_step')}")
+            logger.info(f"[{workflow_id}] LangGraph execution completed with current_step={result.get('current_step')}, status={result.get('status')}")
         except Exception as ex:
             logger.error(f"[{workflow_id}] Uncaught exception during LangGraph execution: {ex}", exc_info=True)
             await self.repo.update_workflow_status(

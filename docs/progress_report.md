@@ -2,7 +2,7 @@
 
 ## Summary
 
-You have completed **Phases 1–6**, **Phase 2.5 (Clerk Organizations Migration)**, **Phase 7 (FastAPI & LangGraph Foundation)**, and **Phase 8 (Individual AI Agents)**. Next up is Phase 9 (Complete LangGraph Workflow with Human-in-the-Loop Gates) and Phase 10 (Recruiter Approval & Monitoring UI).
+You have completed **Phases 1–6**, **Phase 2.5 (Clerk Organizations Migration)**, **Phase 7 (FastAPI & LangGraph Foundation)**, **Phase 8 (Individual AI Agents)**, and **Phase 9 (Complete LangGraph Workflow & Approval Gates)**. Next up is Phase 10 (Recruiter AI Evaluation Review & Workflow Monitoring UI).
 
 ---
 
@@ -32,18 +32,18 @@ You have completed **Phases 1–6**, **Phase 2.5 (Clerk Organizations Migration)
 - FastAPI orchestration service, PostgreSQL state repository, async execution, LangGraph state graph wiring, Vertex AI Gemini structured output bindings.
 
 ## ✅ Phase 8: Individual AI Agents — **COMPLETE**
-- **Agent 1 (Job Description Analysis)**: `JobDescriptionAnalysisAgent` extracting required/preferred skills, domains, seniority, and responsibilities.
-- **Agent 2 (Resume Analysis)**: `ResumeAnalysisAgent` with `DocumentParser` (PDF, DOCX, text) extracting competencies, experience years, and project highlights.
-- **Agent 3 (Candidate Evaluation & Ranking)**: `CandidateEvaluationAgent` producing holistic match score, skill/experience percentages, gap analysis, and recommendations.
-- **Agent 4 (Validation Agent)**: `ValidationAgent` providing deterministic schema compliance and domain business rule checks.
-- **Agent 5 (Interview Question Generator)**: `InterviewQuestionGeneratorAgent` generating calibrated technical, behavioral, problem-solving, and project-based questions with rubrics and difficulty ratings.
-- **Agent 6 (Interview Scheduling)**: `InterviewSchedulingAgent` resolving candidate & interviewer availability constraint overlaps and scoring mutual windows.
-- **Testing**: 28 unit, schema, API, and golden case tests passing in `apps/ai-service`.
+- All 6 specialized AI agents (Job Analysis, Resume Analysis with PDF/DOCX parser, Candidate Evaluation, Validation, Interview Question Generator, Interview Scheduling).
+
+## ✅ Phase 9: Complete LangGraph Workflow & Approval Gates — **COMPLETE**
+- **Multi-Stage StateGraph**: End-to-end orchestration across Stage 1 (Screening & Evaluation), Gate 1 (Recruiter Review), Stage 2 (Question Generation), Stage 3 (Scheduling Recommendation), Gate 2 (Schedule Confirmation), and Stage 4 (Interview Entity Finalization).
+- **Human-in-the-Loop Approval Gates**: Workflow safely pauses with database state persistence at `AWAITING_APPROVAL` and `AWAITING_SCHEDULE_APPROVAL`, and seamlessly resumes upon approval/confirmation via dedicated endpoints.
+- **Rejection Flow**: Handles human recruiter rejection gracefully by transitioning to `REJECTED` and notifying ASP.NET callbacks.
+- **Retry & Timeout Engine**: Exponential backoff retry helper (`execute_with_retry_and_timeout`) with per-step timeout limits and database retry counter tracking.
+- **Testing**: 35 unit, API, golden case, and end-to-end workflow tests passing in `apps/ai-service`.
 
 ---
 
-## ❌ Phases 9–15 — **UPCOMING**
-- **Phase 9**: Complete LangGraph Workflow wiring with human-in-the-loop approval gates
+## ❌ Phases 10–15 — **UPCOMING**
 - **Phase 10**: Recruiter AI Evaluation Review & Workflow Monitoring UI
 - **Phase 11**: Third-Party Integrations (Google Calendar API, Resend Email, SignalR real-time events)
 - **Phase 12**: Security Hardening, Audit Logging & Rate Limiting
@@ -64,7 +64,7 @@ Phase 5    ███████████████████████
 Phase 6    ██████████████████████████████  COMPLETE  ✅
 Phase 7    ██████████████████████████████  COMPLETE  ✅
 Phase 8    ██████████████████████████████  COMPLETE  ✅
-Phase 9    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
+Phase 9    ██████████████████████████████  COMPLETE  ✅
 Phase 10   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
 Phase 11   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
 Phase 12   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
@@ -72,5 +72,5 @@ Phase 13   ░░░░░░░░░░░░░░░░░░░░░░░
 Phase 14   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
 Phase 15   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  UPCOMING  ❌
 
-Overall: ~53% complete (8 completed phases)
+Overall: ~60% complete (9 completed phases)
 ```
