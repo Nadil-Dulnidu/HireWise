@@ -69,7 +69,21 @@ class GeneratedQuestion(BaseModel):
 class InterviewQuestionsPayload(BaseModel):
     questions: List[GeneratedQuestion] = Field(default_factory=list)
 
+class GenerateQuestionsRequest(BaseModel):
+    job_analysis: JobAnalysis
+    resume_analysis: ResumeAnalysis
+    candidate_evaluation: Optional[CandidateEvaluation] = None
+    count_per_category: int = 2
+
 # Agent 6: Scheduling Recommendation Schema
+class AvailabilitySlotInput(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    role: str = "INTERVIEWER" # INTERVIEWER or CANDIDATE
+    start_time: datetime
+    end_time: datetime
+    timezone: str = "UTC"
+
 class RecommendedSlot(BaseModel):
     start_time: datetime
     end_time: datetime
@@ -80,7 +94,16 @@ class RecommendedSlot(BaseModel):
 
 class SchedulingRecommendation(BaseModel):
     recommended_slots: List[RecommendedSlot] = Field(default_factory=list)
+    conflicts: List[str] = Field(default_factory=list)
     reasoning: str = ""
+
+class SchedulingRequest(BaseModel):
+    candidate_id: str
+    interviewer_id: str
+    candidate_slots: List[AvailabilitySlotInput] = Field(default_factory=list)
+    interviewer_slots: List[AvailabilitySlotInput] = Field(default_factory=list)
+    duration_minutes: int = 45
+    timezone: str = "UTC"
 
 # Workflow Request / Response Schemas
 class EvaluateApplicationRequest(BaseModel):
