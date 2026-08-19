@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "HireWise AI Orchestration and Multi-Agent Recruitment Service"
 readme = "README.md"
 authors = [
-    { name = "Nadil-Dulnidu", email = "nzinlud963@gmail.com" }
+    { name = "Nadil-Dulnidu", email = "nzinlud963@gmail.com" },
+    { name = "Pamindu-Rashmitha", email = "pamidurashmitha@gmail.com"}
 ]
 requires-python = ">=3.11"
 dependencies = [
