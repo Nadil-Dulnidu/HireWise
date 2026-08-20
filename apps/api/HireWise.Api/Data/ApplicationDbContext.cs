@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using HireWise.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,9 +8,14 @@ namespace HireWise.Api.Data;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    private readonly IHttpContextAccessor? _httpContextAccessor;
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        IHttpContextAccessor? httpContextAccessor = null)
         : base(options)
     {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<User> Users => Set<User>();
@@ -248,9 +256,9 @@ public class ApplicationDbContext : DbContext
         });
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var entries = ChangeTracker.Entries<BaseEntity>();
+        var entries = ChangeTracker.Entries<BaseEntity>().ToList();
 
         foreach (var entry in entries)
         {
@@ -265,6 +273,138 @@ public class ApplicationDbContext : DbContext
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        var auditLogs = CreateAuditLogs();
+        if (auditLogs.Count > 0)
+        {
+            AuditLogs.AddRange(auditLogs);
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private List<AuditLog> CreateAuditLogs()
+    {
+        var auditEntries = new List<AuditLog>();
+        var httpContext = _httpContextAccessor?.HttpContext;
+
+        Guid? currentUserId = null;
+        string? userRole = null;
+        string? ipAddress = null;
+        string? correlationId = null;
+
+        if (httpContext != null)
+        {
+            if (httpContext.Items.TryGetValue("UserId", out var uidObj) && uidObj is Guid g)
+            {
+                currentUserId = g;
+            }
+            else
+            {
+                var uidStr = httpContext.User.FindFirst("user_id")?.Value;
+                if (Guid.TryParse(uidStr, out var parsedGuid))
+                {
+                    currentUserId = parsedGuid;
+                }
+            }
+
+            userRole = httpContext.User.FindFirst(ClaimTypes.Role)?.Value
+                ?? httpContext.User.FindFirst("role")?.Value;
+
+            ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+            if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var fwd))
+            {
+                ipAddress = fwd.FirstOrDefault()?.Split(',')[0].Trim() ?? ipAddress;
+            }
+
+            correlationId = httpContext.Items["CorrelationId"]?.ToString()
+                ?? httpContext.Request.Headers["X-Correlation-ID"].FirstOrDefault();
+        }
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            ReferenceHandler = ReferenceHandler.IgnoreCycles,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditLog ||
+                entry.State == EntityState.Detached ||
+                entry.State == EntityState.Unchanged)
+            {
+                continue;
+            }
+
+            var entityType = entry.Entity.GetType().Name;
+            var entityId = (entry.Entity as BaseEntity)?.Id ?? Guid.Empty;
+
+            var oldValues = new Dictionary<string, object?>();
+            var newValues = new Dictionary<string, object?>();
+            string action = "UPDATE";
+
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    action = "CREATE";
+                    foreach (var prop in entry.Properties)
+                    {
+                        if (prop.Metadata.IsPrimaryKey() || prop.CurrentValue != null)
+                        {
+                            newValues[prop.Metadata.Name] = prop.CurrentValue;
+                        }
+                    }
+                    break;
+
+                case EntityState.Deleted:
+                    action = "HARD_DELETE";
+                    foreach (var prop in entry.Properties)
+                    {
+                        oldValues[prop.Metadata.Name] = prop.OriginalValue;
+                    }
+                    break;
+
+                case EntityState.Modified:
+                    action = "UPDATE";
+                    var isDeletedProp = entry.Properties.FirstOrDefault(p => p.Metadata.Name == "IsDeleted");
+                    if (isDeletedProp != null && isDeletedProp.IsModified && isDeletedProp.CurrentValue is true)
+                    {
+                        action = "SOFT_DELETE";
+                    }
+
+                    foreach (var prop in entry.Properties)
+                    {
+                        if (prop.IsModified)
+                        {
+                            oldValues[prop.Metadata.Name] = prop.OriginalValue;
+                            newValues[prop.Metadata.Name] = prop.CurrentValue;
+                        }
+                    }
+                    break;
+            }
+
+            // Only log if there are meaningful changes or create/delete
+            if (action == "CREATE" || action == "HARD_DELETE" || action == "SOFT_DELETE" || oldValues.Count > 0)
+            {
+                var auditLog = new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = currentUserId,
+                    Role = userRole,
+                    Action = action,
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    OldValuesJson = oldValues.Count > 0 ? JsonSerializer.Serialize(oldValues, jsonOptions) : null,
+                    NewValuesJson = newValues.Count > 0 ? JsonSerializer.Serialize(newValues, jsonOptions) : null,
+                    IpAddress = ipAddress,
+                    CorrelationId = correlationId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                auditEntries.Add(auditLog);
+            }
+        }
+
+        return auditEntries;
     }
 }
+

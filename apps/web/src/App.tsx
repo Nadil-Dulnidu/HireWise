@@ -48,6 +48,7 @@ import { InterviewerInterviewDetailPage } from '@/pages/interviewer/InterviewerI
 import { InterviewerAvailabilityPage } from '@/pages/interviewer/InterviewerAvailabilityPage'
 import { InterviewerHistoryPage } from '@/pages/interviewer/InterviewerHistoryPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
+import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage'
 
 export function App() {
   return (
@@ -131,7 +132,7 @@ export function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminDashboard />} />
             <Route path="companies" element={<AdminDashboard />} />
-            <Route path="audit-logs" element={<AdminDashboard />} />
+            <Route path="audit-logs" element={<AdminAuditLogsPage />} />
             <Route path="analytics" element={<AdminDashboard />} />
             <Route path="settings" element={<AdminDashboard />} />
           </Route>

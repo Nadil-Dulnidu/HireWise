@@ -64,9 +64,18 @@ public class ResumeService : IResumeService
             return Result<UploadResumeResponse>.NotFound("Candidate profile not found.");
         }
 
-        // Upload to storage
+        // Sanitize file name
+        var sanitizedFileName = FileSecurityValidator.SanitizeFileName(file.FileName);
+
+        // Upload to storage with validation
         using var stream = file.OpenReadStream();
-        var uploadResult = await _storageService.UploadFileAsync(stream, file.FileName, file.ContentType, "resumes", ct);
+        var validation = FileSecurityValidator.ValidateResumeFile(stream, sanitizedFileName, file.ContentType, file.Length, MaxFileSizeBytes);
+        if (!validation.IsValid)
+        {
+            return Result<UploadResumeResponse>.Failure(validation.ErrorMessage ?? "Invalid resume file.");
+        }
+
+        var uploadResult = await _storageService.UploadFileAsync(stream, sanitizedFileName, file.ContentType, "resumes", ct);
 
         if (!uploadResult.Success)
         {
@@ -85,7 +94,7 @@ public class ResumeService : IResumeService
         {
             CandidateId = candidateId,
             FileUrl = uploadResult.FileUrl,
-            FileName = file.FileName,
+            FileName = sanitizedFileName,
             FileType = file.ContentType,
             FileSize = file.Length,
             UploadedAt = DateTime.UtcNow,
