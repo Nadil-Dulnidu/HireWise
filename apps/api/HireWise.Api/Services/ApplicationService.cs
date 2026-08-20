@@ -375,6 +375,18 @@ public class ApplicationService : IApplicationService
 
     public async Task<Result<ApplicationDto>> ApproveForInterviewAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
+        var application = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (application == null)
+        {
+            return Result<ApplicationDto>.NotFound("Application not found.");
+        }
+
+        if (application.Status == ApplicationStatus.INTERVIEW_SCHEDULED ||
+            application.Status == ApplicationStatus.INTERVIEW_COMPLETED)
+        {
+            return Result<ApplicationDto>.Conflict("Cannot approve: an interview is already scheduled or completed for this applicant.");
+        }
+
         return await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct);
     }
 

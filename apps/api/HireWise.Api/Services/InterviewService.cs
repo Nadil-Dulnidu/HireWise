@@ -64,6 +64,15 @@ public class InterviewService : IInterviewService
             return Result<InterviewDto>.Forbidden("You cannot schedule interviews for another company's job.");
         }
 
+        // Check if application is in a non-schedulable state
+        if (application.Status == ApplicationStatus.INTERVIEW_SCHEDULED ||
+            application.Status == ApplicationStatus.INTERVIEW_COMPLETED ||
+            application.Status == ApplicationStatus.SELECTED ||
+            application.Status == ApplicationStatus.REJECTED)
+        {
+            return Result<InterviewDto>.Conflict($"This applicant is currently in '{application.Status.ToString().Replace('_', ' ')}' status and is no longer eligible for interview scheduling.");
+        }
+
         // Check if an interview already exists for this application (including soft-deleted or cancelled)
         var existingInterview = await _db.Interviews.IgnoreQueryFilters()
             .FirstOrDefaultAsync(i => i.ApplicationId == request.ApplicationId, ct);

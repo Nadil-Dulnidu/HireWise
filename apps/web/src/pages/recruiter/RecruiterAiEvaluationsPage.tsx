@@ -352,22 +352,50 @@ export function RecruiterAiEvaluationsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => approveMutation.mutate(item.id)}
-                      disabled={approveMutation.isPending}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition shadow-sm disabled:opacity-50"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => rejectMutation.mutate(item.id)}
-                      disabled={rejectMutation.isPending}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-300 transition disabled:opacity-50"
-                    >
-                      <XCircle className="h-3.5 w-3.5" /> Reject
-                    </button>
+                    {item.status === 'INTERVIEW_SCHEDULED' ? (
+                      <Link
+                        to="/recruiter/interviews"
+                        className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-600/30 transition"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" /> Interview Scheduled
+                      </Link>
+                    ) : item.status === 'INTERVIEW_APPROVED' ? (
+                      <>
+                        <Link
+                          to="/recruiter/scheduling"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 px-3 py-2 text-xs font-semibold text-white transition shadow-sm"
+                        >
+                          Schedule
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => rejectMutation.mutate(item.id)}
+                          disabled={rejectMutation.isPending}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-300 transition disabled:opacity-50"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => approveMutation.mutate(item.id)}
+                          disabled={approveMutation.isPending}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition shadow-sm disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rejectMutation.mutate(item.id)}
+                          disabled={rejectMutation.isPending}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-300 transition disabled:opacity-50"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

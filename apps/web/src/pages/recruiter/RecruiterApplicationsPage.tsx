@@ -194,7 +194,11 @@ export function RecruiterApplicationsPage() {
                   </a>
                 )}
 
-                {app.status !== 'INTERVIEW_APPROVED' && app.status !== 'SELECTED' && app.status !== 'REJECTED' && (
+                {/* Schedulability-aware Actions */}
+                {(app.status === 'APPLIED' ||
+                  app.status === 'AI_REVIEW' ||
+                  app.status === 'AI_RECOMMENDED' ||
+                  app.status === 'RECRUITER_REVIEW') && (
                   <button
                     onClick={() => approveMutation.mutate(app.id)}
                     disabled={approveMutation.isPending}
@@ -202,6 +206,24 @@ export function RecruiterApplicationsPage() {
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" /> Approve Interview
                   </button>
+                )}
+
+                {app.status === 'INTERVIEW_APPROVED' && (
+                  <Link
+                    to="/recruiter/scheduling"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 px-3 py-2 text-xs font-semibold transition"
+                  >
+                    Schedule Interview
+                  </Link>
+                )}
+
+                {app.status === 'INTERVIEW_SCHEDULED' && (
+                  <Link
+                    to="/recruiter/interviews"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 px-3 py-2 text-xs font-semibold transition"
+                  >
+                    Interview Scheduled
+                  </Link>
                 )}
 
                 {app.status !== 'REJECTED' && (

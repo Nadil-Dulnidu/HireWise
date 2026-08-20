@@ -137,17 +137,34 @@ export function RecruiterSchedulingPage() {
   const applications = appsData?.items || []
   const interviewers = interviewersData || []
 
-  // Filter applications that are in interview eligible state (not already scheduled/completed/rejected)
-  const eligibleApps = applications.filter(
-    (a) => a.status === 'INTERVIEW_APPROVED' || a.status === 'AI_RECOMMENDED' || a.status === 'RECRUITER_REVIEW'
-  )
+  // Filter applications that are eligible for scheduling (strictly exclude already scheduled/completed/rejected applicants)
+  const eligibleApps = applications.filter((a) => {
+    return (
+      a.status === 'INTERVIEW_APPROVED' ||
+      a.status === 'AI_RECOMMENDED' ||
+      a.status === 'RECRUITER_REVIEW'
+    )
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedAppId) {
-      setErrorMsg('Please select an approved candidate application.')
+      setErrorMsg('Please select an eligible candidate application.')
       return
     }
+
+    const targetApp = applications.find((a) => a.id === selectedAppId)
+    if (
+      targetApp &&
+      (targetApp.status === 'INTERVIEW_SCHEDULED' ||
+        targetApp.status === 'INTERVIEW_COMPLETED' ||
+        targetApp.status === 'SELECTED' ||
+        targetApp.status === 'REJECTED')
+    ) {
+      setErrorMsg(`Applicant ${targetApp.candidateName} is already in '${targetApp.status.replace(/_/g, ' ')}' status and cannot be scheduled again.`)
+      return
+    }
+
     if (!selectedInterviewerId) {
       setErrorMsg('Please select an interviewer from your company.')
       return
@@ -221,12 +238,23 @@ export function RecruiterSchedulingPage() {
                     required
                   >
                     <option value="">-- Select an Approved Application --</option>
-                    {(eligibleApps.length > 0 ? eligibleApps : applications).map((app) => (
-                      <option key={app.id} value={app.id}>
-                        {app.candidateName} — {app.jobTitle} ({app.status.replace('_', ' ')})
+                    {eligibleApps.length === 0 ? (
+                      <option value="" disabled>
+                        No candidates currently pending interview scheduling
                       </option>
-                    ))}
+                    ) : (
+                      eligibleApps.map((app) => (
+                        <option key={app.id} value={app.id}>
+                          {app.candidateName} — {app.jobTitle} ({app.status.replace(/_/g, ' ')})
+                        </option>
+                      ))
+                    )}
                   </select>
+                )}
+                {eligibleApps.length === 0 && !appsLoading && (
+                  <p className="text-[11px] text-amber-400 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> All approved candidates have already been scheduled for interviews.
+                  </p>
                 )}
               </div>
 
