@@ -13,7 +13,8 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
-  Bot
+  Bot,
+  Calendar
 } from 'lucide-react'
 import type { ApplicationStatus } from '@/types/applications'
 
@@ -178,20 +179,46 @@ export function RecruiterApplicationDetailPage() {
                 <Download className="h-4 w-4" /> Download Resume
               </a>
             )}
-            <button
-              onClick={() => approveMutation.mutate()}
-              disabled={approveMutation.isPending || application.status === 'INTERVIEW_APPROVED'}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 px-4 py-2.5 text-xs font-semibold transition"
-            >
-              <CheckCircle2 className="h-4 w-4" /> Approve for Interview
-            </button>
-            <button
-              onClick={() => rejectMutation.mutate()}
-              disabled={rejectMutation.isPending || application.status === 'REJECTED'}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 px-4 py-2.5 text-xs font-semibold transition"
-            >
-              <XCircle className="h-4 w-4" /> Reject Application
-            </button>
+            {application.status === 'INTERVIEW_APPROVED' && (
+              <Link
+                to="/recruiter/scheduling"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2.5 text-xs font-semibold text-white transition shadow-md shadow-purple-600/20"
+              >
+                <Calendar className="h-4 w-4" /> Schedule Interview
+              </Link>
+            )}
+
+            {application.status === 'INTERVIEW_SCHEDULED' && (
+              <Link
+                to="/recruiter/interviews"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 px-4 py-2.5 text-xs font-semibold transition"
+              >
+                <CheckCircle2 className="h-4 w-4 text-blue-400" /> Interview Scheduled
+              </Link>
+            )}
+
+            {(application.status === 'APPLIED' ||
+              application.status === 'AI_REVIEW' ||
+              application.status === 'AI_RECOMMENDED' ||
+              application.status === 'RECRUITER_REVIEW') && (
+              <button
+                onClick={() => approveMutation.mutate()}
+                disabled={approveMutation.isPending}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 px-4 py-2.5 text-xs font-semibold transition"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Approve for Interview
+              </button>
+            )}
+
+            {application.status !== 'REJECTED' && (
+              <button
+                onClick={() => rejectMutation.mutate()}
+                disabled={rejectMutation.isPending}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 px-4 py-2.5 text-xs font-semibold transition"
+              >
+                <XCircle className="h-4 w-4" /> Reject Application
+              </button>
+            )}
           </div>
         </div>
       </div>
