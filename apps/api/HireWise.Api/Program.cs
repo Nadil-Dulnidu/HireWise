@@ -26,7 +26,9 @@ var builder = WebApplication.CreateBuilder(args);
 Serilog.Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] ({CorrelationId}) {Message:lj}{NewLine}{Exception}")
+    .Enrich.WithProperty("Application", "HireWise.Api")
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] ({CorrelationId}) [{UserRole}:{ClerkUserId}] {Message:lj}{NewLine}{Exception}")
     .WriteTo.File("logs/hirewise-.log", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
@@ -110,6 +112,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<IInterviewFeedbackService, InterviewFeedbackService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 // Integrations (Google Calendar & Resend)
 var resendApiKey = builder.Configuration["Resend:ApiKey"]
@@ -213,6 +216,7 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // 10. HTTP Pipeline
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 

@@ -112,6 +112,44 @@ public class UserContextMiddleware
                 }
             }
 
+            // Resolve DB UserId
+            Guid? resolvedDbUserId = null;
+            if (!string.IsNullOrEmpty(clerkUserId))
+            {
+                var userIdCacheKey = $"DbUserId_{clerkUserId}";
+                if (!memoryCache.TryGetValue(userIdCacheKey, out Guid cachedDbUserId))
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var dbUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId);
+                    if (dbUser != null)
+                    {
+                        cachedDbUserId = dbUser.Id;
+                        memoryCache.Set(userIdCacheKey, cachedDbUserId, TimeSpan.FromMinutes(5));
+                        resolvedDbUserId = cachedDbUserId;
+                        
+                        // Also populate companyId if not resolved yet
+                        if (!resolvedCompanyId.HasValue && dbUser.CompanyId.HasValue)
+                        {
+                            resolvedCompanyId = dbUser.CompanyId.Value;
+                        }
+                    }
+                }
+                else
+                {
+                    resolvedDbUserId = cachedDbUserId;
+                }
+            }
+
+            if (resolvedDbUserId.HasValue)
+            {
+                context.Items["UserId"] = resolvedDbUserId.Value;
+                if (context.User.FindFirst("user_id") == null)
+                {
+                    identity.AddClaim(new Claim("user_id", resolvedDbUserId.Value.ToString()));
+                }
+            }
+
             if (resolvedCompanyId.HasValue)
             {
                 context.Items["CompanyId"] = resolvedCompanyId.Value;
@@ -122,6 +160,7 @@ public class UserContextMiddleware
             }
 
             using (LogContext.PushProperty("ClerkUserId", clerkUserId ?? "anonymous"))
+            using (LogContext.PushProperty("DbUserId", resolvedDbUserId?.ToString() ?? "none"))
             using (LogContext.PushProperty("UserRole", role ?? "none"))
             using (LogContext.PushProperty("ClerkOrganizationId", orgId ?? "none"))
             {
