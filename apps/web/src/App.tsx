@@ -97,7 +97,6 @@ export function App() {
             <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
             <Route path="dashboard" element={<RecruiterDashboard />} />
             <Route path="companies" element={<RecruiterCompanyPage />} />
-            <Route path="departments" element={<RecruiterCompanyPage />} />
             <Route path="team" element={<TeamPage />} />
             <Route path="jobs" element={<RecruiterJobsPage />} />
             <Route path="jobs/new" element={<CreateEditJobPage />} />
@@ -109,7 +108,6 @@ export function App() {
             <Route path="interviews" element={<RecruiterInterviewsPage />} />
             <Route path="interviews/:id" element={<RecruiterInterviewDetailPage />} />
             <Route path="ai-workflows" element={<RecruiterAiWorkflowsPage />} />
-            <Route path="analytics" element={<RecruiterDashboard />} />
           </Route>
         </Route>
 

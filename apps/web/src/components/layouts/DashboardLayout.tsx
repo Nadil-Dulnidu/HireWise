@@ -45,32 +45,48 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
         } transition-all duration-300 ease-in-out glass-panel flex flex-col border-r border-slate-800/80 z-40`}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-slate-800/60">
-          <Link to="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            {sidebarOpen && (
-              <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight text-white leading-tight">
-                  Hire<span className="text-blue-500">Wise</span>
-                </span>
-                <span className={`text-[10px] font-semibold tracking-wider uppercase ${roleColor}`}>
-                  {roleTitle}
-                </span>
-              </div>
-            )}
-          </Link>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
+        <div
+          className={`flex h-16 items-center border-b border-slate-800/60 transition-all ${
+            sidebarOpen ? 'justify-between px-4' : 'justify-center px-2'
+          }`}
+        >
+          {sidebarOpen ? (
+            <>
+              <Link to="/" className="flex items-center gap-3 overflow-hidden">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-base font-bold tracking-tight text-white leading-tight">
+                    Hire<span className="text-blue-500">Wise</span>
+                  </span>
+                  <span className={`text-[10px] font-semibold tracking-wider uppercase ${roleColor}`}>
+                    {roleTitle}
+                  </span>
+                </div>
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                title="Collapse sidebar"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="group flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:scale-105 transition-all"
+              title="Expand sidebar"
+            >
+              <Sparkles className="h-5 w-5 group-hover:hidden transition-all" />
+              <Menu className="h-5 w-5 hidden group-hover:block transition-all" />
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1.5">
+        <nav className={`flex-1 overflow-y-auto space-y-1.5 ${sidebarOpen ? 'p-3' : 'py-3 px-2'}`}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.href || location.pathname.startsWith(`${item.href}/`)
             const Icon = item.icon
@@ -79,9 +95,13 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                className={`flex items-center rounded-xl text-sm font-medium transition-all ${
+                  sidebarOpen
+                    ? 'gap-3 px-3 py-2.5 w-full'
+                    : 'justify-center h-10 w-10 mx-auto'
+                } ${
                   isActive
-                    ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
                     : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
                 title={!sidebarOpen ? item.label : undefined}
@@ -101,8 +121,12 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
         </nav>
 
         {/* User Card at bottom of sidebar */}
-        <div className="p-3 border-t border-slate-800/60">
-          <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-2 border border-slate-800/60">
+        <div className={`border-t border-slate-800/60 ${sidebarOpen ? 'p-3' : 'py-3 px-2'}`}>
+          <div
+            className={`flex items-center rounded-xl bg-slate-900/60 border border-slate-800/60 ${
+              sidebarOpen ? 'gap-3 p-2' : 'justify-center h-10 w-10 mx-auto p-0'
+            }`}
+          >
             <UserButton afterSignOutUrl="/" />
             {sidebarOpen && (
               <div className="flex flex-col min-w-0 flex-1">
@@ -123,6 +147,15 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
         {/* Top Header */}
         <header className="flex h-16 items-center justify-between border-b border-slate-800/80 px-6 glass-panel z-30">
           <div className="flex items-center gap-3 text-sm text-slate-400">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition -ml-2 mr-1"
+                title="Expand sidebar"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            )}
             <span className="font-medium text-slate-200">{roleTitle}</span>
             <ChevronRight className="h-4 w-4 text-slate-600" />
             <span className="text-slate-400 capitalize">
