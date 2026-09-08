@@ -188,8 +188,8 @@ export function RecruiterSchedulingPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Back Link */}
+    <div className="space-y-6">
+      {/* Top Header */}
       <Link
         to="/recruiter/interviews"
         className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition font-medium"

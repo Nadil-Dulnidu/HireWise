@@ -55,7 +55,7 @@ export function CandidateDashboard() {
   if (resumeData?.fileUrl) completenessScore += 25
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8">
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-white p-6 sm:p-8 border border-slate-200 shadow-sm">
         <div className="relative z-10 max-w-2xl space-y-3">

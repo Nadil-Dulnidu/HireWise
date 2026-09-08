@@ -149,57 +149,61 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 px-6 bg-white z-30 shadow-xs">
-          <div className="flex items-center gap-2.5 text-sm text-slate-500">
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition -ml-2 mr-1"
-                title="Expand sidebar"
-              >
-                <Menu className="h-4 w-4" />
-              </button>
-            )}
-            <span className="font-medium text-slate-700">{roleTitle}</span>
-            <ChevronRight className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-900 font-semibold capitalize">
-              {location.pathname.split('/').pop()?.replace(/-/g, ' ') || 'Overview'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Real-time Status Badge */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              API & AI Connected
+        <header className="flex h-16 items-center border-b border-slate-200 px-6 md:px-8 bg-white z-30 shadow-xs">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-sm text-slate-500">
+              {!sidebarOpen && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition -ml-2 mr-1"
+                  title="Expand sidebar"
+                >
+                  <Menu className="h-4 w-4" />
+                </button>
+              )}
+              <span className="font-medium text-slate-700">{roleTitle}</span>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+              <span className="text-slate-900 font-semibold capitalize">
+                {location.pathname.split('/').pop()?.replace(/-/g, ' ') || 'Overview'}
+              </span>
             </div>
 
-            {/* Notification Bell Button & Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
-                title="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-xs">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
+            <div className="flex items-center gap-4">
+              {/* Real-time Status Badge */}
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                API & AI Connected
+              </div>
 
-              <NotificationDropdown
-                isOpen={notificationsOpen}
-                onClose={() => setNotificationsOpen(false)}
-              />
+              {/* Notification Bell Button & Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+                  title="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-xs">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationDropdown
+                  isOpen={notificationsOpen}
+                  onClose={() => setNotificationsOpen(false)}
+                />
+              </div>
             </div>
           </div>
         </header>
 
         {/* Workspace Canvas */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50">
-          <Outlet />
+          <div className="container mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -144,7 +144,7 @@ export function JobDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 space-y-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Back button */}
       <div>
         <Link
