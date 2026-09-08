@@ -296,46 +296,46 @@ export function LandingPage() {
           </p>
         </div>
 
-        {/* 6 Agent Cards with Dedicated Visuals */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* 6 Agent Cards with Dedicated Visuals - Rectangular Shape (Left Image, Right Details) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {agents.map((agent, i) => (
             <div
               key={i}
-              className="rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
+              className="rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col sm:flex-row group"
             >
-              {/* Agent Dedicated Artwork */}
-              <div className="relative aspect-[4/3] bg-slate-100 border-b border-slate-100 overflow-hidden group">
+              {/* Left Side: Reduced Size Image Container */}
+              <div className="relative w-full sm:w-44 md:w-48 shrink-0 bg-slate-100 overflow-hidden aspect-[16/10] sm:aspect-auto">
                 <img
                   src={agent.image}
                   alt={agent.title}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 />
-                <div className="absolute top-3 left-3">
-                  <span className="rounded-full bg-white/95 backdrop-blur-sm border border-slate-200/80 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
+                <div className="absolute top-2.5 left-2.5 sm:top-2 sm:left-2">
+                  <span className="rounded-full bg-white/95 backdrop-blur-sm border border-slate-200/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700 shadow-sm">
                     {agent.badge}
                   </span>
                 </div>
               </div>
 
-              {/* Agent Body */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`h-8 w-8 rounded-lg ${agent.bg} ${agent.color} flex items-center justify-center`}>
-                      <agent.icon className="h-4 w-4" />
+              {/* Right Side: Agent Details */}
+              <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-3.5">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-7 w-7 rounded-lg ${agent.bg} ${agent.color} flex items-center justify-center shrink-0`}>
+                      <agent.icon className="h-3.5 w-3.5" />
                     </div>
                     <h3 className="text-base font-bold text-slate-900">{agent.title}</h3>
                   </div>
-                  <p className="text-sm text-slate-600 leading-relaxed pt-1">{agent.desc}</p>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-0.5">{agent.desc}</p>
                 </div>
 
                 {/* Capabilities Tags */}
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-3 border-t border-slate-100">
                   <div className="flex flex-wrap gap-1.5">
                     {agent.capabilities.map((cap, capIdx) => (
                       <span
                         key={capIdx}
-                        className="rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                        className="rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-slate-600"
                       >
                         {cap}
                       </span>
