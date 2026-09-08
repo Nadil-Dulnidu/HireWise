@@ -28,13 +28,17 @@ public class EmailService : IEmailService
         _enabled = config.GetValue<bool>("Resend:Enabled", false)
             || config.GetValue<bool>("RESEND_ENABLED", false);
 
-        _fromAddress = config["Resend:FromAddress"]
-            ?? config["RESEND_FROM_ADDRESS"]
-            ?? "HireWise <hirewise.team@gmail.com>";
+        _fromAddress = !string.IsNullOrWhiteSpace(config["RESEND_FROM_ADDRESS"])
+            ? config["RESEND_FROM_ADDRESS"]!
+            : (!string.IsNullOrWhiteSpace(config["Resend:FromAddress"])
+                ? config["Resend:FromAddress"]!
+                : "HireWise <onboarding@resend.dev>");
 
-        var apiKey = config["Resend:ApiKey"]
-            ?? config["RESEND_API_KEY"]
-            ?? "";
+        var apiKey = !string.IsNullOrWhiteSpace(config["RESEND_API_KEY"])
+            ? config["RESEND_API_KEY"]!
+            : (!string.IsNullOrWhiteSpace(config["Resend:ApiKey"])
+                ? config["Resend:ApiKey"]!
+                : "");
 
         if (_enabled && !string.IsNullOrWhiteSpace(apiKey) && !apiKey.StartsWith("re_placeholder"))
         {

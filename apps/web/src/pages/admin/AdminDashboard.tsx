@@ -8,11 +8,27 @@ import {
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { auditLogsApi } from '@/lib/api/audit-logs-api'
+import { companiesApi } from '@/lib/api/jobs-api'
+import { apiClient } from '@/lib/api-client'
+import type { ApiResponse, PagedResult } from '@/types/auth'
 
 export function AdminDashboard() {
   const { data: auditData } = useQuery({
     queryKey: ['recent-audit-logs'],
     queryFn: () => auditLogsApi.getAuditLogs({ page: 1, pageSize: 5 })
+  })
+
+  const { data: companiesData, isLoading: isCompaniesLoading } = useQuery({
+    queryKey: ['admin-companies-count'],
+    queryFn: () => companiesApi.getCompanies({ pageSize: 1 })
+  })
+
+  const { data: usersData, isLoading: isUsersLoading } = useQuery({
+    queryKey: ['admin-users-count'],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiResponse<PagedResult<any>>>('/users', { params: { pageSize: 1 } })
+      return res.data.data
+    }
   })
 
   return (
@@ -42,9 +58,9 @@ export function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Security Status', value: 'Hardened', icon: ShieldCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-          { label: 'Active Companies', value: '12', icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-          { label: 'Total Platform Users', value: '148', icon: UserCheck, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-          { label: 'Total Audit Records', value: auditData?.totalCount ? `${auditData.totalCount}` : 'Active', icon: ShieldAlert, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+          { label: 'Active Companies', value: isCompaniesLoading ? '...' : (companiesData?.totalCount ?? 0).toString(), icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+          { label: 'Total Platform Users', value: isUsersLoading ? '...' : (usersData?.totalCount ?? 0).toString(), icon: UserCheck, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+          { label: 'Total Audit Records', value: auditData?.totalCount !== undefined ? auditData.totalCount.toString() : '0', icon: ShieldAlert, color: 'text-amber-400', bg: 'bg-amber-500/10' },
         ].map((kpi, i) => (
           <div key={i} className="glass-card p-5 rounded-xl border border-slate-800 flex items-center justify-between">
             <div>

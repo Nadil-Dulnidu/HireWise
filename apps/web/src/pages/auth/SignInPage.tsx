@@ -1,4 +1,5 @@
 import { SignIn } from '@clerk/clerk-react'
+import { dark } from '@clerk/themes'
 import { Sparkles } from 'lucide-react'
 
 export function SignInPage() {
@@ -22,15 +23,7 @@ export function SignInPage() {
             forceRedirectUrl="/auth-redirect"
             afterSignInUrl="/auth-redirect"
             appearance={{
-              elements: {
-                card: 'glass-panel border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90 text-white',
-                headerTitle: 'text-white font-bold',
-                headerSubtitle: 'text-slate-400',
-                formButtonPrimary: 'bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl',
-                formFieldInput: 'bg-slate-950 border-slate-800 text-white rounded-xl focus:border-blue-500',
-                formFieldLabel: 'text-slate-300',
-                footerActionLink: 'text-blue-400 hover:text-blue-300 font-medium'
-              }
+              baseTheme: dark
             }}
           />
         </div>

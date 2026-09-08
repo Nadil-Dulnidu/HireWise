@@ -41,25 +41,41 @@ public class UserService : IUserService
     public async Task<Result<UserDto>> GetCurrentUserAsync(string clerkUserId, CancellationToken ct = default)
     {
         var user = await _db.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Company)
             .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId, ct);
+
+        if (user != null && user.IsDeleted)
+        {
+            user.IsDeleted = false;
+            user.DeletedAt = null;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("Reactivated soft-deleted user {UserId} ({Email}) for Clerk ID {ClerkUserId}",
+                user.Id, user.Email, clerkUserId);
+        }
 
         if (user == null)
         {
             var email = _currentUserService.Email;
 
-            // Check if there is an existing user by email
+            // Check if there is an existing user by email (including previously soft-deleted ones)
             if (!string.IsNullOrEmpty(email))
             {
                 user = await _db.Users
+                    .IgnoreQueryFilters()
                     .Include(u => u.Company)
-                    .FirstOrDefaultAsync(u => u.Email == email, ct);
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
 
                 if (user != null)
                 {
                     user.ClerkUserId = clerkUserId;
+                    user.IsDeleted = false;
+                    user.DeletedAt = null;
                     user.UpdatedAt = DateTime.UtcNow;
                     await _db.SaveChangesAsync(ct);
+                    _logger.LogInformation("Linked and restored existing user {UserId} ({Email}) to new Clerk ID {ClerkUserId}",
+                        user.Id, user.Email, clerkUserId);
                     return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
                 }
             }
@@ -82,10 +98,57 @@ public class UserService : IUserService
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role} and status {Status}",
-                user.Id, user.Email, user.Role, user.Status);
+            try
+            {
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role} and status {Status}",
+                    user.Id, user.Email, user.Role, user.Status);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict during auto-provisioning for {ClerkUserId}. Reloading existing user.", clerkUserId);
+                _db.ChangeTracker.Clear();
+                user = await _db.Users
+                    .IgnoreQueryFilters()
+                    .Include(u => u.Company)
+                    .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId || (!string.IsNullOrEmpty(email) && u.Email.ToLower() == email.ToLower()), ct);
+
+                if (user != null)
+                {
+                    if (user.IsDeleted)
+                    {
+                        user.IsDeleted = false;
+                        user.DeletedAt = null;
+                    }
+                    user.ClerkUserId = clerkUserId;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _db.SaveChangesAsync(ct);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        var explicitRole = _currentUserService.Role;
+
+        // If the user's role is CANDIDATE (either explicitly requested or set on the user):
+        // Ensure they are preserved as CANDIDATE and not forcibly attached to any company.
+        if (explicitRole == UserRole.CANDIDATE || (user.Role == UserRole.CANDIDATE && explicitRole != UserRole.RECRUITER && explicitRole != UserRole.INTERVIEWER))
+        {
+            if (user.Role != UserRole.CANDIDATE || user.CompanyId != null)
+            {
+                user.Role = UserRole.CANDIDATE;
+                user.CompanyId = null;
+                user.Company = null;
+                user.Status = UserStatus.ACTIVE;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync(ct);
+                _logger.LogInformation("Preserved/reset user {UserId} ({Email}) as CANDIDATE", user.Id, user.Email);
+            }
+            return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
         }
 
         // Self-healing org & role sync: Link company and correct role if user belongs to an org or created one
@@ -97,7 +160,7 @@ public class UserService : IUserService
             company = await _db.Companies.FirstOrDefaultAsync(c => c.ClerkOrganizationId == orgId, ct);
         }
 
-        if (company == null && !user.CompanyId.HasValue)
+        if (company == null && !user.CompanyId.HasValue && explicitRole != UserRole.CANDIDATE && user.Role != UserRole.CANDIDATE)
         {
             // Check if this user created any company in the DB
             company = await _db.Companies.FirstOrDefaultAsync(c => c.CreatedByUserId == user.Id, ct);
@@ -105,18 +168,21 @@ public class UserService : IUserService
 
         if (company != null)
         {
-            var explicitRole = _currentUserService.Role;
-            var targetRole = explicitRole ?? (user.Role == UserRole.CANDIDATE ? UserRole.RECRUITER : user.Role);
+            var targetRole = explicitRole ?? user.Role;
 
-            // If explicit role is CANDIDATE or user has no orgRole, preserve CANDIDATE role
-            if (explicitRole == UserRole.CANDIDATE || (user.Role == UserRole.CANDIDATE && string.IsNullOrEmpty(_currentUserService.OrgRole)))
+            // If the user created this company or is org admin, they are definitely a RECRUITER
+            if (company.CreatedByUserId == user.Id || _currentUserService.OrgRole == "org:admin" || explicitRole == UserRole.RECRUITER)
             {
-                targetRole = UserRole.CANDIDATE;
+                targetRole = UserRole.RECRUITER;
+            }
+            else if (_currentUserService.OrgRole == "org:member" || explicitRole == UserRole.INTERVIEWER)
+            {
+                targetRole = UserRole.INTERVIEWER;
             }
 
             var shouldUpdate = user.CompanyId != company.Id || user.Role != targetRole || user.Status != UserStatus.ACTIVE || company.CreatedByUserId == null;
 
-            if (shouldUpdate && targetRole != UserRole.CANDIDATE)
+            if (shouldUpdate)
             {
                 user.CompanyId = company.Id;
                 user.Company = company;
@@ -131,8 +197,8 @@ public class UserService : IUserService
                 }
 
                 await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("Self-healed user {UserId} linking to Company {CompanyId} as {Role}",
-                    user.Id, company.Id, user.Role);
+                _logger.LogInformation("Self-healed user {UserId}: Linked to Company {CompanyId} with Role {Role} and Status {Status}",
+                    user.Id, company.Id, user.Role, user.Status);
             }
         }
         else if (_currentUserService.Role.HasValue && _currentUserService.Role.Value != user.Role)

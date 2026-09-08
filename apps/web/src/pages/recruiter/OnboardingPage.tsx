@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreateOrganization, useOrganizationList } from '@clerk/clerk-react'
+import { dark } from '@clerk/themes'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Building2, Sparkles, Users, CheckCircle2, Loader2, User, ArrowRight } from 'lucide-react'
 
@@ -145,15 +146,7 @@ export function OnboardingPage() {
               afterCreateOrganizationUrl="/recruiter/dashboard"
               skipInvitationScreen={true}
               appearance={{
-                elements: {
-                  card: 'glass-panel border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90 text-white',
-                  headerTitle: 'text-white font-bold text-xl',
-                  headerSubtitle: 'text-slate-400 text-xs',
-                  formButtonPrimary: 'bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl transition',
-                  formFieldInput: 'bg-slate-950 border-slate-800 text-white rounded-xl focus:border-purple-500',
-                  formFieldLabel: 'text-slate-300 text-xs font-medium',
-                  footerActionLink: 'text-purple-400 hover:text-purple-300 font-medium text-xs'
-                }
+                baseTheme: dark
               }}
             />
           </div>

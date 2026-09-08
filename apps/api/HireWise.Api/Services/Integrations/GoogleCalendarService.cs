@@ -29,9 +29,11 @@ public class GoogleCalendarService : IGoogleCalendarService
         _enabled = config.GetValue<bool>("GoogleCalendar:Enabled", false)
             || config.GetValue<bool>("GOOGLE_CALENDAR_ENABLED", false);
 
-        _calendarId = config["GoogleCalendar:CalendarId"]
-            ?? config["GOOGLE_CALENDAR_ID"]
-            ?? "primary";
+        _calendarId = !string.IsNullOrWhiteSpace(config["GOOGLE_CALENDAR_ID"])
+            ? config["GOOGLE_CALENDAR_ID"]!
+            : (!string.IsNullOrWhiteSpace(config["GoogleCalendar:CalendarId"])
+                ? config["GoogleCalendar:CalendarId"]!
+                : "primary");
 
         if (_enabled)
         {

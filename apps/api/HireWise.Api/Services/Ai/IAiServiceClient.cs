@@ -24,17 +24,20 @@ public class AiServiceClient : IAiServiceClient
         _config = config;
         _logger = logger;
 
-        var baseUrl = _config["AiService:BaseUrl"]
-            ?? _config["AI_SERVICE_BASE_URL"]
-            ?? _config["AiService__BaseUrl"]
-            ?? "http://localhost:8000";
+        var baseUrl = !string.IsNullOrWhiteSpace(_config["AI_SERVICE_BASE_URL"])
+            ? _config["AI_SERVICE_BASE_URL"]!
+            : (!string.IsNullOrWhiteSpace(_config["AiService:BaseUrl"])
+                ? _config["AiService:BaseUrl"]!
+                : "http://localhost:8000");
 
-        var apiKey = _config["AiService:ApiKey"]
-            ?? _config["AI_SERVICE_API_KEY"]
-            ?? _config["AiService__ApiKey"]
-            ?? "hw_ai_service_secret_key";
+        var apiKey = !string.IsNullOrWhiteSpace(_config["AI_SERVICE_API_KEY"])
+            ? _config["AI_SERVICE_API_KEY"]!
+            : (!string.IsNullOrWhiteSpace(_config["AiService:ApiKey"])
+                ? _config["AiService:ApiKey"]!
+                : "hw_ai_service_secret_key");
 
         _httpClient.BaseAddress = new Uri(baseUrl);
+        _httpClient.DefaultRequestHeaders.Remove("X-Api-Key");
         _httpClient.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }

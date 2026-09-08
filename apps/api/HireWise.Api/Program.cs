@@ -35,8 +35,8 @@ Serilog.Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // 2. Database Context
-var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? builder.Configuration["DATABASE_URL"]
+var rawConnectionString = builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? builder.Configuration["ConnectionStrings__DefaultConnection"]
     ?? "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
 
@@ -49,8 +49,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }));
 
 // 3. Authentication & Clerk JWT Configuration
-var clerkAuthority = builder.Configuration["Clerk:Authority"]
-    ?? builder.Configuration["CLERK_AUTHORITY"]
+var clerkAuthority = builder.Configuration["CLERK_AUTHORITY"]
+    ?? builder.Configuration["Clerk:Authority"]
     ?? builder.Configuration["Clerk__Authority"]
     ?? "https://clerk.hirewise.dev";
 
@@ -60,8 +60,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = clerkAuthority;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = !builder.Environment.IsDevelopment() 
-                || !string.IsNullOrEmpty(builder.Configuration["Clerk:Authority"]) 
+            ValidateIssuer = !builder.Environment.IsDevelopment()
+                || !string.IsNullOrEmpty(builder.Configuration["Clerk:Authority"])
                 || !string.IsNullOrEmpty(builder.Configuration["CLERK_AUTHORITY"]),
             ValidateAudience = false,
             ValidateLifetime = true,
@@ -115,8 +115,8 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 // Integrations (Google Calendar & Resend)
-var resendApiKey = builder.Configuration["Resend:ApiKey"]
-    ?? builder.Configuration["RESEND_API_KEY"]
+var resendApiKey = builder.Configuration["RESEND_API_KEY"]
+    ?? builder.Configuration["Resend:ApiKey"]
     ?? "re_placeholder_key";
 
 builder.Services.AddOptions<ResendClientOptions>().Configure(options =>

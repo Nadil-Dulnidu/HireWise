@@ -2,20 +2,22 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { jobsApi, companiesApi } from '@/lib/api/jobs-api'
+import { applicationsApi } from '@/lib/api/applications-api'
 import {
   Briefcase,
   Bot,
   Activity,
   Plus,
   Building,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react'
 
 export function RecruiterDashboard() {
   const { profile } = useCurrentUser()
   const companyId = profile?.companyId
 
-  const { data: jobsData } = useQuery({
+  const { data: jobsData, isLoading: isJobsLoading } = useQuery({
     queryKey: ['recruiterJobsCount'],
     queryFn: () => jobsApi.getRecruiterJobs({ pageSize: 100 }),
     enabled: !!companyId
@@ -26,6 +28,26 @@ export function RecruiterDashboard() {
     queryFn: () => companiesApi.getCompanyById(companyId!),
     enabled: !!companyId
   })
+
+  const { data: appsData, isLoading: isAppsLoading } = useQuery({
+    queryKey: ['recruiterDashboardApplications', companyId],
+    queryFn: () => applicationsApi.getCompanyApplications({ pageSize: 50 }),
+    enabled: !!companyId
+  })
+
+  const allApplications = appsData?.items || []
+  const evaluationsReadyCount = allApplications.filter(
+    (a) => a.status === 'AI_RECOMMENDED' || a.status === 'AI_REVIEW'
+  ).length
+  const pendingApprovalsCount = allApplications.filter(
+    (a) => a.status === 'RECRUITER_REVIEW' || a.status === 'INTERVIEW_APPROVED'
+  ).length
+  const activeWorkflowsCount = allApplications.filter(
+    (a) => a.status === 'AI_REVIEW'
+  ).length
+  const pendingAiRecommendations = allApplications.filter(
+    (a) => a.status === 'AI_RECOMMENDED' || a.status === 'AI_REVIEW'
+  )
 
   const activeJobsCount = jobsData?.items?.filter((j) => j.status === 'OPEN').length ?? 0
   const totalJobsCount = jobsData?.totalCount ?? 0
@@ -60,10 +82,38 @@ export function RecruiterDashboard() {
       {/* Analytics KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Active Job Openings', value: activeJobsCount.toString(), icon: Briefcase, color: 'text-purple-400', bg: 'bg-purple-500/10', link: '/recruiter/jobs' },
-          { label: 'Total Postings', value: totalJobsCount.toString(), icon: Building, color: 'text-blue-400', bg: 'bg-blue-500/10', link: '/recruiter/jobs' },
-          { label: 'AI Evaluations Ready', value: '5', icon: Bot, color: 'text-pink-400', bg: 'bg-pink-500/10', link: '/recruiter/ai-evaluations' },
-          { label: 'Pending Approvals', value: '3', icon: Activity, color: 'text-amber-400', bg: 'bg-amber-500/10', link: '/recruiter/scheduling' },
+          {
+            label: 'Active Job Openings',
+            value: isJobsLoading ? '...' : activeJobsCount.toString(),
+            icon: Briefcase,
+            color: 'text-purple-400',
+            bg: 'bg-purple-500/10',
+            link: '/recruiter/jobs'
+          },
+          {
+            label: 'Total Postings',
+            value: isJobsLoading ? '...' : totalJobsCount.toString(),
+            icon: Building,
+            color: 'text-blue-400',
+            bg: 'bg-blue-500/10',
+            link: '/recruiter/jobs'
+          },
+          {
+            label: 'AI Evaluations Ready',
+            value: isAppsLoading ? '...' : evaluationsReadyCount.toString(),
+            icon: Bot,
+            color: 'text-pink-400',
+            bg: 'bg-pink-500/10',
+            link: '/recruiter/ai-evaluations'
+          },
+          {
+            label: 'Pending Approvals',
+            value: isAppsLoading ? '...' : pendingApprovalsCount.toString(),
+            icon: Activity,
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10',
+            link: '/recruiter/scheduling'
+          },
         ].map((kpi, i) => (
           <Link key={i} to={kpi.link} className="glass-card p-5 rounded-xl border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
             <div>
@@ -90,33 +140,43 @@ export function RecruiterDashboard() {
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {[
-              { candidate: 'Alex Rivera', role: 'Senior Full Stack Engineer', score: '94%', recommendation: 'Strong Hire', time: '10m ago' },
-              { candidate: 'Elena Rostova', role: 'Staff ML Engineer', score: '89%', recommendation: 'Hire', time: '1h ago' },
-              { candidate: 'David Kim', role: 'DevOps Architect', score: '82%', recommendation: 'Hire', time: '3h ago' },
-            ].map((item, idx) => (
-              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-white">{item.candidate}</span>
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
-                      Score {item.score}
-                    </span>
+          {isAppsLoading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="h-6 w-6 text-pink-400 animate-spin mx-auto" />
+            </div>
+          ) : pendingAiRecommendations.length === 0 ? (
+            <div className="p-8 text-center rounded-xl bg-slate-950/40 border border-slate-800/80 space-y-2">
+              <Bot className="h-8 w-8 text-slate-600 mx-auto" />
+              <p className="text-sm text-slate-400">No pending AI evaluations awaiting review.</p>
+              <p className="text-xs text-slate-500">
+                When candidates submit applications to your open roles, AI multi-agent evaluations will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingAiRecommendations.slice(0, 4).map((item) => (
+                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-white">{item.candidateName}</span>
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+                        {item.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">{item.jobTitle} • Applied {new Date(item.appliedAt).toLocaleDateString()}</p>
                   </div>
-                  <p className="text-xs text-slate-400">{item.role} • {item.time}</p>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/recruiter/applications/${item.id}`}
+                      className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-600/30 transition"
+                    >
+                      View Evaluation
+                    </Link>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/recruiter/ai-evaluations"
-                    className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-600/30 transition"
-                  >
-                    View Evaluation
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right: Quick Links & Monitoring */}
@@ -131,12 +191,16 @@ export function RecruiterDashboard() {
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 font-medium">Active Workflows</span>
-              <span className="text-emerald-400 font-bold">2 Running</span>
+              <span className={activeWorkflowsCount > 0 ? "text-emerald-400 font-bold" : "text-slate-400 font-medium"}>
+                {activeWorkflowsCount > 0 ? `${activeWorkflowsCount} Running` : 'Idle / Ready'}
+              </span>
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-full w-2/3 animate-pulse"></div>
+              <div className={`h-full ${activeWorkflowsCount > 0 ? 'bg-gradient-to-r from-purple-500 to-blue-500 w-2/3 animate-pulse' : 'bg-slate-700 w-full'}`}></div>
             </div>
-            <span className="text-[10px] text-slate-500 block">Agent Step: Question Generator in progress</span>
+            <span className="text-[10px] text-slate-500 block">
+              {activeWorkflowsCount > 0 ? 'Agent Step: Orchestrating evaluation pipeline' : 'System standby • 6 recruitment agents ready'}
+            </span>
           </div>
 
           <Link
@@ -150,3 +214,4 @@ export function RecruiterDashboard() {
     </div>
   )
 }
+

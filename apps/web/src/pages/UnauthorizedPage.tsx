@@ -1,15 +1,29 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { ShieldAlert, ArrowLeft, Home } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 export function UnauthorizedPage() {
-  const { role } = useCurrentUser()
+  const navigate = useNavigate()
+  const { role, changeRole } = useCurrentUser()
+  const [isSwitching, setIsSwitching] = useState(false)
 
   const dashboardPath =
     role === 'ADMIN' ? '/admin/dashboard' :
     role === 'RECRUITER' ? '/recruiter/dashboard' :
     role === 'INTERVIEWER' ? '/interviewer/dashboard' :
     '/candidate/dashboard'
+
+  const handleSwitch = async (newRole: 'CANDIDATE' | 'RECRUITER') => {
+    setIsSwitching(true)
+    try {
+      await changeRole(newRole)
+      navigate(newRole === 'CANDIDATE' ? '/candidate/dashboard' : '/recruiter/dashboard', { replace: true })
+    } catch (err) {
+      console.error('Failed to switch role:', err)
+      setIsSwitching(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0b0f19] px-4 text-white">
@@ -20,7 +34,7 @@ export function UnauthorizedPage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">Access Restricted</h1>
           <p className="text-sm text-slate-400">
-            You do not have the required permissions or role ({role || 'Guest'}) to view this resource.
+            You do not have the required permissions or role (<span className="text-white font-medium">{role || 'Guest'}</span>) to view this resource.
           </p>
         </div>
 
@@ -38,6 +52,32 @@ export function UnauthorizedPage() {
             <Home className="h-4 w-4" /> Return Home
           </Link>
         </div>
+
+        {role && (
+          <div className="pt-2 border-t border-slate-800/60 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <span>Need a different role?</span>
+            {role !== 'CANDIDATE' && (
+              <button
+                type="button"
+                disabled={isSwitching}
+                onClick={() => handleSwitch('CANDIDATE')}
+                className="text-blue-400 hover:text-blue-300 underline font-medium"
+              >
+                Switch to Candidate
+              </button>
+            )}
+            {role !== 'RECRUITER' && (
+              <button
+                type="button"
+                disabled={isSwitching}
+                onClick={() => handleSwitch('RECRUITER')}
+                className="text-purple-400 hover:text-purple-300 underline font-medium"
+              >
+                Switch to Recruiter
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

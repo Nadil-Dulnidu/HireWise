@@ -17,6 +17,8 @@ export function useCurrentUser() {
 
   const metadataRole = (clerkUser?.publicMetadata?.role as string) || (clerkUser?.unsafeMetadata?.role as string)
   const orgId = clerkOrg?.id || clerkUser?.organizationMemberships?.[0]?.organization?.id
+  const localRole = (typeof window !== 'undefined' ? localStorage.getItem('hirewise_selected_role') : null) as UserRole | null
+  const effectiveRole = metadataRole || localRole
 
   const {
     data: profileResponse,
@@ -24,14 +26,15 @@ export function useCurrentUser() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['currentUser', clerkUser?.id, orgId, metadataRole],
+    queryKey: ['currentUser', clerkUser?.id, orgId, effectiveRole],
     queryFn: async () => {
       if (!isSignedIn) return null
       const token = await getToken()
       const headers: Record<string, string> = {}
       if (token) headers['Authorization'] = `Bearer ${token}`
-      if (orgId) headers['X-Clerk-Org-Id'] = orgId
-      if (metadataRole) headers['X-Clerk-Role'] = metadataRole
+      if (orgId && effectiveRole !== 'CANDIDATE') headers['X-Clerk-Org-Id'] = orgId
+      if (effectiveRole) headers['X-Clerk-Role'] = effectiveRole
+      if (clerkUser?.primaryEmailAddress?.emailAddress) headers['X-Clerk-Email'] = clerkUser.primaryEmailAddress.emailAddress
 
       const res = await apiClient.get<ApiResponse<UserProfile>>('/users/me', { headers })
       return res.data.data
@@ -39,13 +42,11 @@ export function useCurrentUser() {
     enabled: isClerkLoaded && !!isSignedIn
   })
 
-  const localRole = (typeof window !== 'undefined' ? localStorage.getItem('hirewise_selected_role') : null) as UserRole | null
-
   // Role hierarchy:
-  // 1. Profile role from DB (if loaded)
-  // 2. Metadata role from Clerk (publicMetadata or unsafeMetadata)
-  // 3. Local role from sign-up choice
-  // 4. Fallback to org membership (RECRUITER) or default CANDIDATE
+  // 1. Backend database profile role (authoritative)
+  // 2. Clerk user metadata role (unsafeMetadata / publicMetadata)
+  // 3. Stored local role from sign-up or explicit switch
+  // 4. Fallback to org membership (if orgId present and no role) or default CANDIDATE
   const role: UserRole = (
     profileResponse?.role
       || (metadataRole as UserRole)

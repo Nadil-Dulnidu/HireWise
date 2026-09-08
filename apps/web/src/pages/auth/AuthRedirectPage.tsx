@@ -24,7 +24,6 @@ export function AuthRedirectPage() {
       // If a role was selected during registration/sign-up, apply and sync it
       if (storedRole && !syncAttempted.current) {
         syncAttempted.current = true
-        localStorage.removeItem('hirewise_selected_role')
 
         try {
           if (clerkUser && clerkUser.unsafeMetadata?.role !== storedRole) {
@@ -36,12 +35,13 @@ export function AuthRedirectPage() {
             })
           }
 
-          if (profile && profile.role !== storedRole) {
-            await apiClient.put('/users/me/role', { role: storedRole })
-            await refetchProfile()
-          }
+          // Always ensure the backend DB is updated to the chosen role
+          await apiClient.put('/users/me/role', { role: storedRole })
+          await refetchProfile()
         } catch (err) {
           console.error('Role sync error during redirect:', err)
+        } finally {
+          localStorage.removeItem('hirewise_selected_role')
         }
 
         if (storedRole === 'CANDIDATE') {
@@ -65,12 +65,21 @@ export function AuthRedirectPage() {
       }
 
       // Existing user role-based redirection
-      if (role === 'ADMIN') {
+      const metadataRole = (clerkUser?.unsafeMetadata?.role as UserRole | undefined) || (clerkUser?.publicMetadata?.role as UserRole | undefined)
+      const effectiveRole = profile?.role || metadataRole || role
+
+      // Candidates NEVER go to recruiter onboarding — send directly to candidate dashboard
+      if (effectiveRole === 'CANDIDATE') {
+        navigate('/candidate/dashboard', { replace: true })
+        return
+      }
+
+      if (effectiveRole === 'ADMIN') {
         navigate('/admin/dashboard', { replace: true })
         return
       }
 
-      if (role === 'RECRUITER') {
+      if (effectiveRole === 'RECRUITER') {
         const hasClerkOrg = (clerkUser?.organizationMemberships && clerkUser.organizationMemberships.length > 0)
         const hasDbCompany = !!profile?.companyId
 
@@ -82,12 +91,12 @@ export function AuthRedirectPage() {
         return
       }
 
-      if (role === 'INTERVIEWER') {
+      if (effectiveRole === 'INTERVIEWER') {
         navigate('/interviewer/dashboard', { replace: true })
         return
       }
 
-      // Default to candidate dashboard
+      // Fallback: Default to candidate dashboard
       navigate('/candidate/dashboard', { replace: true })
     }
 
