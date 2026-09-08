@@ -3,7 +3,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Info,
-  Sparkles,
+  Bot,
   X,
   ExternalLink
 } from 'lucide-react'
@@ -38,45 +38,45 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const config = {
     success: {
       icon: CheckCircle,
-      iconColor: 'text-emerald-400',
-      borderColor: 'border-emerald-500/30',
-      glow: 'shadow-emerald-500/10',
-      badgeBg: 'bg-emerald-500/20 text-emerald-300'
+      iconColor: 'text-emerald-600',
+      borderColor: 'border-emerald-200',
+      glow: 'shadow-emerald-500/5',
+      badgeBg: 'bg-emerald-50 text-emerald-700'
     },
     info: {
       icon: Info,
-      iconColor: 'text-blue-400',
-      borderColor: 'border-blue-500/30',
-      glow: 'shadow-blue-500/10',
-      badgeBg: 'bg-blue-500/20 text-blue-300'
+      iconColor: 'text-blue-600',
+      borderColor: 'border-blue-200',
+      glow: 'shadow-blue-500/5',
+      badgeBg: 'bg-blue-50 text-blue-700'
     },
     warning: {
       icon: AlertTriangle,
-      iconColor: 'text-amber-400',
-      borderColor: 'border-amber-500/30',
-      glow: 'shadow-amber-500/10',
-      badgeBg: 'bg-amber-500/20 text-amber-300'
+      iconColor: 'text-amber-600',
+      borderColor: 'border-amber-200',
+      glow: 'shadow-amber-500/5',
+      badgeBg: 'bg-amber-50 text-amber-700'
     },
     error: {
       icon: AlertTriangle,
-      iconColor: 'text-rose-400',
-      borderColor: 'border-rose-500/30',
-      glow: 'shadow-rose-500/10',
-      badgeBg: 'bg-rose-500/20 text-rose-300'
+      iconColor: 'text-rose-600',
+      borderColor: 'border-rose-200',
+      glow: 'shadow-rose-500/5',
+      badgeBg: 'bg-rose-50 text-rose-700'
     },
     ai: {
-      icon: Sparkles,
-      iconColor: 'text-purple-400',
-      borderColor: 'border-purple-500/40',
-      glow: 'shadow-purple-500/20',
-      badgeBg: 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-purple-300'
+      icon: Bot,
+      iconColor: 'text-indigo-600',
+      borderColor: 'border-indigo-200',
+      glow: 'shadow-indigo-500/5',
+      badgeBg: 'bg-indigo-50 text-indigo-700'
     }
   }[type] || {
     icon: Info,
-    iconColor: 'text-blue-400',
-    borderColor: 'border-blue-500/30',
-    glow: 'shadow-blue-500/10',
-    badgeBg: 'bg-blue-500/20 text-blue-300'
+    iconColor: 'text-blue-600',
+    borderColor: 'border-blue-200',
+    glow: 'shadow-blue-500/5',
+    badgeBg: 'bg-blue-50 text-blue-700'
   }
 
   const Icon = config.icon
@@ -85,7 +85,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
     <div
       role="alert"
       id={`toast-${id}`}
-      className={`pointer-events-auto flex items-start gap-3.5 p-4 rounded-xl border backdrop-blur-xl bg-slate-900/90 text-slate-100 shadow-xl ${config.borderColor} ${config.glow} transition-all duration-300 animate-in slide-in-from-top-3 fade-in`}
+      className={`pointer-events-auto flex items-start gap-3.5 p-4 rounded-xl border bg-white text-slate-900 shadow-lg ${config.borderColor} ${config.glow} transition-all duration-300 animate-in slide-in-from-top-3 fade-in`}
     >
       <div className="flex-shrink-0 mt-0.5">
         <Icon className={`w-5 h-5 ${config.iconColor}`} />
@@ -93,11 +93,11 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 
       <div className="flex-1 min-w-0 pr-1">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm font-semibold tracking-tight text-white line-clamp-1">
+          <h4 className="text-sm font-semibold tracking-tight text-slate-900 line-clamp-1">
             {title}
           </h4>
         </div>
-        <p className="mt-1 text-xs text-slate-300 line-clamp-2 leading-relaxed">
+        <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">
           {message}
         </p>
 
@@ -106,7 +106,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
             <Link
               to={link}
               onClick={onDismiss}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               <span>View details</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -118,7 +118,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="flex-shrink-0 text-slate-400 hover:text-slate-200 transition-colors p-1 -mr-1 -mt-1 rounded-lg hover:bg-slate-800/60"
+        className="flex-shrink-0 text-slate-400 hover:text-slate-700 transition-colors p-1 -mr-1 -mt-1 rounded-lg hover:bg-slate-100"
       >
         <X className="w-4 h-4" />
       </button>

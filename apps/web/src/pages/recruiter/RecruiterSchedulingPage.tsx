@@ -192,23 +192,23 @@ export function RecruiterSchedulingPage() {
       {/* Back Link */}
       <Link
         to="/recruiter/interviews"
-        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition font-medium"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Interviews
       </Link>
 
       {/* Header */}
-      <div className="glass-card p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
-          <Calendar className="h-7 w-7 text-purple-400" /> Schedule Technical Interview
+      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
+          <Calendar className="h-7 w-7 text-indigo-600" /> Schedule Technical Interview
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           Match an approved candidate with an assigned technical evaluator, cross-check their availability, and dispatch calendar invites.
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
           <AlertCircle className="h-4 w-4 shrink-0" /> {errorMsg}
         </div>
       )}
@@ -217,24 +217,24 @@ export function RecruiterSchedulingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Form Column */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="glass-card p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-5">
-            <h3 className="text-base font-bold text-white">Interview Configuration</h3>
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+            <h3 className="text-base font-bold text-slate-900">Interview Configuration</h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Application Selector */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Candidate Application
                 </label>
                 {appsLoading ? (
-                  <div className="p-3 text-xs text-slate-400 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-purple-400" /> Loading applications...
+                  <div className="p-3 text-xs text-slate-500 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> Loading applications...
                   </div>
                 ) : (
                   <select
                     value={selectedAppId}
                     onChange={(e) => setSelectedAppId(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   >
                     <option value="">-- Select an Approved Application --</option>
@@ -252,7 +252,7 @@ export function RecruiterSchedulingPage() {
                   </select>
                 )}
                 {eligibleApps.length === 0 && !appsLoading && (
-                  <p className="text-[11px] text-amber-400 mt-1.5 flex items-center gap-1">
+                  <p className="text-[11px] text-amber-700 mt-1.5 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" /> All approved candidates have already been scheduled for interviews.
                   </p>
                 )}
@@ -261,26 +261,26 @@ export function RecruiterSchedulingPage() {
               {/* Interviewer Selector */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-semibold text-slate-700">
                     Assigned Interviewer
                   </label>
                   <Link
                     to="/recruiter/team"
-                    className="text-[11px] text-purple-400 hover:text-purple-300 inline-flex items-center gap-1"
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 font-medium"
                   >
                     <UserPlus className="h-3 w-3" /> Manage Staff
                   </Link>
                 </div>
                 {interviewersLoading ? (
-                  <div className="p-3 text-xs text-slate-400 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-purple-400" /> Loading interviewers...
+                  <div className="p-3 text-xs text-slate-500 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> Loading interviewers...
                   </div>
                 ) : interviewers.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center justify-between">
                     <span>No active interviewers assigned to your organization yet.</span>
                     <Link
                       to="/recruiter/team"
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 text-[11px] font-medium transition"
+                      className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200 text-[11px] font-medium transition"
                     >
                       Invite Interviewer
                     </Link>
@@ -289,7 +289,7 @@ export function RecruiterSchedulingPage() {
                   <select
                     value={selectedInterviewerId}
                     onChange={(e) => setSelectedInterviewerId(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   >
                     <option value="">-- Select Company Interviewer ({interviewers.length} available) --</option>
@@ -304,36 +304,36 @@ export function RecruiterSchedulingPage() {
 
               {/* Date & Time */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Interview Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Start Time (UTC)</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Start Time (UTC)</label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">End Time (UTC)</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">End Time (UTC)</label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   />
                 </div>
@@ -341,11 +341,11 @@ export function RecruiterSchedulingPage() {
 
               {/* Outside Availability Live Warning */}
               {isOutsideAvailability && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
                   <div className="space-y-0.5">
                     <span className="font-semibold block">Outside Interviewer's Published Hours</span>
-                    <span className="text-[11px] text-amber-300/80">
+                    <span className="text-[11px] text-amber-700">
                       The selected time window ({startTime} – {endTime} UTC on {startDate}) does not match this interviewer's availability schedule. Click one of the slots on the right to apply.
                     </span>
                   </div>
@@ -354,7 +354,7 @@ export function RecruiterSchedulingPage() {
 
               {/* Meeting Link */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Video Conference URL
                 </label>
                 <div className="relative">
@@ -364,14 +364,14 @@ export function RecruiterSchedulingPage() {
                     value={meetingLink}
                     onChange={(e) => setMeetingLink(e.target.value)}
                     placeholder="https://meet.google.com/xyz-abcd-efg"
-                    className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               {/* Notes */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Preparation Instructions & Notes
                 </label>
                 <textarea
@@ -379,14 +379,14 @@ export function RecruiterSchedulingPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Focus on backend system design and concurrency handling..."
-                  className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={createInterviewMutation.isPending || isOutsideAvailability}
-                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-purple-950 mt-2"
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm mt-2 cursor-pointer"
               >
                 {createInterviewMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -401,52 +401,52 @@ export function RecruiterSchedulingPage() {
 
         {/* Live Availability Sidebar */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Clock className="h-4 w-4 text-purple-400" /> Interviewer Availability Slots
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-indigo-600" /> Interviewer Availability Slots
             </h3>
 
             {!selectedInterviewerId ? (
               <div className="p-8 text-center text-xs text-slate-400 space-y-1">
-                <User className="h-6 w-6 text-slate-500 mx-auto mb-2" />
+                <User className="h-6 w-6 text-slate-300 mx-auto mb-2" />
                 <p>Select an interviewer on the left to view their weekly recurring slots.</p>
               </div>
             ) : availabilityLoading ? (
               <div className="p-8 text-center">
-                <Loader2 className="h-5 w-5 text-purple-400 animate-spin mx-auto" />
+                <Loader2 className="h-5 w-5 text-indigo-600 animate-spin mx-auto" />
               </div>
             ) : interviewerAvailability.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400 space-y-1 bg-slate-950/40 rounded-xl border border-slate-800">
-                <AlertCircle className="h-5 w-5 text-amber-400 mx-auto mb-1" />
-                <p className="font-semibold text-slate-300">No custom slots published</p>
+              <div className="p-6 text-center text-xs text-slate-500 space-y-1 bg-slate-50 rounded-xl border border-slate-200">
+                <AlertCircle className="h-5 w-5 text-amber-500 mx-auto mb-1" />
+                <p className="font-semibold text-slate-800">No custom slots published</p>
                 <p className="text-[11px] text-slate-500">
                   This interviewer has not yet configured specific availability slots. Standard business hours may apply.
                 </p>
               </div>
             ) : (
               <div className="space-y-2 text-xs">
-                <p className="text-[11px] text-slate-400 mb-2">
+                <p className="text-[11px] text-slate-500 mb-2">
                   Click <strong>Apply</strong> on any slot below to automatically set the interview date & time.
                 </p>
                 {interviewerAvailability.map((slot) => (
                   <div
                     key={slot.id}
-                    className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 flex items-center justify-between hover:border-purple-500/40 transition group"
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-indigo-300 transition group"
                   >
                     <div>
-                      <div className="font-semibold text-purple-300">
+                      <div className="font-semibold text-indigo-700">
                         {getDayLabel(slot.dayOfWeek, false)}
                       </div>
-                      <div className="text-white font-medium text-[11px] mt-0.5">
+                      <div className="text-slate-800 font-medium text-[11px] mt-0.5">
                         {formatTimeDisplay(slot.startTime)} – {formatTimeDisplay(slot.endTime)}
-                        <span className="text-[10px] text-slate-500 ml-1.5">({slot.timezone})</span>
+                        <span className="text-[10px] text-slate-400 ml-1.5">({slot.timezone})</span>
                       </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleApplySlot(slot)}
-                      className="px-2.5 py-1 rounded-lg bg-purple-600/20 group-hover:bg-purple-600 text-purple-300 group-hover:text-white border border-purple-500/30 text-[11px] font-medium transition"
+                      className="px-2.5 py-1 rounded-lg bg-indigo-50 group-hover:bg-indigo-600 text-indigo-700 group-hover:text-white border border-indigo-200 text-[11px] font-medium transition cursor-pointer"
                     >
                       Apply
                     </button>

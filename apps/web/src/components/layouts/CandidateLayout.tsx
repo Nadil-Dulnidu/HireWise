@@ -23,7 +23,7 @@ export function CandidateLayout() {
     <DashboardLayout
       navItems={candidateNav}
       roleTitle="Candidate Portal"
-      roleColor="text-blue-400"
+      roleColor="text-blue-600"
     />
   )
 }

@@ -18,7 +18,7 @@ export function InterviewerLayout() {
     <DashboardLayout
       navItems={interviewerNav}
       roleTitle="Interviewer Desk"
-      roleColor="text-emerald-400"
+      roleColor="text-emerald-600"
     />
   )
 }

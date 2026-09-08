@@ -88,7 +88,6 @@ export function RecruiterCompanyPage() {
     }
   })
 
-
   // Delete Department Mutation
   const deleteDeptMutation = useMutation({
     mutationFn: (id: string) => departmentsApi.deleteDepartment(id),
@@ -103,18 +102,18 @@ export function RecruiterCompanyPage() {
   if (isLoadingCompany || isLoadingDepts) {
     return (
       <div className="py-24 flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
-        <p className="text-sm text-slate-400">Loading company profile...</p>
+        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+        <p className="text-sm text-slate-500">Loading company profile...</p>
       </div>
     )
   }
 
   if (!companyId) {
     return (
-      <div className="glass-card p-12 rounded-2xl border border-slate-800 text-center space-y-3 max-w-lg mx-auto">
-        <Building className="h-10 w-10 text-purple-400 mx-auto" />
-        <h2 className="text-lg font-bold text-white">No Company Assigned</h2>
-        <p className="text-xs text-slate-400">
+      <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3 max-w-lg mx-auto">
+        <Building className="h-10 w-10 text-blue-600 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-900">No Company Assigned</h2>
+        <p className="text-xs text-slate-500">
           Your recruiter account is not yet assigned to an active company tenant. Please contact platform administrators.
         </p>
       </div>
@@ -122,14 +121,14 @@ export function RecruiterCompanyPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl pb-12">
+    <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Company & Organization Workspace
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-600 mt-1">
             Manage your organization profile, locations, brand overview, and internal engineering departments.
           </p>
         </div>
@@ -137,7 +136,7 @@ export function RecruiterCompanyPage() {
         {!isEditingCompany && (
           <button
             onClick={startEditingCompany}
-            className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2.5 text-xs font-semibold text-white transition shadow-lg shadow-purple-600/25 shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm shrink-0"
           >
             <Edit2 className="h-4 w-4" /> Edit Company Profile
           </button>
@@ -145,15 +144,15 @@ export function RecruiterCompanyPage() {
       </div>
 
       {/* Section 1: Company Profile Info / Form */}
-      <div className="glass-card p-6 md:p-8 rounded-3xl border border-slate-800 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200">
               <Building className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">{company?.name || 'Company Profile'}</h2>
-              <p className="text-xs text-slate-400">Multi-tenant Company ID: {companyId}</p>
+              <h2 className="text-lg font-bold text-slate-900">{company?.name || 'Company Profile'}</h2>
+              <p className="text-xs text-slate-500">Multi-tenant Company ID: {companyId}</p>
             </div>
           </div>
         </div>
@@ -168,67 +167,67 @@ export function RecruiterCompanyPage() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Company Name</label>
+                <label className="text-xs font-semibold text-slate-700">Company Name</label>
                 <input
                   type="text"
                   required
                   value={companyForm.name}
                   onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Industry</label>
+                <label className="text-xs font-semibold text-slate-700">Industry</label>
                 <input
                   type="text"
                   placeholder="e.g. Artificial Intelligence, Cloud Infrastructure"
                   value={companyForm.industry}
                   onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Company Size</label>
+                <label className="text-xs font-semibold text-slate-700">Company Size</label>
                 <input
                   type="text"
                   placeholder="e.g. 50-100 employees, 500-1000"
                   value={companyForm.size}
                   onChange={(e) => setCompanyForm({ ...companyForm, size: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Headquarters / Location</label>
+                <label className="text-xs font-semibold text-slate-700">Headquarters / Location</label>
                 <input
                   type="text"
                   placeholder="e.g. San Francisco, CA / Remote"
                   value={companyForm.location}
                   onChange={(e) => setCompanyForm({ ...companyForm, location: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
 
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Website URL</label>
+                <label className="text-xs font-semibold text-slate-700">Website URL</label>
                 <input
                   type="url"
                   placeholder="https://yourcompany.com"
                   value={companyForm.website}
                   onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
 
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Company Overview</label>
+                <label className="text-xs font-semibold text-slate-700">Company Overview</label>
                 <textarea
                   rows={3}
                   value={companyForm.description}
                   onChange={(e) => setCompanyForm({ ...companyForm, description: e.target.value })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 p-3 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
             </div>
@@ -237,14 +236,14 @@ export function RecruiterCompanyPage() {
               <button
                 type="button"
                 onClick={() => setIsEditingCompany(false)}
-                className="rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 text-xs font-semibold text-slate-300"
+                className="rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={updateCompanyMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-semibold text-white transition"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2 text-xs font-semibold text-white transition shadow-sm"
               >
                 {updateCompanyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save Company Details
@@ -253,40 +252,40 @@ export function RecruiterCompanyPage() {
           </form>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-4 md:col-span-2 text-sm text-slate-300 leading-relaxed">
+            <div className="space-y-4 md:col-span-2 text-sm text-slate-600 leading-relaxed">
               <p>{company?.description || 'No company description provided.'}</p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
                 <div>
-                  <span className="text-slate-500 block">Industry</span>
-                  <span className="text-slate-200 font-semibold mt-0.5 block">{company?.industry || 'Technology'}</span>
+                  <span className="text-slate-400 block">Industry</span>
+                  <span className="text-slate-900 font-semibold mt-0.5 block">{company?.industry || 'Technology'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Company Size</span>
-                  <span className="text-slate-200 font-semibold mt-0.5 block">{company?.size || 'Not specified'}</span>
+                  <span className="text-slate-400 block">Company Size</span>
+                  <span className="text-slate-900 font-semibold mt-0.5 block">{company?.size || 'Not specified'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Headquarters</span>
-                  <span className="text-slate-200 font-semibold mt-0.5 block">{company?.location || 'Remote'}</span>
+                  <span className="text-slate-400 block">Headquarters</span>
+                  <span className="text-slate-900 font-semibold mt-0.5 block">{company?.location || 'Remote'}</span>
                 </div>
               </div>
             </div>
 
             {/* Quick stats panel */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-3 bg-slate-950/40">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Tenant Metrics</h3>
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Tenant Metrics</h3>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Total Employees</span>
-                  <span className="font-bold text-white">{company?.employeeCount || 1}</span>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500">Total Employees</span>
+                  <span className="font-bold text-slate-900">{company?.employeeCount || 1}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Active Departments</span>
-                  <span className="font-bold text-purple-400">{departments.length}</span>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500">Active Departments</span>
+                  <span className="font-bold text-blue-600">{departments.length}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-400">Active Job Openings</span>
-                  <span className="font-bold text-emerald-400">{company?.activeJobCount || 0}</span>
+                  <span className="text-slate-500">Active Job Openings</span>
+                  <span className="font-bold text-emerald-600">{company?.activeJobCount || 0}</span>
                 </div>
               </div>
 
@@ -295,9 +294,9 @@ export function RecruiterCompanyPage() {
                   href={company.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 px-3 py-2 text-xs font-semibold text-slate-300 transition"
+                  className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition shadow-xs"
                 >
-                  <Globe className="h-3.5 w-3.5 text-purple-400" /> Visit Public Website
+                  <Globe className="h-3.5 w-3.5 text-blue-600" /> Visit Public Website
                 </a>
               )}
             </div>
@@ -306,21 +305,21 @@ export function RecruiterCompanyPage() {
       </div>
 
       {/* Section 2: Department Management */}
-      <div className="glass-card p-6 md:p-8 rounded-3xl border border-slate-800 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200">
               <Layers className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Engineering & Product Departments</h2>
-              <p className="text-xs text-slate-400">Organize job postings and interviewer assignments by business domain.</p>
+              <h2 className="text-lg font-bold text-slate-900">Engineering & Product Departments</h2>
+              <p className="text-xs text-slate-500">Organize job postings and interviewer assignments by business domain.</p>
             </div>
           </div>
 
           <button
             onClick={() => setIsAddingDept(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition shadow-md shadow-blue-600/25"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition shadow-sm"
           >
             <Plus className="h-4 w-4" /> Add Department
           </button>
@@ -333,9 +332,9 @@ export function RecruiterCompanyPage() {
               e.preventDefault()
               createDeptMutation.mutate()
             }}
-            className="glass-panel p-5 rounded-2xl border border-blue-500/30 bg-blue-500/5 space-y-3"
+            className="bg-blue-50/50 p-5 rounded-2xl border border-blue-200 space-y-3"
           >
-            <h3 className="text-sm font-bold text-white">Create New Department</h3>
+            <h3 className="text-sm font-bold text-slate-900">Create New Department</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 type="text"
@@ -343,28 +342,28 @@ export function RecruiterCompanyPage() {
                 placeholder="Department Name (e.g. Applied AI Research)"
                 value={deptForm.name}
                 onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })}
-                className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
               />
               <input
                 type="text"
                 placeholder="Description / Focus Area (Optional)"
                 value={deptForm.description}
                 onChange={(e) => setDeptForm({ ...deptForm, description: e.target.value })}
-                className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
               />
             </div>
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setIsAddingDept(false)}
-                className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={createDeptMutation.isPending}
-                className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-1.5 text-xs font-semibold text-white transition"
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-1.5 text-xs font-semibold text-white transition shadow-sm"
               >
                 {createDeptMutation.isPending ? 'Creating...' : 'Save Department'}
               </button>
@@ -378,22 +377,22 @@ export function RecruiterCompanyPage() {
             {departments.map((dept) => (
               <div
                 key={dept.id}
-                className="glass-card p-5 rounded-2xl border border-slate-800 hover:border-slate-700 transition flex flex-col justify-between space-y-4"
+                className="bg-slate-50 p-5 rounded-2xl border border-slate-200 hover:border-slate-300 transition flex flex-col justify-between space-y-4 shadow-xs"
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">{dept.name}</h3>
-                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
+                    <h3 className="font-bold text-slate-900 text-sm">{dept.name}</h3>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
                       {dept.activeJobCount} active jobs
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 line-clamp-2">
+                  <p className="text-xs text-slate-500 line-clamp-2">
                     {dept.description || 'General domain and development scope.'}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-900 text-xs">
-                  <span className="text-[11px] text-slate-500">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+                  <span className="text-[11px] text-slate-400">
                     Created {new Date(dept.createdAt).toLocaleDateString()}
                   </span>
                   <button
@@ -402,7 +401,7 @@ export function RecruiterCompanyPage() {
                         deleteDeptMutation.mutate(dept.id)
                       }
                     }}
-                    className="p-1 text-red-400 hover:text-red-300 rounded hover:bg-red-500/10 transition"
+                    className="p-1 text-rose-600 hover:text-rose-700 rounded hover:bg-rose-50 transition"
                     title="Delete Department"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -412,7 +411,7 @@ export function RecruiterCompanyPage() {
             ))}
           </div>
         ) : (
-          <div className="p-8 text-center text-slate-400 text-xs bg-slate-950/30 rounded-2xl border border-slate-800">
+          <div className="p-8 text-center text-slate-500 text-xs bg-slate-50 rounded-2xl border border-slate-200">
             No specific departments created yet. All jobs will be filed under company root.
           </div>
         )}
