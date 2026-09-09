@@ -90,10 +90,6 @@ export function PublicLayout() {
               <p className="text-xs text-slate-500 leading-relaxed">
                 Autonomous multi-agent technical recruitment platform with deterministic evaluation, structured rubric validation, and complete hiring manager control.
               </p>
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md w-fit border border-emerald-200">
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                All Systems Operational
-              </div>
             </div>
 
             {/* Platform links */}

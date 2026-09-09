@@ -169,12 +169,6 @@ export function DashboardLayout({ navItems, roleTitle, roleColor }: DashboardLay
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Real-time Status Badge */}
-              <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                API & AI Connected
-              </div>
-
               {/* Notification Bell Button & Dropdown */}
               <div className="relative">
                 <button
