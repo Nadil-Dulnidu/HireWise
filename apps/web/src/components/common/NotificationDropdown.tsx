@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Bell,
-  Sparkles,
+  Cpu,
   Calendar,
   FileText,
   CheckCheck,
@@ -140,14 +140,14 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-800/80 bg-slate-900/50">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-slate-50/70">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-white">Notifications</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
           {unreadCount > 0 && (
-            <span className="flex h-5 items-center justify-center rounded-full bg-blue-500/20 px-2 text-[11px] font-bold text-blue-400 border border-blue-500/30">
+            <span className="flex h-5 items-center justify-center rounded-full bg-blue-100 px-2 text-[11px] font-bold text-blue-700 border border-blue-200">
               {unreadCount} new
             </span>
           )}
@@ -157,7 +157,7 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
           <button
             onClick={() => markAllAsReadMutation.mutate()}
             disabled={markAllAsReadMutation.isPending}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-400 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 transition-colors disabled:opacity-50 font-medium"
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span>Mark all read</span>
@@ -166,29 +166,29 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
       </div>
 
       {/* Notifications List */}
-      <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-800/50">
+      <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
             <span className="text-xs">Loading notifications...</span>
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-            <AlertTriangle className="w-6 h-6 text-amber-400 mb-2" />
-            <p className="text-xs text-slate-300">Could not load notifications</p>
+            <AlertTriangle className="w-6 h-6 text-amber-500 mb-2" />
+            <p className="text-xs text-slate-600">Could not load notifications</p>
             <button
               onClick={() => refetch()}
-              className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline"
+              className="mt-2 text-xs text-blue-600 hover:text-blue-700 underline font-medium"
             >
               Retry
             </button>
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800/60 text-slate-500 mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
               <Bell className="w-6 h-6 text-slate-400" />
             </div>
-            <p className="text-sm font-medium text-slate-300">All caught up!</p>
+            <p className="text-sm font-semibold text-slate-800">All caught up!</p>
             <p className="text-xs text-slate-500 mt-1 max-w-[220px]">
               You have no new notifications right now.
             </p>
@@ -219,38 +219,38 @@ function NotificationItem({
   const config = {
     APPLICATION_UPDATE: {
       icon: FileText,
-      iconColor: 'text-blue-400',
-      bg: 'bg-blue-500/10'
+      iconColor: 'text-blue-600',
+      bg: 'bg-blue-50 border border-blue-100'
     },
     INTERVIEW_SCHEDULED: {
       icon: Calendar,
-      iconColor: 'text-emerald-400',
-      bg: 'bg-emerald-500/10'
+      iconColor: 'text-emerald-600',
+      bg: 'bg-emerald-50 border border-emerald-100'
     },
     AI_EVALUATION_COMPLETE: {
-      icon: Sparkles,
-      iconColor: 'text-purple-400',
-      bg: 'bg-purple-500/10'
+      icon: Cpu,
+      iconColor: 'text-purple-600',
+      bg: 'bg-purple-50 border border-purple-100'
     },
     APPROVAL_REQUIRED: {
       icon: AlertTriangle,
-      iconColor: 'text-amber-400',
-      bg: 'bg-amber-500/10'
+      iconColor: 'text-amber-600',
+      bg: 'bg-amber-50 border border-amber-100'
     },
     FEEDBACK_SUBMITTED: {
       icon: CheckCircle2,
-      iconColor: 'text-emerald-400',
-      bg: 'bg-emerald-500/10'
+      iconColor: 'text-emerald-600',
+      bg: 'bg-emerald-50 border border-emerald-100'
     },
     GENERAL: {
       icon: Bell,
-      iconColor: 'text-slate-400',
-      bg: 'bg-slate-800'
+      iconColor: 'text-slate-500',
+      bg: 'bg-slate-100'
     }
   }[type] || {
     icon: Bell,
-    iconColor: 'text-slate-400',
-    bg: 'bg-slate-800'
+    iconColor: 'text-slate-500',
+    bg: 'bg-slate-100'
   }
 
   const Icon = config.icon
@@ -262,7 +262,7 @@ function NotificationItem({
     <div
       onClick={onClick}
       className={`group relative flex items-start gap-3 p-3.5 cursor-pointer transition-colors ${
-        !isRead ? 'bg-blue-950/20 hover:bg-blue-900/30' : 'hover:bg-slate-800/40'
+        !isRead ? 'bg-blue-50/60 hover:bg-blue-50/90' : 'hover:bg-slate-50'
       }`}
     >
       {/* Type Icon */}
@@ -273,19 +273,19 @@ function NotificationItem({
       {/* Content */}
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center justify-between gap-1.5">
-          <h4 className={`text-xs font-semibold truncate ${!isRead ? 'text-white' : 'text-slate-300'}`}>
+          <h4 className={`text-xs font-semibold truncate ${!isRead ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>
             {title}
           </h4>
-          <span className="text-[10px] text-slate-500 shrink-0">{timeAgo}</span>
+          <span className="text-[10px] text-slate-400 shrink-0">{timeAgo}</span>
         </div>
-        <p className="text-xs text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">
+        <p className="text-xs text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
           {message}
         </p>
       </div>
 
       {/* Unread indicator dot */}
       {!isRead && (
-        <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1.5 shadow-sm shadow-blue-500/50"></span>
+        <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5"></span>
       )}
     </div>
   )

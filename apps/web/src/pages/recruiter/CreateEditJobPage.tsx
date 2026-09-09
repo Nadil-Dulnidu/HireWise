@@ -3,15 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { jobsApi, departmentsApi } from '@/lib/api/jobs-api'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import type { EmploymentType, ExperienceLevel, JobStatus } from '@/types/jobs'
+import type { EmploymentType, ExperienceLevel, JobStatus, Department } from '@/types/jobs'
 import {
   Briefcase,
   ArrowLeft,
   Save,
   DollarSign,
-  Sparkles,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileCheck2
 } from 'lucide-react'
 
 export function CreateEditJobPage() {
@@ -30,27 +30,26 @@ export function CreateEditJobPage() {
     salaryMin: 120000,
     salaryMax: 160000,
     salaryCurrency: 'USD',
-    status: 'OPEN' as JobStatus,
     applicationDeadline: '',
     description: '',
-    requirements: ''
+    requirements: '',
+    status: 'OPEN' as JobStatus
   })
 
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Fetch existing job data if editing
-  const { data: existingJob, isLoading: isLoadingJob } = useQuery({
-    queryKey: ['jobEdit', id],
-    queryFn: () => jobsApi.getJobById(id!),
-    enabled: isEditing
+  // Fetch departments for company
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', profile?.companyId],
+    queryFn: () => departmentsApi.getDepartments(profile?.companyId!),
+    enabled: !!profile?.companyId
   })
 
-  // Fetch departments for current company
-  const companyId = profile?.companyId || existingJob?.companyId
-  const { data: departments = [] } = useQuery({
-    queryKey: ['departments', companyId],
-    queryFn: () => departmentsApi.getDepartments(companyId!),
-    enabled: !!companyId
+  // Fetch job if editing
+  const { data: existingJob, isLoading: isLoadingJob } = useQuery({
+    queryKey: ['job', id],
+    queryFn: () => jobsApi.getJobById(id!),
+    enabled: isEditing
   })
 
   useEffect(() => {
@@ -64,56 +63,47 @@ export function CreateEditJobPage() {
         salaryMin: existingJob.salaryMin || 0,
         salaryMax: existingJob.salaryMax || 0,
         salaryCurrency: existingJob.salaryCurrency || 'USD',
-        status: existingJob.status,
-        applicationDeadline: existingJob.applicationDeadline
-          ? new Date(existingJob.applicationDeadline).toISOString().split('T')[0]
-          : '',
+        applicationDeadline: existingJob.applicationDeadline ? existingJob.applicationDeadline.split('T')[0] : '',
         description: existingJob.description,
-        requirements: existingJob.requirements
+        requirements: existingJob.requirements,
+        status: existingJob.status
       })
     }
   }, [existingJob])
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const payload = {
+        title: formData.title.trim(),
+        departmentId: formData.departmentId || undefined,
+        location: formData.location.trim(),
+        employmentType: formData.employmentType,
+        experienceLevel: formData.experienceLevel,
+        salaryMin: formData.salaryMin ? Number(formData.salaryMin) : undefined,
+        salaryMax: formData.salaryMax ? Number(formData.salaryMax) : undefined,
+        salaryCurrency: formData.salaryCurrency.trim().toUpperCase(),
+        applicationDeadline: formData.applicationDeadline ? new Date(formData.applicationDeadline).toISOString() : undefined,
+        description: formData.description.trim(),
+        requirements: formData.requirements.trim()
+      }
+
       if (isEditing) {
-        return jobsApi.updateJob(id!, {
-          title: formData.title,
-          description: formData.description,
-          requirements: formData.requirements,
-          location: formData.location,
-          employmentType: formData.employmentType,
-          experienceLevel: formData.experienceLevel,
-          salaryMin: formData.salaryMin || null,
-          salaryMax: formData.salaryMax || null,
-          salaryCurrency: formData.salaryCurrency,
-          departmentId: formData.departmentId || null,
-          applicationDeadline: formData.applicationDeadline ? new Date(formData.applicationDeadline).toISOString() : null
-        })
+        return jobsApi.updateJob(id!, payload)
       } else {
         return jobsApi.createJob({
-          title: formData.title,
-          description: formData.description,
-          requirements: formData.requirements,
-          location: formData.location,
-          employmentType: formData.employmentType,
-          experienceLevel: formData.experienceLevel,
-          salaryMin: formData.salaryMin || null,
-          salaryMax: formData.salaryMax || null,
-          salaryCurrency: formData.salaryCurrency,
-          status: formData.status,
-          departmentId: formData.departmentId || null,
-          applicationDeadline: formData.applicationDeadline ? new Date(formData.applicationDeadline).toISOString() : null
+          ...payload,
+          status: formData.status
         })
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recruiterJobs'] })
       queryClient.invalidateQueries({ queryKey: ['publicJobs'] })
+      queryClient.invalidateQueries({ queryKey: ['public-jobs'] })
       navigate('/recruiter/jobs')
     },
     onError: (err: any) => {
-      setFormError(err?.response?.data?.error || 'Failed to save job posting.')
+      setFormError(err?.response?.data?.error || err.message || 'Failed to save job.')
     }
   })
 
@@ -140,8 +130,8 @@ export function CreateEditJobPage() {
   if (isEditing && isLoadingJob) {
     return (
       <div className="py-24 flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
-        <p className="text-sm text-slate-400">Loading job specifications...</p>
+        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+        <p className="text-sm text-slate-500">Loading job specifications...</p>
       </div>
     )
   }
@@ -152,7 +142,7 @@ export function CreateEditJobPage() {
       <div>
         <Link
           to="/recruiter/jobs"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Job Management
         </Link>
@@ -160,33 +150,33 @@ export function CreateEditJobPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             {isEditing ? 'Edit Job Posting' : 'Create New Job Opening'}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-600 mt-1">
             Specify technical requirements, compensation, and department details for AI evaluation matching.
           </p>
         </div>
       </div>
 
       {formError && (
-        <div className="glass-card p-4 rounded-xl border border-red-500/20 bg-red-500/10 flex items-center gap-3 text-red-300 text-sm">
-          <AlertCircle className="h-5 w-5 shrink-0" />
+        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 flex items-center gap-3 text-rose-700 text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0 text-rose-500" />
           <span>{formError}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: General Info */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-purple-400" /> Basic Job Information
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-blue-600" /> Basic Job Information
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Job Title <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-slate-700">
+                Job Title <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -194,19 +184,19 @@ export function CreateEditJobPage() {
                 placeholder="e.g. Senior Full Stack Engineer (React + .NET)"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Department</label>
+              <label className="text-xs font-semibold text-slate-700">Department</label>
               <select
                 value={formData.departmentId}
                 onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="">General Engineering (No Dept)</option>
-                {departments.map((dept) => (
+                {departments.map((dept: Department) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
                   </option>
@@ -215,8 +205,8 @@ export function CreateEditJobPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Location <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-slate-700">
+                Location <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -224,16 +214,16 @@ export function CreateEditJobPage() {
                 placeholder="e.g. San Francisco, CA / Remote"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Employment Type</label>
+              <label className="text-xs font-semibold text-slate-700">Employment Type</label>
               <select
                 value={formData.employmentType}
                 onChange={(e) => setFormData({ ...formData, employmentType: e.target.value as EmploymentType })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="FULL_TIME">Full-time</option>
                 <option value="CONTRACT">Contract</option>
@@ -243,11 +233,11 @@ export function CreateEditJobPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Experience Level</label>
+              <label className="text-xs font-semibold text-slate-700">Experience Level</label>
               <select
                 value={formData.experienceLevel}
                 onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as ExperienceLevel })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="ENTRY">Entry Level (0-2 yrs)</option>
                 <option value="MID">Mid Level (2-5 yrs)</option>
@@ -259,64 +249,64 @@ export function CreateEditJobPage() {
         </div>
 
         {/* Section 2: Compensation & Schedule */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-emerald-400" /> Compensation & Lifecycle
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-emerald-600" /> Compensation & Lifecycle
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Minimum Annual Salary</label>
+              <label className="text-xs font-semibold text-slate-700">Minimum Annual Salary</label>
               <input
                 type="number"
                 min="0"
                 step="1000"
                 value={formData.salaryMin}
                 onChange={(e) => setFormData({ ...formData, salaryMin: Number(e.target.value) })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Maximum Annual Salary</label>
+              <label className="text-xs font-semibold text-slate-700">Maximum Annual Salary</label>
               <input
                 type="number"
                 min="0"
                 step="1000"
                 value={formData.salaryMax}
                 onChange={(e) => setFormData({ ...formData, salaryMax: Number(e.target.value) })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Currency</label>
+              <label className="text-xs font-semibold text-slate-700">Currency</label>
               <input
                 type="text"
                 maxLength={3}
                 value={formData.salaryCurrency}
                 onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value.toUpperCase() })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 uppercase"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white uppercase"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Application Deadline (Optional)</label>
+              <label className="text-xs font-semibold text-slate-700">Application Deadline (Optional)</label>
               <input
                 type="date"
                 value={formData.applicationDeadline}
                 onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             {!isEditing && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Publishing Status</label>
+                <label className="text-xs font-semibold text-slate-700">Publishing Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as JobStatus })}
-                  className="w-full rounded-xl bg-slate-950/60 border border-slate-800 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 >
                   <option value="OPEN">Open (Published immediately)</option>
                   <option value="DRAFT">Draft (Save internally)</option>
@@ -327,15 +317,15 @@ export function CreateEditJobPage() {
         </div>
 
         {/* Section 3: Description & Requirements */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-pink-400" /> Detailed Specifications & Rubric
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <FileCheck2 className="h-4 w-4 text-purple-600" /> Detailed Specifications & Rubric
           </h2>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Job Description <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-slate-700">
+                Job Description <span className="text-rose-500">*</span>
               </label>
               <textarea
                 required
@@ -343,13 +333,13 @@ export function CreateEditJobPage() {
                 placeholder="Describe team mission, day-to-day responsibilities, and architecture scope..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 p-4 text-sm text-white focus:outline-none focus:border-purple-500 leading-relaxed font-mono text-xs"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white leading-relaxed font-mono text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Requirements & Technical Qualifications <span className="text-red-400">*</span>
+              <label className="text-xs font-semibold text-slate-700">
+                Requirements & Technical Qualifications <span className="text-rose-500">*</span>
               </label>
               <textarea
                 required
@@ -357,7 +347,7 @@ export function CreateEditJobPage() {
                 placeholder="• 5+ years building backend systems&#10;• Experience with React, TypeScript, C#, and PostgreSQL&#10;• Understanding of distributed state and CI/CD"
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-800 p-4 text-sm text-white focus:outline-none focus:border-purple-500 leading-relaxed font-mono text-xs"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white leading-relaxed font-mono text-xs"
               />
               <span className="text-[11px] text-slate-500">
                 Tip: Use bullet points (•) for clean rendering and optimal AI parser token extraction.
@@ -370,14 +360,14 @@ export function CreateEditJobPage() {
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link
             to="/recruiter/jobs"
-            className="rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-300 transition"
+            className="rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-700 transition"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-6 py-2.5 text-xs font-semibold text-white transition shadow-lg shadow-purple-600/25"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 py-2.5 text-xs font-semibold text-white transition shadow-sm"
           >
             {mutation.isPending ? (
               <>
@@ -385,7 +375,7 @@ export function CreateEditJobPage() {
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" /> {isEditing ? 'Save Changes' : 'Publish Job Posting'}
+                <Save className="h-4 w-4" /> {isEditing ? 'Save Changes' : 'Publish Job Opening'}
               </>
             )}
           </button>

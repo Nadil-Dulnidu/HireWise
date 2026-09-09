@@ -14,10 +14,10 @@ export function ProtectedRoute({ allowedRoles, allowOnboarding = false }: Protec
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0b0f19] text-white">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 text-slate-900">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-slate-400">Authenticating session...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <p className="text-sm text-slate-500 font-medium">Authenticating session...</p>
         </div>
       </div>
     )
@@ -30,19 +30,19 @@ export function ProtectedRoute({ allowedRoles, allowOnboarding = false }: Protec
   // Account Inactive / Banned
   if (status === 'INACTIVE') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0b0f19] p-4 text-white">
-        <div className="glass-panel max-w-md rounded-2xl p-8 text-center shadow-2xl border border-red-500/20">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-900">
+        <div className="bg-white max-w-md rounded-2xl p-8 text-center shadow-xl border border-red-200">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-200">
             <ShieldAlert className="h-8 w-8" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Account Deactivated</h2>
-          <p className="mt-3 text-sm text-slate-400">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Account Deactivated</h2>
+          <p className="mt-3 text-sm text-slate-500">
             Your account has been deactivated or suspended by platform administrators.
           </p>
           <div className="mt-6">
             <a
               href="/"
-              className="inline-flex items-center justify-center rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 transition"
+              className="inline-flex items-center justify-center rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 border border-slate-200 transition"
             >
               Return to Home
             </a>

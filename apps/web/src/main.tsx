@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
-import { dark } from '@clerk/themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
@@ -28,7 +27,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ClerkProvider
           publishableKey={clerkPubKey}
           appearance={{
-            baseTheme: dark
+            variables: {
+              colorPrimary: '#2563eb',
+              colorText: '#0f172a',
+              colorTextSecondary: '#475569',
+              colorBackground: '#ffffff',
+              colorInputBackground: '#f8fafc',
+              colorBorder: '#e2e8f0',
+              borderRadius: '0.5rem',
+              fontFamily: 'Roboto, sans-serif'
+            },
+            elements: {
+              card: 'shadow-xl border border-slate-200 rounded-2xl bg-white',
+              formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-all',
+              footerActionLink: 'text-blue-600 hover:text-blue-700 font-medium'
+            }
           }}
         >
           <BrowserRouter>

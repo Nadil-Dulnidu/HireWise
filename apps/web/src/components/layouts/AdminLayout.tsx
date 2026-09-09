@@ -22,7 +22,7 @@ export function AdminLayout() {
     <DashboardLayout
       navItems={adminNav}
       roleTitle="Platform Admin"
-      roleColor="text-amber-400"
+      roleColor="text-amber-600"
     />
   )
 }

@@ -28,7 +28,7 @@ export function RecruiterLayout() {
     <DashboardLayout
       navItems={recruiterNav}
       roleTitle="Recruiter Workspace"
-      roleColor="text-purple-400"
+      roleColor="text-indigo-600"
     />
   )
 }
