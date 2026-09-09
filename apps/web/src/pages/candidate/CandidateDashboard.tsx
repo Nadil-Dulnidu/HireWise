@@ -12,8 +12,7 @@ import {
   ArrowRight,
   Clock,
   TrendingUp,
-  Loader2,
-  User
+  Loader2
 } from 'lucide-react'
 
 export function CandidateDashboard() {
@@ -59,9 +58,6 @@ export function CandidateDashboard() {
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-white p-6 sm:p-8 border border-slate-200 shadow-sm">
         <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            <User className="h-3.5 w-3.5 text-blue-600" /> Candidate Workspace
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Welcome back, {profile?.firstName || 'Candidate'}!
           </h1>

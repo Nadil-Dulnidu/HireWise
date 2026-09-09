@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { CreateOrganization, useOrganizationList } from '@clerk/clerk-react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { Building2, Users, CheckCircle2, Loader2, User, ArrowRight, Bot } from 'lucide-react'
+import { Users, CheckCircle2, Loader2, User, ArrowRight, Bot } from 'lucide-react'
 
 export function OnboardingPage() {
   const navigate = useNavigate()
@@ -78,10 +78,6 @@ export function OnboardingPage() {
           </Link>
 
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">
-              <Building2 className="h-3.5 w-3.5 text-indigo-600" />
-              Recruiter Workspace Setup
-            </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Create your Company Workspace</h1>
             <p className="text-sm text-slate-600 leading-relaxed">
               Name your organization to create a dedicated multi-tenant hiring portal. You'll be able to publish jobs, configure autonomous AI evaluation workflows, and invite your engineering team.

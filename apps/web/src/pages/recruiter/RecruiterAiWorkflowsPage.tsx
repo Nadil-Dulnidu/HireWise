@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { aiApi, type ApplicationWorkflowResponse, type StepResponse } from '@/lib/api/ai-api'
 import {
-  Activity,
   Bot,
   Cpu,
   Loader2,
@@ -77,9 +76,6 @@ export function RecruiterAiWorkflowsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 mb-2">
-            <Activity className="h-3.5 w-3.5" /> LangGraph Multi-Agent Architecture
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             AI Workflow Monitor
           </h1>
@@ -202,9 +198,6 @@ export function RecruiterAiWorkflowsPage() {
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-2">
-                          <Activity className="h-3 w-3" /> StateGraph Pipeline
-                        </div>
                         <h2 className="text-xl font-bold text-slate-900">{appWorkflow.candidateName}</h2>
                         <p className="text-xs text-slate-500">Position: {appWorkflow.jobTitle}</p>
                       </div>

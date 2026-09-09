@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { aiApi, type ApplicationWorkflowResponse, type GeneratedQuestion } from '@/lib/api/ai-api'
 import { applicationsApi } from '@/lib/api/applications-api'
 import {
-  Cpu,
   Bot,
   CheckCircle2,
   XCircle,
@@ -112,9 +111,6 @@ export function RecruiterAiEvaluationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 mb-2">
-            <Cpu className="h-3.5 w-3.5" /> LangGraph Intelligence
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             AI Candidate Evaluations
           </h1>
@@ -448,9 +444,6 @@ export function RecruiterAiEvaluationsPage() {
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
                       <div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 mb-1">
-                          <Bot className="h-3 w-3" /> Multi-Agent Candidate Assessment
-                        </div>
                         <h2 className="text-xl font-bold text-slate-900">{appWorkflow.candidateName}</h2>
                         <p className="text-xs text-slate-500">Position: {appWorkflow.jobTitle}</p>
                       </div>

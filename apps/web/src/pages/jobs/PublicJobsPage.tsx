@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { jobsApi } from '@/lib/api/jobs-api'
 import type { EmploymentType, ExperienceLevel } from '@/types/jobs'
 import {
-  Briefcase,
   Search,
   MapPin,
   DollarSign,
@@ -15,7 +14,8 @@ import {
   Loader2,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Briefcase
 } from 'lucide-react'
 
 export function PublicJobsPage() {
@@ -69,9 +69,6 @@ export function PublicJobsPage() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-          <Briefcase className="h-3.5 w-3.5" /> Technical Careers
-        </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
           Explore Technical Openings
         </h1>

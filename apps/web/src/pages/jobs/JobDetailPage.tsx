@@ -22,7 +22,6 @@ import {
   FileText,
   Upload,
   X,
-  Cpu,
   FileCheck2
 } from 'lucide-react'
 
@@ -324,9 +323,6 @@ export function JobDetailPage() {
             </button>
 
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                <Cpu className="h-3 w-3" /> AI Application Submission
-              </div>
               <h2 className="text-xl font-bold text-slate-900">Apply to {job.title}</h2>
               <p className="text-xs text-slate-500">{job.companyName} • {job.location}</p>
             </div>

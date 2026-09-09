@@ -10,8 +10,7 @@ import {
   Clock,
   ArrowRight,
   Loader2,
-  ChevronRight,
-  Layers
+  ChevronRight
 } from 'lucide-react'
 import type { ApplicationStatus } from '@/types/applications'
 
@@ -55,9 +54,6 @@ export function CandidateApplicationsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 mb-3">
-          <Layers className="h-3.5 w-3.5 text-blue-600" /> Application Pipeline
-        </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
           My Submitted Applications
         </h1>

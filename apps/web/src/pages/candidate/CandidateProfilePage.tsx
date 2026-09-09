@@ -8,8 +8,7 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  Loader2,
-  User
+  Loader2
 } from 'lucide-react'
 
 export function CandidateProfilePage() {
@@ -66,9 +65,6 @@ export function CandidateProfilePage() {
     <div className="space-y-8 max-w-3xl">
       {/* Header */}
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 mb-3">
-          <User className="h-3.5 w-3.5 text-blue-600" /> Account Settings
-        </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
           Candidate Profile
         </h1>
