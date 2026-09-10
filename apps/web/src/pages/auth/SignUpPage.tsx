@@ -1,60 +1,74 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { SignUp, useClerk } from '@clerk/clerk-react'
-import { User, Building, LogOut, ArrowRight, CheckCircle2 } from 'lucide-react'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import type { UserRole } from '@/types/auth'
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { SignUp, useClerk } from "@clerk/clerk-react";
+import { User, Building, LogOut, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import type { UserRole } from "@/types/auth";
 
 export function SignUpPage() {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const clerk = useClerk()
-  const { isSignedIn, clerkUser, role: currentRole, changeRole } = useCurrentUser()
-  const [isSwitching, setIsSwitching] = useState(false)
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const clerk = useClerk();
+  const {
+    isSignedIn,
+    clerkUser,
+    role: currentRole,
+    changeRole,
+  } = useCurrentUser();
+  const [isSwitching, setIsSwitching] = useState(false);
 
-  const initialRoleFromParam = searchParams.get('role')?.toUpperCase() as UserRole | undefined
-  const validRoles: UserRole[] = ['CANDIDATE', 'RECRUITER']
+  const initialRoleFromParam = searchParams.get("role")?.toUpperCase() as
+    | UserRole
+    | undefined;
+  const validRoles: UserRole[] = ["CANDIDATE", "RECRUITER"];
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
     if (initialRoleFromParam && validRoles.includes(initialRoleFromParam)) {
-      return initialRoleFromParam
+      return initialRoleFromParam;
     }
-    return 'CANDIDATE'
-  })
+    return "CANDIDATE";
+  });
 
   useEffect(() => {
-    localStorage.setItem('hirewise_selected_role', selectedRole)
-  }, [selectedRole])
+    localStorage.setItem("hirewise_selected_role", selectedRole);
+  }, [selectedRole]);
 
   const handleRoleChange = (role: UserRole) => {
-    setSelectedRole(role)
-    localStorage.setItem('hirewise_selected_role', role)
-  }
+    setSelectedRole(role);
+    localStorage.setItem("hirewise_selected_role", role);
+  };
 
   const handleSwitchToCandidate = async () => {
-    setIsSwitching(true)
+    setIsSwitching(true);
     try {
-      await changeRole('CANDIDATE')
-      navigate('/candidate/dashboard', { replace: true })
+      await changeRole("CANDIDATE");
+      navigate("/candidate/dashboard", { replace: true });
     } catch (err) {
-      console.error('Failed to switch role:', err)
-      setIsSwitching(false)
+      console.error("Failed to switch role:", err);
+      setIsSwitching(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 py-12">
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-block transition-transform hover:scale-105 mb-2">
+          <Link
+            to="/"
+            className="inline-block transition-transform hover:scale-105 mb-2"
+          >
             <img
               src="/main-logo.png"
               alt="HireWise Logo"
               className="h-12 w-auto mx-auto object-contain"
             />
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your HireWise Account</h1>
-          <p className="text-xs text-slate-500">Choose your account role to get started</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Create your HireWise Account
+          </h1>
+          <p className="text-xs text-slate-500">
+            Choose your account role to get started
+          </p>
         </div>
 
         {/* Already Signed In Alert / Switcher */}
@@ -63,7 +77,15 @@ export function SignUpPage() {
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
               <div className="text-xs text-slate-700">
-                You are currently signed in as <span className="font-semibold text-slate-900">{clerkUser.primaryEmailAddress?.emailAddress}</span> with role <span className="font-semibold text-blue-600">{currentRole}</span>.
+                You are currently signed in as{" "}
+                <span className="font-semibold text-slate-900">
+                  {clerkUser.primaryEmailAddress?.emailAddress}
+                </span>{" "}
+                with role{" "}
+                <span className="font-semibold text-blue-600">
+                  {currentRole}
+                </span>
+                .
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -71,25 +93,30 @@ export function SignUpPage() {
                 type="button"
                 onClick={() => {
                   const path =
-                    currentRole === 'ADMIN' ? '/admin/dashboard' :
-                    currentRole === 'RECRUITER' ? '/recruiter/dashboard' :
-                    currentRole === 'INTERVIEWER' ? '/interviewer/dashboard' :
-                    '/candidate/dashboard'
-                  navigate(path)
+                    currentRole === "ADMIN"
+                      ? "/admin/dashboard"
+                      : currentRole === "RECRUITER"
+                        ? "/recruiter/dashboard"
+                        : currentRole === "INTERVIEWER"
+                          ? "/interviewer/dashboard"
+                          : "/candidate/dashboard";
+                  navigate(path);
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
               >
                 Go to Dashboard <ArrowRight className="h-3.5 w-3.5" />
               </button>
 
-              {currentRole !== 'CANDIDATE' && (
+              {currentRole !== "CANDIDATE" && (
                 <button
                   type="button"
                   disabled={isSwitching}
                   onClick={handleSwitchToCandidate}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-xs"
                 >
-                  {isSwitching ? 'Switching...' : 'Switch this Account to Candidate'}
+                  {isSwitching
+                    ? "Switching..."
+                    : "Switch this Account to Candidate"}
                 </button>
               )}
 
@@ -108,30 +135,34 @@ export function SignUpPage() {
         <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
           <button
             type="button"
-            onClick={() => handleRoleChange('CANDIDATE')}
+            onClick={() => handleRoleChange("CANDIDATE")}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition text-xs font-medium ${
-              selectedRole === 'CANDIDATE'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              selectedRole === "CANDIDATE"
+                ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-xs"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             <User className="h-5 w-5" />
             <span className="font-semibold">Candidate</span>
-            <span className="text-[10px] text-slate-400 font-normal">Job Seeker</span>
+            <span className="text-[10px] text-slate-400 font-normal">
+              Job Seeker
+            </span>
           </button>
 
           <button
             type="button"
-            onClick={() => handleRoleChange('RECRUITER')}
+            onClick={() => handleRoleChange("RECRUITER")}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition text-xs font-medium ${
-              selectedRole === 'RECRUITER'
-                ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              selectedRole === "RECRUITER"
+                ? "bg-purple-50 text-purple-700 border border-purple-200 shadow-xs"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             <Building className="h-5 w-5" />
             <span className="font-semibold">Recruiter</span>
-            <span className="text-[10px] text-slate-400 font-normal">Hiring & Teams</span>
+            <span className="text-[10px] text-slate-400 font-normal">
+              Hiring & Teams
+            </span>
           </button>
         </div>
 
@@ -148,5 +179,5 @@ export function SignUpPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

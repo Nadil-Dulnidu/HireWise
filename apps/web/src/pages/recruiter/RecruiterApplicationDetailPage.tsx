@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { applicationsApi } from '@/lib/api/applications-api'
+import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { applicationsApi } from "@/lib/api/applications-api";
 import {
   FileText,
   Mail,
@@ -14,90 +14,115 @@ import {
   AlertCircle,
   Loader2,
   Bot,
-  Calendar
-} from 'lucide-react'
-import type { ApplicationStatus } from '@/types/applications'
+  Calendar,
+} from "lucide-react";
+import type { ApplicationStatus } from "@/types/applications";
 
 const allStatuses: { value: ApplicationStatus; label: string }[] = [
-  { value: 'APPLIED', label: 'Applied' },
-  { value: 'AI_REVIEW', label: 'AI Review in Progress' },
-  { value: 'AI_RECOMMENDED', label: 'AI Recommended' },
-  { value: 'RECRUITER_REVIEW', label: 'Recruiter Review' },
-  { value: 'INTERVIEW_APPROVED', label: 'Interview Approved' },
-  { value: 'INTERVIEW_SCHEDULED', label: 'Interview Scheduled' },
-  { value: 'INTERVIEW_COMPLETED', label: 'Interview Completed' },
-  { value: 'EVALUATION_PENDING', label: 'Evaluation Pending' },
-  { value: 'SELECTED', label: 'Selected / Offer' },
-  { value: 'REJECTED', label: 'Rejected' }
-]
+  { value: "APPLIED", label: "Applied" },
+  { value: "AI_REVIEW", label: "AI Review in Progress" },
+  { value: "AI_RECOMMENDED", label: "AI Recommended" },
+  { value: "RECRUITER_REVIEW", label: "Recruiter Review" },
+  { value: "INTERVIEW_APPROVED", label: "Interview Approved" },
+  { value: "INTERVIEW_SCHEDULED", label: "Interview Scheduled" },
+  { value: "INTERVIEW_COMPLETED", label: "Interview Completed" },
+  { value: "EVALUATION_PENDING", label: "Evaluation Pending" },
+  { value: "SELECTED", label: "Selected / Offer" },
+  { value: "REJECTED", label: "Rejected" },
+];
 
 export function RecruiterApplicationDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const queryClient = useQueryClient()
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
-  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | ''>('')
-  const [statusNotes, setStatusNotes] = useState('')
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | "">(
+    "",
+  );
+  const [statusNotes, setStatusNotes] = useState("");
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const { data: application, isLoading, isError } = useQuery({
-    queryKey: ['recruiterApplicationDetail', id],
+  const {
+    data: application,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["recruiterApplicationDetail", id],
     queryFn: () => applicationsApi.getApplicationById(id!),
-    enabled: !!id
-  })
+    enabled: !!id,
+  });
 
   const updateStatusMutation = useMutation({
     mutationFn: (status: ApplicationStatus) =>
-      applicationsApi.updateApplicationStatus(id!, { status, notes: statusNotes || undefined }),
+      applicationsApi.updateApplicationStatus(id!, {
+        status,
+        notes: statusNotes || undefined,
+      }),
     onSuccess: (data) => {
-      setActionError(null)
-      setActionSuccess(`Application status updated to ${data?.status?.replace(/_/g, ' ') || 'updated status'}`)
-      queryClient.invalidateQueries({ queryKey: ['recruiterApplicationDetail', id] })
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-      setTimeout(() => setActionSuccess(null), 4000)
+      setActionError(null);
+      setActionSuccess(
+        `Application status updated to ${data?.status?.replace(/_/g, " ") || "updated status"}`,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["recruiterApplicationDetail", id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      setTimeout(() => setActionSuccess(null), 4000);
     },
     onError: (err: any) => {
-      setActionSuccess(null)
-      setActionError(err?.response?.data?.error || err.message || 'Failed to update status')
-    }
-  })
+      setActionSuccess(null);
+      setActionError(
+        err?.response?.data?.error || err.message || "Failed to update status",
+      );
+    },
+  });
 
   const approveMutation = useMutation({
     mutationFn: () => applicationsApi.approveForInterview(id!),
     onSuccess: () => {
-      setActionError(null)
-      setActionSuccess('Candidate approved for technical interview scheduling!')
-      queryClient.invalidateQueries({ queryKey: ['recruiterApplicationDetail', id] })
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-      setTimeout(() => setActionSuccess(null), 4000)
-    }
-  })
+      setActionError(null);
+      setActionSuccess(
+        "Candidate approved for technical interview scheduling!",
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["recruiterApplicationDetail", id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+  });
 
   const rejectMutation = useMutation({
     mutationFn: () => applicationsApi.rejectApplication(id!),
     onSuccess: () => {
-      setActionError(null)
-      setActionSuccess('Application marked as rejected.')
-      queryClient.invalidateQueries({ queryKey: ['recruiterApplicationDetail', id] })
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-      setTimeout(() => setActionSuccess(null), 4000)
-    }
-  })
+      setActionError(null);
+      setActionSuccess("Application marked as rejected.");
+      queryClient.invalidateQueries({
+        queryKey: ["recruiterApplicationDetail", id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+  });
 
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
-    )
+    );
   }
 
   if (isError || !application) {
     return (
       <div className="bg-white max-w-md mx-auto p-8 rounded-2xl border border-slate-200 text-center space-y-4 shadow-sm">
         <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-900">Application Not Found</h2>
-        <p className="text-xs text-slate-500">The application may have been removed or you lack authorization.</p>
+        <h2 className="text-lg font-bold text-slate-900">
+          Application Not Found
+        </h2>
+        <p className="text-xs text-slate-500">
+          The application may have been removed or you lack authorization.
+        </p>
         <Link
           to="/recruiter/applications"
           className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm"
@@ -105,7 +130,7 @@ export function RecruiterApplicationDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Candidate Pipeline
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -146,23 +171,29 @@ export function RecruiterApplicationDetailPage() {
                   {application.candidateName}
                 </h1>
                 <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-0.5 text-xs font-semibold">
-                  {application.status.replace(/_/g, ' ')}
+                  {application.status.replace(/_/g, " ")}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                Candidate for <span className="text-slate-900 font-bold">{application.jobTitle}</span>
+                Candidate for{" "}
+                <span className="text-slate-900 font-bold">
+                  {application.jobTitle}
+                </span>
               </p>
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
                 <span className="flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" /> {application.candidateEmail}
+                  <Mail className="h-3.5 w-3.5 text-slate-400" />{" "}
+                  {application.candidateEmail}
                 </span>
                 {application.candidatePhone && (
                   <span className="flex items-center gap-1">
-                    <Phone className="h-3.5 w-3.5 text-slate-400" /> {application.candidatePhone}
+                    <Phone className="h-3.5 w-3.5 text-slate-400" />{" "}
+                    {application.candidatePhone}
                   </span>
                 )}
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-slate-400" /> Applied {new Date(application.appliedAt).toLocaleDateString()}
+                  <Clock className="h-3.5 w-3.5 text-slate-400" /> Applied{" "}
+                  {new Date(application.appliedAt).toLocaleDateString()}
                 </span>
               </div>
             </div>
@@ -179,7 +210,7 @@ export function RecruiterApplicationDetailPage() {
                 <Download className="h-4 w-4" /> Download Resume
               </a>
             )}
-            {application.status === 'INTERVIEW_APPROVED' && (
+            {application.status === "INTERVIEW_APPROVED" && (
               <Link
                 to="/recruiter/scheduling"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm"
@@ -188,29 +219,31 @@ export function RecruiterApplicationDetailPage() {
               </Link>
             )}
 
-            {application.status === 'INTERVIEW_SCHEDULED' && (
+            {application.status === "INTERVIEW_SCHEDULED" && (
               <Link
                 to="/recruiter/interviews"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-4 py-2.5 text-xs font-semibold transition"
               >
-                <CheckCircle2 className="h-4 w-4 text-blue-600" /> Interview Scheduled
+                <CheckCircle2 className="h-4 w-4 text-blue-600" /> Interview
+                Scheduled
               </Link>
             )}
 
-            {(application.status === 'APPLIED' ||
-              application.status === 'AI_REVIEW' ||
-              application.status === 'AI_RECOMMENDED' ||
-              application.status === 'RECRUITER_REVIEW') && (
+            {(application.status === "APPLIED" ||
+              application.status === "AI_REVIEW" ||
+              application.status === "AI_RECOMMENDED" ||
+              application.status === "RECRUITER_REVIEW") && (
               <button
                 onClick={() => approveMutation.mutate()}
                 disabled={approveMutation.isPending}
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-4 py-2.5 text-xs font-semibold transition cursor-pointer"
               >
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Approve for Interview
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Approve
+                for Interview
               </button>
             )}
 
-            {application.status !== 'REJECTED' && (
+            {application.status !== "REJECTED" && (
               <button
                 onClick={() => rejectMutation.mutate()}
                 disabled={rejectMutation.isPending}
@@ -230,14 +263,17 @@ export function RecruiterApplicationDetailPage() {
           {/* Cover letter */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-indigo-600" /> Candidate Cover Letter & Notes
+              <FileText className="h-4 w-4 text-indigo-600" /> Candidate Cover
+              Letter & Notes
             </h2>
             {application.coverLetter ? (
               <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200 whitespace-pre-line">
                 {application.coverLetter}
               </p>
             ) : (
-              <p className="text-xs text-slate-400 italic">No cover letter was submitted with this application.</p>
+              <p className="text-xs text-slate-400 italic">
+                No cover letter was submitted with this application.
+              </p>
             )}
           </div>
 
@@ -245,19 +281,25 @@ export function RecruiterApplicationDetailPage() {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Bot className="h-4 w-4 text-indigo-600" /> AI Evaluation Intelligence
+                <Bot className="h-4 w-4 text-indigo-600" /> AI Evaluation
+                Intelligence
               </h2>
               <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-[10px] font-semibold">
                 LangGraph Multi-Agent
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Evaluated against rubric skills, experience requirements, and technical constraints.
+              Evaluated against rubric skills, experience requirements, and
+              technical constraints.
             </p>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
               <div className="space-y-0.5">
-                <span className="text-xs text-slate-800 font-semibold block">Multi-Agent Assessment</span>
-                <span className="text-[11px] text-slate-500">Autonomous Rubric Matching & Gap Analysis</span>
+                <span className="text-xs text-slate-800 font-semibold block">
+                  Multi-Agent Assessment
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Autonomous Rubric Matching & Gap Analysis
+                </span>
               </div>
               <Link
                 to="/recruiter/ai-evaluations"
@@ -272,18 +314,28 @@ export function RecruiterApplicationDetailPage() {
         {/* Right: Status Transition Control */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold text-slate-900">Manual Status Progression</h2>
+            <h2 className="text-sm font-bold text-slate-900">
+              Manual Status Progression
+            </h2>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs text-slate-600 font-medium">New Status</label>
+                <label className="text-xs text-slate-600 font-medium">
+                  New Status
+                </label>
                 <select
                   value={selectedStatus || application.status}
-                  onChange={(e) => setSelectedStatus(e.target.value as ApplicationStatus)}
+                  onChange={(e) =>
+                    setSelectedStatus(e.target.value as ApplicationStatus)
+                  }
                   className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500 cursor-pointer"
                 >
                   {allStatuses.map((s) => (
-                    <option key={s.value} value={s.value} className="bg-white text-slate-800">
+                    <option
+                      key={s.value}
+                      value={s.value}
+                      className="bg-white text-slate-800"
+                    >
                       {s.label}
                     </option>
                   ))}
@@ -291,7 +343,9 @@ export function RecruiterApplicationDetailPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-600 font-medium">Status Change Note (Optional)</label>
+                <label className="text-xs text-slate-600 font-medium">
+                  Status Change Note (Optional)
+                </label>
                 <textarea
                   rows={3}
                   value={statusNotes}
@@ -304,13 +358,21 @@ export function RecruiterApplicationDetailPage() {
               <button
                 onClick={() => {
                   if (selectedStatus && selectedStatus !== application.status) {
-                    updateStatusMutation.mutate(selectedStatus as ApplicationStatus)
+                    updateStatusMutation.mutate(
+                      selectedStatus as ApplicationStatus,
+                    );
                   }
                 }}
-                disabled={updateStatusMutation.isPending || !selectedStatus || selectedStatus === application.status}
+                disabled={
+                  updateStatusMutation.isPending ||
+                  !selectedStatus ||
+                  selectedStatus === application.status
+                }
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
               >
-                {updateStatusMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {updateStatusMutation.isPending && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                )}
                 Update Candidate Status
               </button>
             </div>
@@ -318,5 +380,5 @@ export function RecruiterApplicationDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

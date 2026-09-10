@@ -61,7 +61,7 @@ public class CreateJobRequest
     public decimal? SalaryMax { get; set; }
     public string SalaryCurrency { get; set; } = "USD";
     public JobStatus Status { get; set; } = JobStatus.DRAFT;
-    public Guid? CompanyId { get; set; } 
+    public Guid? CompanyId { get; set; }
     public Guid? DepartmentId { get; set; }
     public DateTime? ApplicationDeadline { get; set; }
 }

@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import { applicationsApi } from '@/lib/api/applications-api'
-import { interviewsApi } from '@/lib/api/interviews-api'
-import { availabilityApi } from '@/lib/api/availability-api'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { getInterviewers } from '@/lib/api/users-api'
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { applicationsApi } from "@/lib/api/applications-api";
+import { interviewsApi } from "@/lib/api/interviews-api";
+import { availabilityApi } from "@/lib/api/availability-api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { getInterviewers } from "@/lib/api/users-api";
 import {
   Calendar,
   Clock,
@@ -16,166 +16,203 @@ import {
   Loader2,
   ArrowLeft,
   Plus,
-  UserPlus
-} from 'lucide-react'
-import type { ApiResponse, PagedResult } from '@/types/auth'
+  UserPlus,
+} from "lucide-react";
+import type { ApiResponse, PagedResult } from "@/types/auth";
 import {
   type CreateInterviewRequest,
   getDayLabel,
   formatTimeDisplay,
-  normalizeDayOfWeek
-} from '@/types/interviews'
+  normalizeDayOfWeek,
+} from "@/types/interviews";
 
 export function RecruiterSchedulingPage() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { profile } = useCurrentUser()
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { profile } = useCurrentUser();
 
-  const [selectedAppId, setSelectedAppId] = useState<string>('')
-  const [selectedInterviewerId, setSelectedInterviewerId] = useState<string>('')
-  const [startDate, setStartDate] = useState<string>('')
-  const [startTime, setStartTime] = useState<string>('14:00')
-  const [endTime, setEndTime] = useState<string>('15:00')
-  const [meetingLink, setMeetingLink] = useState<string>('https://meet.google.com/hwr-tech-rnd')
-  const [notes, setNotes] = useState<string>('')
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [selectedAppId, setSelectedAppId] = useState<string>("");
+  const [selectedInterviewerId, setSelectedInterviewerId] =
+    useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [startTime, setStartTime] = useState<string>("14:00");
+  const [endTime, setEndTime] = useState<string>("15:00");
+  const [meetingLink, setMeetingLink] = useState<string>(
+    "https://meet.google.com/hwr-tech-rnd",
+  );
+  const [notes, setNotes] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Fetch eligible applications (INTERVIEW_APPROVED or all company applications)
   const { data: appsData, isLoading: appsLoading } = useQuery({
-    queryKey: ['approvedApplications'],
-    queryFn: () => applicationsApi.getCompanyApplications({ pageSize: 50 })
-  })
+    queryKey: ["approvedApplications"],
+    queryFn: () => applicationsApi.getCompanyApplications({ pageSize: 50 }),
+  });
 
   // Fetch company interviewers
-  const { data: interviewersData = [], isLoading: interviewersLoading } = useQuery({
-    queryKey: ['companyInterviewers', profile?.companyId],
-    queryFn: async () => {
-      try {
-        const interviewersList = await getInterviewers(profile?.companyId)
-        if (interviewersList && interviewersList.length > 0) {
-          return interviewersList
+  const { data: interviewersData = [], isLoading: interviewersLoading } =
+    useQuery({
+      queryKey: ["companyInterviewers", profile?.companyId],
+      queryFn: async () => {
+        try {
+          const interviewersList = await getInterviewers(profile?.companyId);
+          if (interviewersList && interviewersList.length > 0) {
+            return interviewersList;
+          }
+        } catch (err) {
+          console.warn("Direct interviewers fetch fallback to /users:", err);
         }
-      } catch (err) {
-        console.warn('Direct interviewers fetch fallback to /users:', err)
-      }
 
-      const res = await apiClient.get<ApiResponse<PagedResult<any>>>('/users', {
-        params: { role: 'INTERVIEWER', pageSize: 50 }
-      })
-      return res.data.data?.items || []
-    }
-  })
+        const res = await apiClient.get<ApiResponse<PagedResult<any>>>(
+          "/users",
+          {
+            params: { role: "INTERVIEWER", pageSize: 50 },
+          },
+        );
+        return res.data.data?.items || [];
+      },
+    });
 
   // Fetch selected interviewer availability
-  const { data: interviewerAvailability = [], isLoading: availabilityLoading } = useQuery({
-    queryKey: ['interviewerAvailability', selectedInterviewerId],
-    queryFn: () => availabilityApi.getInterviewerAvailability(selectedInterviewerId),
-    enabled: !!selectedInterviewerId
-  })
+  const { data: interviewerAvailability = [], isLoading: availabilityLoading } =
+    useQuery({
+      queryKey: ["interviewerAvailability", selectedInterviewerId],
+      queryFn: () =>
+        availabilityApi.getInterviewerAvailability(selectedInterviewerId),
+      enabled: !!selectedInterviewerId,
+    });
 
   // Check if selected time falls outside the interviewer's configured slots
   const isOutsideAvailability = (() => {
-    if (!startDate || !startTime || !endTime || interviewerAvailability.length === 0) {
-      return false
+    if (
+      !startDate ||
+      !startTime ||
+      !endTime ||
+      interviewerAvailability.length === 0
+    ) {
+      return false;
     }
 
-    const chosenDate = new Date(`${startDate}T${startTime}:00Z`)
-    const chosenDayOfWeek = chosenDate.getUTCDay()
-    const reqStart = `${startTime}:00`
-    const reqEnd = `${endTime}:00`
+    const chosenDate = new Date(`${startDate}T${startTime}:00Z`);
+    const chosenDayOfWeek = chosenDate.getUTCDay();
+    const reqStart = `${startTime}:00`;
+    const reqEnd = `${endTime}:00`;
 
     const isMatch = interviewerAvailability.some((slot) => {
       if (slot.specificDate) {
-        return slot.specificDate === startDate && slot.startTime <= reqStart && slot.endTime >= reqEnd
+        return (
+          slot.specificDate === startDate &&
+          slot.startTime <= reqStart &&
+          slot.endTime >= reqEnd
+        );
       }
-      return normalizeDayOfWeek(slot.dayOfWeek) === chosenDayOfWeek && slot.startTime <= reqStart && slot.endTime >= reqEnd
-    })
+      return (
+        normalizeDayOfWeek(slot.dayOfWeek) === chosenDayOfWeek &&
+        slot.startTime <= reqStart &&
+        slot.endTime >= reqEnd
+      );
+    });
 
-    return !isMatch
-  })()
+    return !isMatch;
+  })();
 
   const handleApplySlot = (slot: any) => {
-    const sParts = (slot.startTime || '10:00').split(':')
-    const eParts = (slot.endTime || '16:00').split(':')
-    const sTime = `${sParts[0]}:${sParts[1]}`
-    
+    const sParts = (slot.startTime || "10:00").split(":");
+    const eParts = (slot.endTime || "16:00").split(":");
+    const sTime = `${sParts[0]}:${sParts[1]}`;
+
     // Set 1-hour session by default within slot range
-    const startH = parseInt(sParts[0], 10)
-    const endH = parseInt(eParts[0], 10)
-    let eTime = `${String(Math.min(startH + 1, endH)).padStart(2, '0')}:${sParts[1]}`
+    const startH = parseInt(sParts[0], 10);
+    const endH = parseInt(eParts[0], 10);
+    let eTime = `${String(Math.min(startH + 1, endH)).padStart(2, "0")}:${sParts[1]}`;
     if (sTime >= eTime) {
-      eTime = `${eParts[0]}:${eParts[1]}`
+      eTime = `${eParts[0]}:${eParts[1]}`;
     }
 
-    setStartTime(sTime)
-    setEndTime(eTime)
+    setStartTime(sTime);
+    setEndTime(eTime);
 
     if (slot.specificDate) {
-      setStartDate(slot.specificDate)
+      setStartDate(slot.specificDate);
     } else {
-      const targetDay = normalizeDayOfWeek(slot.dayOfWeek)
-      const now = new Date()
-      let daysToAdd = (targetDay - now.getUTCDay() + 7) % 7
-      if (daysToAdd === 0) daysToAdd = 7
-      const nextDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysToAdd))
-      setStartDate(nextDate.toISOString().split('T')[0])
+      const targetDay = normalizeDayOfWeek(slot.dayOfWeek);
+      const now = new Date();
+      let daysToAdd = (targetDay - now.getUTCDay() + 7) % 7;
+      if (daysToAdd === 0) daysToAdd = 7;
+      const nextDate = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() + daysToAdd,
+        ),
+      );
+      setStartDate(nextDate.toISOString().split("T")[0]);
     }
-  }
+  };
 
   const createInterviewMutation = useMutation({
-    mutationFn: (data: CreateInterviewRequest) => interviewsApi.createInterview(data),
+    mutationFn: (data: CreateInterviewRequest) =>
+      interviewsApi.createInterview(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruiterInterviews'] })
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-      navigate('/recruiter/interviews')
+      queryClient.invalidateQueries({ queryKey: ["recruiterInterviews"] });
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      navigate("/recruiter/interviews");
     },
     onError: (err: any) => {
-      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Failed to schedule interview.')
-    }
-  })
+      setErrorMsg(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to schedule interview.",
+      );
+    },
+  });
 
-  const applications = appsData?.items || []
-  const interviewers = interviewersData || []
+  const applications = appsData?.items || [];
+  const interviewers = interviewersData || [];
 
   // Filter applications that are eligible for scheduling (strictly exclude already scheduled/completed/rejected applicants)
   const eligibleApps = applications.filter((a) => {
     return (
-      a.status === 'INTERVIEW_APPROVED' ||
-      a.status === 'AI_RECOMMENDED' ||
-      a.status === 'RECRUITER_REVIEW'
-    )
-  })
+      a.status === "INTERVIEW_APPROVED" ||
+      a.status === "AI_RECOMMENDED" ||
+      a.status === "RECRUITER_REVIEW"
+    );
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!selectedAppId) {
-      setErrorMsg('Please select an eligible candidate application.')
-      return
+      setErrorMsg("Please select an eligible candidate application.");
+      return;
     }
 
-    const targetApp = applications.find((a) => a.id === selectedAppId)
+    const targetApp = applications.find((a) => a.id === selectedAppId);
     if (
       targetApp &&
-      (targetApp.status === 'INTERVIEW_SCHEDULED' ||
-        targetApp.status === 'INTERVIEW_COMPLETED' ||
-        targetApp.status === 'SELECTED' ||
-        targetApp.status === 'REJECTED')
+      (targetApp.status === "INTERVIEW_SCHEDULED" ||
+        targetApp.status === "INTERVIEW_COMPLETED" ||
+        targetApp.status === "SELECTED" ||
+        targetApp.status === "REJECTED")
     ) {
-      setErrorMsg(`Applicant ${targetApp.candidateName} is already in '${targetApp.status.replace(/_/g, ' ')}' status and cannot be scheduled again.`)
-      return
+      setErrorMsg(
+        `Applicant ${targetApp.candidateName} is already in '${targetApp.status.replace(/_/g, " ")}' status and cannot be scheduled again.`,
+      );
+      return;
     }
 
     if (!selectedInterviewerId) {
-      setErrorMsg('Please select an interviewer from your company.')
-      return
+      setErrorMsg("Please select an interviewer from your company.");
+      return;
     }
     if (!startDate) {
-      setErrorMsg('Please select a date.')
-      return
+      setErrorMsg("Please select a date.");
+      return;
     }
 
-    const startDateTime = new Date(`${startDate}T${startTime}:00Z`).toISOString()
-    const endDateTime = new Date(`${startDate}T${endTime}:00Z`).toISOString()
+    const startDateTime = new Date(
+      `${startDate}T${startTime}:00Z`,
+    ).toISOString();
+    const endDateTime = new Date(`${startDate}T${endTime}:00Z`).toISOString();
 
     createInterviewMutation.mutate({
       applicationId: selectedAppId,
@@ -183,9 +220,9 @@ export function RecruiterSchedulingPage() {
       scheduledStartTime: startDateTime,
       scheduledEndTime: endDateTime,
       meetingLink: meetingLink.trim(),
-      notes: notes.trim()
-    })
-  }
+      notes: notes.trim(),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -200,10 +237,12 @@ export function RecruiterSchedulingPage() {
       {/* Header */}
       <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-          <Calendar className="h-7 w-7 text-indigo-600" /> Schedule Technical Interview
+          <Calendar className="h-7 w-7 text-indigo-600" /> Schedule Technical
+          Interview
         </h1>
         <p className="text-sm text-slate-500">
-          Match an approved candidate with an assigned technical evaluator, cross-check their availability, and dispatch calendar invites.
+          Match an approved candidate with an assigned technical evaluator,
+          cross-check their availability, and dispatch calendar invites.
         </p>
       </div>
 
@@ -218,7 +257,9 @@ export function RecruiterSchedulingPage() {
         {/* Form Column */}
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-            <h3 className="text-base font-bold text-slate-900">Interview Configuration</h3>
+            <h3 className="text-base font-bold text-slate-900">
+              Interview Configuration
+            </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Application Selector */}
@@ -228,7 +269,8 @@ export function RecruiterSchedulingPage() {
                 </label>
                 {appsLoading ? (
                   <div className="p-3 text-xs text-slate-500 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> Loading applications...
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />{" "}
+                    Loading applications...
                   </div>
                 ) : (
                   <select
@@ -237,7 +279,9 @@ export function RecruiterSchedulingPage() {
                     className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   >
-                    <option value="">-- Select an Approved Application --</option>
+                    <option value="">
+                      -- Select an Approved Application --
+                    </option>
                     {eligibleApps.length === 0 ? (
                       <option value="" disabled>
                         No candidates currently pending interview scheduling
@@ -245,7 +289,8 @@ export function RecruiterSchedulingPage() {
                     ) : (
                       eligibleApps.map((app) => (
                         <option key={app.id} value={app.id}>
-                          {app.candidateName} — {app.jobTitle} ({app.status.replace(/_/g, ' ')})
+                          {app.candidateName} — {app.jobTitle} (
+                          {app.status.replace(/_/g, " ")})
                         </option>
                       ))
                     )}
@@ -253,7 +298,8 @@ export function RecruiterSchedulingPage() {
                 )}
                 {eligibleApps.length === 0 && !appsLoading && (
                   <p className="text-[11px] text-amber-700 mt-1.5 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> All approved candidates have already been scheduled for interviews.
+                    <AlertCircle className="h-3 w-3" /> All approved candidates
+                    have already been scheduled for interviews.
                   </p>
                 )}
               </div>
@@ -273,11 +319,14 @@ export function RecruiterSchedulingPage() {
                 </div>
                 {interviewersLoading ? (
                   <div className="p-3 text-xs text-slate-500 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> Loading interviewers...
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />{" "}
+                    Loading interviewers...
                   </div>
                 ) : interviewers.length === 0 ? (
                   <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center justify-between">
-                    <span>No active interviewers assigned to your organization yet.</span>
+                    <span>
+                      No active interviewers assigned to your organization yet.
+                    </span>
                     <Link
                       to="/recruiter/team"
                       className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200 text-[11px] font-medium transition"
@@ -292,10 +341,14 @@ export function RecruiterSchedulingPage() {
                     className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500"
                     required
                   >
-                    <option value="">-- Select Company Interviewer ({interviewers.length} available) --</option>
+                    <option value="">
+                      -- Select Company Interviewer ({interviewers.length}{" "}
+                      available) --
+                    </option>
                     {interviewers.map((user: any) => (
                       <option key={user.id} value={user.id}>
-                        {user.fullName || `${user.firstName} ${user.lastName}`} ({user.email})
+                        {user.fullName || `${user.firstName} ${user.lastName}`}{" "}
+                        ({user.email})
                       </option>
                     ))}
                   </select>
@@ -318,7 +371,9 @@ export function RecruiterSchedulingPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Start Time (UTC)</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Start Time (UTC)
+                  </label>
                   <input
                     type="time"
                     value={startTime}
@@ -328,7 +383,9 @@ export function RecruiterSchedulingPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">End Time (UTC)</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    End Time (UTC)
+                  </label>
                   <input
                     type="time"
                     value={endTime}
@@ -344,9 +401,14 @@ export function RecruiterSchedulingPage() {
                 <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
                   <div className="space-y-0.5">
-                    <span className="font-semibold block">Outside Interviewer's Published Hours</span>
+                    <span className="font-semibold block">
+                      Outside Interviewer's Published Hours
+                    </span>
                     <span className="text-[11px] text-amber-700">
-                      The selected time window ({startTime} – {endTime} UTC on {startDate}) does not match this interviewer's availability schedule. Click one of the slots on the right to apply.
+                      The selected time window ({startTime} – {endTime} UTC on{" "}
+                      {startDate}) does not match this interviewer's
+                      availability schedule. Click one of the slots on the right
+                      to apply.
                     </span>
                   </div>
                 </div>
@@ -385,7 +447,9 @@ export function RecruiterSchedulingPage() {
 
               <button
                 type="submit"
-                disabled={createInterviewMutation.isPending || isOutsideAvailability}
+                disabled={
+                  createInterviewMutation.isPending || isOutsideAvailability
+                }
                 className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm mt-2 cursor-pointer"
               >
                 {createInterviewMutation.isPending ? (
@@ -403,13 +467,17 @@ export function RecruiterSchedulingPage() {
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-indigo-600" /> Interviewer Availability Slots
+              <Clock className="h-4 w-4 text-indigo-600" /> Interviewer
+              Availability Slots
             </h3>
 
             {!selectedInterviewerId ? (
               <div className="p-8 text-center text-xs text-slate-400 space-y-1">
                 <User className="h-6 w-6 text-slate-300 mx-auto mb-2" />
-                <p>Select an interviewer on the left to view their weekly recurring slots.</p>
+                <p>
+                  Select an interviewer on the left to view their weekly
+                  recurring slots.
+                </p>
               </div>
             ) : availabilityLoading ? (
               <div className="p-8 text-center">
@@ -418,15 +486,19 @@ export function RecruiterSchedulingPage() {
             ) : interviewerAvailability.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-500 space-y-1 bg-slate-50 rounded-xl border border-slate-200">
                 <AlertCircle className="h-5 w-5 text-amber-500 mx-auto mb-1" />
-                <p className="font-semibold text-slate-800">No custom slots published</p>
+                <p className="font-semibold text-slate-800">
+                  No custom slots published
+                </p>
                 <p className="text-[11px] text-slate-500">
-                  This interviewer has not yet configured specific availability slots. Standard business hours may apply.
+                  This interviewer has not yet configured specific availability
+                  slots. Standard business hours may apply.
                 </p>
               </div>
             ) : (
               <div className="space-y-2 text-xs">
                 <p className="text-[11px] text-slate-500 mb-2">
-                  Click <strong>Apply</strong> on any slot below to automatically set the interview date & time.
+                  Click <strong>Apply</strong> on any slot below to
+                  automatically set the interview date & time.
                 </p>
                 {interviewerAvailability.map((slot) => (
                   <div
@@ -438,8 +510,11 @@ export function RecruiterSchedulingPage() {
                         {getDayLabel(slot.dayOfWeek, false)}
                       </div>
                       <div className="text-slate-800 font-medium text-[11px] mt-0.5">
-                        {formatTimeDisplay(slot.startTime)} – {formatTimeDisplay(slot.endTime)}
-                        <span className="text-[10px] text-slate-400 ml-1.5">({slot.timezone})</span>
+                        {formatTimeDisplay(slot.startTime)} –{" "}
+                        {formatTimeDisplay(slot.endTime)}
+                        <span className="text-[10px] text-slate-400 ml-1.5">
+                          ({slot.timezone})
+                        </span>
                       </div>
                     </div>
 
@@ -458,5 +533,5 @@ export function RecruiterSchedulingPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

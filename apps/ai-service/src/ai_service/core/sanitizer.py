@@ -12,7 +12,7 @@ PROMPT_INJECTION_PATTERNS = [
     r"(?i)<\s*/?\s*system\s*>",
     r"(?i)\[\s*system\s*\]",
     r"(?i)\bprint\s+all\s+environment\s+variables\b",
-    r"(?i)\breveal\s+(?:the\s+)?api\s+key\b"
+    r"(?i)\breveal\s+(?:the\s+)?api\s+key\b",
 ]
 
 # Tool permissions allow-list mapped per agent name
@@ -22,8 +22,13 @@ AGENT_ALLOWED_TOOLS: Dict[str, Set[str]] = {
     "CandidateEvaluationAgent": {"scoring_calculator", "skills_matcher"},
     "ValidationAgent": {"schema_validator", "business_rule_checker"},
     "QuestionGeneratorAgent": {"question_template_library", "rubric_evaluator"},
-    "SchedulingAgent": {"availability_matcher", "calendar_checker", "timezone_converter"}
+    "SchedulingAgent": {
+        "availability_matcher",
+        "calendar_checker",
+        "timezone_converter",
+    },
 }
+
 
 def detect_prompt_injection(text: Optional[str]) -> Tuple[bool, Optional[str]]:
     """
@@ -39,6 +44,7 @@ def detect_prompt_injection(text: Optional[str]) -> Tuple[bool, Optional[str]]:
             return True, f"Suspicious prompt pattern detected: '{match.group(0)}'"
 
     return False, None
+
 
 def sanitize_text(text: Optional[str], max_length: int = 25000) -> str:
     """
@@ -58,9 +64,13 @@ def sanitize_text(text: Optional[str], max_length: int = 25000) -> str:
 
     # Truncate to maximum allowed safe character limit
     if len(cleaned) > max_length:
-        cleaned = cleaned[:max_length] + "\n[Content truncated for security and model token limits]"
+        cleaned = (
+            cleaned[:max_length]
+            + "\n[Content truncated for security and model token limits]"
+        )
 
     return cleaned.strip()
+
 
 def is_tool_allowed(agent_name: str, tool_name: str) -> bool:
     """

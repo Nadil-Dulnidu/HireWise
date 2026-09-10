@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { interviewsApi } from '@/lib/api/interviews-api'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { interviewsApi } from "@/lib/api/interviews-api";
+import { Link } from "react-router-dom";
 import {
   Users,
   Clock,
@@ -14,55 +14,83 @@ import {
   Search,
   Filter,
   Star,
-  AlertTriangle
-} from 'lucide-react'
-import type { InterviewStatus } from '@/types/interviews'
+  AlertTriangle,
+} from "lucide-react";
+import type { InterviewStatus } from "@/types/interviews";
 
 const getStatusBadge = (status: InterviewStatus) => {
   switch (status) {
-    case 'SCHEDULED':
-      return { label: 'Scheduled', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' }
-    case 'IN_PROGRESS':
-      return { label: 'In Progress', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' }
-    case 'COMPLETED':
-      return { label: 'Completed', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' }
-    case 'CANCELLED':
-      return { label: 'Cancelled', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' }
+    case "SCHEDULED":
+      return {
+        label: "Scheduled",
+        color: "text-emerald-700",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+      };
+    case "IN_PROGRESS":
+      return {
+        label: "In Progress",
+        color: "text-amber-700",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      };
+    case "COMPLETED":
+      return {
+        label: "Completed",
+        color: "text-blue-700",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+      };
+    case "CANCELLED":
+      return {
+        label: "Cancelled",
+        color: "text-red-700",
+        bg: "bg-red-50",
+        border: "border-red-200",
+      };
     default:
-      return { label: status, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' }
+      return {
+        label: status,
+        color: "text-slate-600",
+        bg: "bg-slate-100",
+        border: "border-slate-200",
+      };
   }
-}
+};
 
 export function RecruiterInterviewsPage() {
-  const queryClient = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState<string>('ALL')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [page] = useState(1)
-  const [cancelModalId, setCancelModalId] = useState<string | null>(null)
-  const [cancelReason, setCancelReason] = useState('')
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page] = useState(1);
+  const [cancelModalId, setCancelModalId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ['recruiterInterviews', page, statusFilter, searchTerm],
+    queryKey: ["recruiterInterviews", page, statusFilter, searchTerm],
     queryFn: () =>
       interviewsApi.getInterviews({
         page,
         pageSize: 15,
-        status: statusFilter === 'ALL' ? undefined : (statusFilter as InterviewStatus),
-        search: searchTerm || undefined
-      })
-  })
+        status:
+          statusFilter === "ALL"
+            ? undefined
+            : (statusFilter as InterviewStatus),
+        search: searchTerm || undefined,
+      }),
+  });
 
   const cancelMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       interviewsApi.cancelInterview(id, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruiterInterviews'] })
-      setCancelModalId(null)
-      setCancelReason('')
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ["recruiterInterviews"] });
+      setCancelModalId(null);
+      setCancelReason("");
+    },
+  });
 
-  const interviews = data?.items || []
+  const interviews = data?.items || [];
 
   return (
     <div className="space-y-6">
@@ -73,7 +101,8 @@ export function RecruiterInterviewsPage() {
             <Users className="h-7 w-7 text-indigo-600" /> Company Interviews
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Oversee all scheduled, active, and completed technical rounds across your company.
+            Oversee all scheduled, active, and completed technical rounds across
+            your company.
           </p>
         </div>
         <Link
@@ -116,14 +145,19 @@ export function RecruiterInterviewsPage() {
       {isLoading ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
           <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-          <p className="text-sm text-slate-500">Loading company interviews...</p>
+          <p className="text-sm text-slate-500">
+            Loading company interviews...
+          </p>
         </div>
       ) : interviews.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
           <Users className="h-8 w-8 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">No interviews found</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            No interviews found
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Get started by scheduling an interview for an approved candidate application.
+            Get started by scheduling an interview for an approved candidate
+            application.
           </p>
           <Link
             to="/recruiter/scheduling"
@@ -135,9 +169,9 @@ export function RecruiterInterviewsPage() {
       ) : (
         <div className="space-y-4">
           {interviews.map((interview) => {
-            const badge = getStatusBadge(interview.status)
-            const startDate = new Date(interview.scheduledStartTime)
-            const endDate = new Date(interview.scheduledEndTime)
+            const badge = getStatusBadge(interview.status);
+            const startDate = new Date(interview.scheduledStartTime);
+            const endDate = new Date(interview.scheduledEndTime);
 
             return (
               <div
@@ -147,7 +181,9 @@ export function RecruiterInterviewsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-base font-bold text-slate-900">{interview.candidateName}</h3>
+                      <h3 className="text-base font-bold text-slate-900">
+                        {interview.candidateName}
+                      </h3>
                       <span
                         className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.color} ${badge.border}`}
                       >
@@ -155,7 +191,14 @@ export function RecruiterInterviewsPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Position: <span className="text-slate-800 font-medium">{interview.jobTitle}</span> • Interviewer: <span className="text-indigo-700 font-medium">{interview.interviewerName}</span>
+                      Position:{" "}
+                      <span className="text-slate-800 font-medium">
+                        {interview.jobTitle}
+                      </span>{" "}
+                      • Interviewer:{" "}
+                      <span className="text-indigo-700 font-medium">
+                        {interview.interviewerName}
+                      </span>
                     </p>
                   </div>
 
@@ -167,11 +210,12 @@ export function RecruiterInterviewsPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 border border-slate-200 transition"
                       >
-                        <Video className="h-3.5 w-3.5 text-emerald-600" /> Meet Link
+                        <Video className="h-3.5 w-3.5 text-emerald-600" /> Meet
+                        Link
                       </a>
                     )}
 
-                    {interview.status === 'SCHEDULED' && (
+                    {interview.status === "SCHEDULED" && (
                       <button
                         onClick={() => setCancelModalId(interview.id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-medium transition cursor-pointer"
@@ -184,7 +228,8 @@ export function RecruiterInterviewsPage() {
                       to={`/recruiter/interviews/${interview.id}`}
                       className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-medium transition"
                     >
-                      {interview.hasFeedback ? 'Review Feedback' : 'Details'} <ArrowRight className="h-3.5 w-3.5" />
+                      {interview.hasFeedback ? "Review Feedback" : "Details"}{" "}
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -193,18 +238,32 @@ export function RecruiterInterviewsPage() {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-indigo-600" />
                     <span>
-                      {startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at{' '}
-                      {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
-                      {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {startDate.toLocaleDateString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}{" "}
+                      at{" "}
+                      {startDate.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {endDate.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-amber-500" />
                     <span>
-                      Feedback:{' '}
+                      Feedback:{" "}
                       {interview.hasFeedback ? (
-                        <strong className="text-emerald-700">Submitted ({interview.overallRating}/5.0)</strong>
+                        <strong className="text-emerald-700">
+                          Submitted ({interview.overallRating}/5.0)
+                        </strong>
                       ) : (
                         <span className="text-slate-400">Pending</span>
                       )}
@@ -214,12 +273,17 @@ export function RecruiterInterviewsPage() {
                   {interview.recommendation && (
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                      <span>Recommendation: <strong className="text-slate-800">{interview.recommendation.replace('_', ' ')}</strong></span>
+                      <span>
+                        Recommendation:{" "}
+                        <strong className="text-slate-800">
+                          {interview.recommendation.replace("_", " ")}
+                        </strong>
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
@@ -230,13 +294,19 @@ export function RecruiterInterviewsPage() {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full space-y-4">
             <div className="flex items-center gap-2.5 text-red-600">
               <AlertTriangle className="h-5 w-5 shrink-0" />
-              <h3 className="text-base font-bold text-slate-900">Cancel Interview</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                Cancel Interview
+              </h3>
             </div>
             <p className="text-xs text-slate-500">
-              Are you sure you want to cancel this interview session? The candidate and interviewer will be notified and the application returned to approved state.
+              Are you sure you want to cancel this interview session? The
+              candidate and interviewer will be notified and the application
+              returned to approved state.
             </p>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Cancellation Reason (Optional)</label>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Cancellation Reason (Optional)
+              </label>
               <textarea
                 rows={2}
                 value={cancelReason}
@@ -255,11 +325,18 @@ export function RecruiterInterviewsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => cancelMutation.mutate({ id: cancelModalId, reason: cancelReason })}
+                onClick={() =>
+                  cancelMutation.mutate({
+                    id: cancelModalId,
+                    reason: cancelReason,
+                  })
+                }
                 disabled={cancelMutation.isPending}
                 className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-semibold text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
               >
-                {cancelMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {cancelMutation.isPending && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                )}
                 Confirm Cancellation
               </button>
             </div>
@@ -267,5 +344,5 @@ export function RecruiterInterviewsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

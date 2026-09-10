@@ -4,22 +4,26 @@ from enum import Enum
 import uuid
 from datetime import datetime
 
+
 class QuestionCategory(str, Enum):
     TECHNICAL = "TECHNICAL"
     BEHAVIORAL = "BEHAVIORAL"
     PROBLEM_SOLVING = "PROBLEM_SOLVING"
     PROJECT_BASED = "PROJECT_BASED"
 
+
 class DifficultyLevel(str, Enum):
     EASY = "EASY"
     MEDIUM = "MEDIUM"
     HARD = "HARD"
+
 
 class RecommendationType(str, Enum):
     STRONG_HIRE = "STRONG_HIRE"
     HIRE = "HIRE"
     NO_HIRE = "NO_HIRE"
     STRONG_NO_HIRE = "STRONG_NO_HIRE"
+
 
 # Agent 1: Job Description Analysis Schema
 class JobAnalysis(BaseModel):
@@ -31,6 +35,7 @@ class JobAnalysis(BaseModel):
     technical_domains: List[str] = Field(default_factory=list)
     key_responsibilities: List[str] = Field(default_factory=list)
 
+
 # Agent 2: Resume Analysis Schema
 class ResumeAnalysis(BaseModel):
     candidate_name: Optional[str] = None
@@ -40,6 +45,7 @@ class ResumeAnalysis(BaseModel):
     project_highlights: List[str] = Field(default_factory=list)
     certifications: List[str] = Field(default_factory=list)
     executive_summary: str = ""
+
 
 # Agent 3: Candidate Evaluation & Ranking Schema
 class CandidateEvaluation(BaseModel):
@@ -51,12 +57,14 @@ class CandidateEvaluation(BaseModel):
     recommendation: RecommendationType
     recommendation_reasoning: str
 
+
 # Agent 4: Validation Result Schema
 class ValidationResult(BaseModel):
     is_valid: bool
     validation_errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     confidence_score: float = 1.0
+
 
 # Agent 5: Generated Interview Question Schema
 class GeneratedQuestion(BaseModel):
@@ -66,8 +74,10 @@ class GeneratedQuestion(BaseModel):
     expected_answer_rubric: str
     difficulty: DifficultyLevel
 
+
 class InterviewQuestionsPayload(BaseModel):
     questions: List[GeneratedQuestion] = Field(default_factory=list)
+
 
 class GenerateQuestionsRequest(BaseModel):
     job_analysis: JobAnalysis
@@ -75,14 +85,16 @@ class GenerateQuestionsRequest(BaseModel):
     candidate_evaluation: Optional[CandidateEvaluation] = None
     count_per_category: int = 2
 
+
 # Agent 6: Scheduling Recommendation Schema
 class AvailabilitySlotInput(BaseModel):
     id: Optional[str] = None
     user_id: str
-    role: str = "INTERVIEWER" # INTERVIEWER or CANDIDATE
+    role: str = "INTERVIEWER"  # INTERVIEWER or CANDIDATE
     start_time: datetime
     end_time: datetime
     timezone: str = "UTC"
+
 
 class RecommendedSlot(BaseModel):
     start_time: datetime
@@ -92,10 +104,12 @@ class RecommendedSlot(BaseModel):
     conflict_detected: bool = False
     score: float = 1.0
 
+
 class SchedulingRecommendation(BaseModel):
     recommended_slots: List[RecommendedSlot] = Field(default_factory=list)
     conflicts: List[str] = Field(default_factory=list)
     reasoning: str = ""
+
 
 class SchedulingRequest(BaseModel):
     candidate_id: str
@@ -105,16 +119,19 @@ class SchedulingRequest(BaseModel):
     duration_minutes: int = 45
     timezone: str = "UTC"
 
+
 # Approval Gate Request Schemas
 class EvaluationApprovalRequest(BaseModel):
-    decision: str = "APPROVED" # "APPROVED" or "REJECTED"
+    decision: str = "APPROVED"  # "APPROVED" or "REJECTED"
     approved_by_user_id: Optional[uuid.UUID] = None
     notes: Optional[str] = None
+
 
 class ScheduleConfirmationRequest(BaseModel):
     selected_slot: RecommendedSlot
     approved_by_user_id: Optional[uuid.UUID] = None
     notes: Optional[str] = None
+
 
 # Workflow Request / Response Schemas
 class EvaluateApplicationRequest(BaseModel):
@@ -127,6 +144,7 @@ class EvaluateApplicationRequest(BaseModel):
     interviewer_id: Optional[str] = None
     candidate_slots: Optional[List[AvailabilitySlotInput]] = None
     interviewer_slots: Optional[List[AvailabilitySlotInput]] = None
+
 
 class WorkflowResponse(BaseModel):
     workflow_id: uuid.UUID

@@ -89,8 +89,8 @@ public class UserService : IUserService
 
             // Auto-provision new user from authenticated claims
             var role = _currentUserService.Role ?? UserRole.CANDIDATE;
-            var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN) 
-                ? UserStatus.ACTIVE 
+            var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN)
+                ? UserStatus.ACTIVE
                 : UserStatus.ONBOARDING;
 
             user = new User

@@ -4,10 +4,15 @@ from pydantic import BaseModel
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from ai_service.core.logging import logger
-from ai_service.core.sanitizer import sanitize_text, detect_prompt_injection, is_tool_allowed
+from ai_service.core.sanitizer import (
+    sanitize_text,
+    detect_prompt_injection,
+    is_tool_allowed,
+)
 from ai_service.llm.client import get_structured_llm
 
 T = TypeVar("T", bound=BaseModel)
+
 
 class BaseAgent(ABC):
     """
@@ -33,14 +38,13 @@ class BaseAgent(ABC):
         """
         allowed = is_tool_allowed(self.name, tool_name)
         if not allowed:
-            self.logger.warning(f"[SECURITY] Agent '{self.name}' attempted unauthorized access to tool '{tool_name}'.")
+            self.logger.warning(
+                f"[SECURITY] Agent '{self.name}' attempted unauthorized access to tool '{tool_name}'."
+            )
         return allowed
 
     async def invoke_structured_llm(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        agent_key: Optional[str] = None
+        self, system_prompt: str, user_prompt: str, agent_key: Optional[str] = None
     ) -> T:
         """
         Invokes the structured LLM with Gemini / Vertex AI and validates output against self.schema.
@@ -55,6 +59,7 @@ class BaseAgent(ABC):
         if agent_key:
             try:
                 from ai_service.db.agent_config_repo import agent_config_repo
+
                 db_cfg = await agent_config_repo.get_config(agent_key)
                 if db_cfg and db_cfg.get("IsActive", True):
                     if db_cfg.get("SystemPrompt"):
@@ -65,24 +70,33 @@ class BaseAgent(ABC):
                         temp = float(db_cfg["Temperature"])
                     if db_cfg.get("MaxTokens"):
                         max_toks = int(db_cfg["MaxTokens"])
-                    self.logger.info(f"[{self.name}] Applied dynamic DB config for '{agent_key}': model={model_override}, temp={temp}")
+                    self.logger.info(
+                        f"[{self.name}] Applied dynamic DB config for '{agent_key}': model={model_override}, temp={temp}"
+                    )
             except Exception as e:
-                self.logger.warning(f"[{self.name}] Could not retrieve dynamic DB config: {e}. Falling back to default.")
+                self.logger.warning(
+                    f"[{self.name}] Could not retrieve dynamic DB config: {e}. Falling back to default."
+                )
 
         # Security scan and sanitization
         is_injection, reason = detect_prompt_injection(user_prompt)
         if is_injection:
-            self.logger.warning(f"[SECURITY ALERT] Prompt injection heuristic flagged in '{self.name}': {reason}")
+            self.logger.warning(
+                f"[SECURITY ALERT] Prompt injection heuristic flagged in '{self.name}': {reason}"
+            )
 
         cleaned_user_prompt = sanitize_text(user_prompt)
 
-        self.logger.info(f"[{self.name}] Invoking structured LLM for schema: {self.schema.__name__}")
-        llm = get_structured_llm(self.schema, model=model_override, temperature=temp, max_tokens=max_toks)
+        self.logger.info(
+            f"[{self.name}] Invoking structured LLM for schema: {self.schema.__name__}"
+        )
+        llm = get_structured_llm(
+            self.schema, model=model_override, temperature=temp, max_tokens=max_toks
+        )
         messages = [
             SystemMessage(content=active_system_prompt),
-            HumanMessage(content=cleaned_user_prompt)
+            HumanMessage(content=cleaned_user_prompt),
         ]
-        
+
         result: T = await llm.ainvoke(messages)
         return result
-

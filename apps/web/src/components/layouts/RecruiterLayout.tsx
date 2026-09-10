@@ -1,4 +1,4 @@
-import { DashboardLayout, type NavItem } from './DashboardLayout'
+import { DashboardLayout, type NavItem } from "./DashboardLayout";
 import {
   LayoutDashboard,
   Building2,
@@ -8,20 +8,32 @@ import {
   FileSpreadsheet,
   Bot,
   Calendar,
-  Activity
-} from 'lucide-react'
+  Activity,
+} from "lucide-react";
 
 const recruiterNav: NavItem[] = [
-  { label: 'Dashboard', href: '/recruiter/dashboard', icon: LayoutDashboard },
-  { label: 'Company Profile', href: '/recruiter/companies', icon: Building2 },
-  { label: 'Team & Interviewers', href: '/recruiter/team', icon: UserCheck },
-  { label: 'Job Postings', href: '/recruiter/jobs', icon: Briefcase },
-  { label: 'Applications', href: '/recruiter/applications', icon: FileSpreadsheet },
-  { label: 'AI Evaluations', href: '/recruiter/ai-evaluations', icon: Bot },
-  { label: 'Interview Scheduling', href: '/recruiter/scheduling', icon: Calendar },
-  { label: 'Interviews', href: '/recruiter/interviews', icon: Users },
-  { label: 'AI Workflow Monitor', href: '/recruiter/ai-workflows', icon: Activity },
-]
+  { label: "Dashboard", href: "/recruiter/dashboard", icon: LayoutDashboard },
+  { label: "Company Profile", href: "/recruiter/companies", icon: Building2 },
+  { label: "Team & Interviewers", href: "/recruiter/team", icon: UserCheck },
+  { label: "Job Postings", href: "/recruiter/jobs", icon: Briefcase },
+  {
+    label: "Applications",
+    href: "/recruiter/applications",
+    icon: FileSpreadsheet,
+  },
+  { label: "AI Evaluations", href: "/recruiter/ai-evaluations", icon: Bot },
+  {
+    label: "Interview Scheduling",
+    href: "/recruiter/scheduling",
+    icon: Calendar,
+  },
+  { label: "Interviews", href: "/recruiter/interviews", icon: Users },
+  {
+    label: "AI Workflow Monitor",
+    href: "/recruiter/ai-workflows",
+    icon: Activity,
+  },
+];
 
 export function RecruiterLayout() {
   return (
@@ -30,5 +42,5 @@ export function RecruiterLayout() {
       roleTitle="Recruiter Workspace"
       roleColor="text-indigo-600"
     />
-  )
+  );
 }

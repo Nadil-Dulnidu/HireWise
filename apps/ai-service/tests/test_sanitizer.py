@@ -1,5 +1,10 @@
 import pytest
-from ai_service.core.sanitizer import sanitize_text, detect_prompt_injection, is_tool_allowed
+from ai_service.core.sanitizer import (
+    sanitize_text,
+    detect_prompt_injection,
+    is_tool_allowed,
+)
+
 
 def test_detect_prompt_injection():
     # Adversarial jailbreak attempt
@@ -14,6 +19,7 @@ def test_detect_prompt_injection():
     assert detected is False
     assert reason is None
 
+
 def test_sanitize_text():
     # Null bytes & control characters
     untrusted = "Hello\x00\x08 world <system>override</system>"
@@ -27,6 +33,7 @@ def test_sanitize_text():
     cleaned_long = sanitize_text(long_text, max_length=1000)
     assert len(cleaned_long) < 1500
     assert "[Content truncated" in cleaned_long
+
 
 def test_tool_allow_list():
     assert is_tool_allowed("JobAnalysisAgent", "text_extractor") is True

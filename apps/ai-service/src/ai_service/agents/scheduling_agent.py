@@ -5,12 +5,13 @@ from ai_service.models.schemas import (
     AvailabilitySlotInput,
     RecommendedSlot,
     SchedulingRecommendation,
-    SchedulingRequest
+    SchedulingRequest,
 )
 from ai_service.prompts.templates import (
     SCHEDULING_REASONING_SYSTEM_PROMPT,
-    SCHEDULING_REASONING_USER_PROMPT
+    SCHEDULING_REASONING_USER_PROMPT,
 )
+
 
 class InterviewSchedulingAgent:
     """
@@ -21,17 +22,14 @@ class InterviewSchedulingAgent:
     def __init__(self):
         self.name = "InterviewSchedulingAgent"
 
-    async def execute(
-        self,
-        request: SchedulingRequest
-    ) -> SchedulingRecommendation:
+    async def execute(self, request: SchedulingRequest) -> SchedulingRecommendation:
         return self.schedule(
             candidate_id=request.candidate_id,
             interviewer_id=request.interviewer_id,
             candidate_slots=request.candidate_slots,
             interviewer_slots=request.interviewer_slots,
             duration_minutes=request.duration_minutes,
-            target_timezone=request.timezone
+            target_timezone=request.timezone,
         )
 
     def schedule(
@@ -41,7 +39,7 @@ class InterviewSchedulingAgent:
         candidate_slots: List[AvailabilitySlotInput],
         interviewer_slots: List[AvailabilitySlotInput],
         duration_minutes: int = 45,
-        target_timezone: str = "UTC"
+        target_timezone: str = "UTC",
     ) -> SchedulingRecommendation:
         """
         Deterministic constraint satisfaction algorithm finding mutual availability windows.
@@ -71,9 +69,12 @@ class InterviewSchedulingAgent:
                     if overlap_end - overlap_start >= slot_duration:
                         # Generate candidate slot(s) within the overlap
                         curr_start = overlap_start
-                        while curr_start + slot_duration <= overlap_end and len(recommended_slots) < 5:
+                        while (
+                            curr_start + slot_duration <= overlap_end
+                            and len(recommended_slots) < 5
+                        ):
                             curr_end = curr_start + slot_duration
-                            
+
                             # Score higher if scheduled during standard working hours (09:00 - 17:00)
                             hour = curr_start.hour
                             score = 1.0 if 9 <= hour <= 16 else 0.8
@@ -85,7 +86,7 @@ class InterviewSchedulingAgent:
                                     interviewer_id=interviewer_id,
                                     candidate_id=candidate_id,
                                     conflict_detected=False,
-                                    score=score
+                                    score=score,
                                 )
                             )
                             # Advance by 30-minute increments for multiple options
@@ -102,7 +103,9 @@ class InterviewSchedulingAgent:
             )
         else:
             if not conflicts:
-                conflicts.append("No overlapping availability slots found between candidate and interviewer.")
+                conflicts.append(
+                    "No overlapping availability slots found between candidate and interviewer."
+                )
             reasoning = (
                 "Unable to find overlapping windows matching the required duration. "
                 "Recommend requesting alternative availability slots or assigning an alternate interviewer."
@@ -111,5 +114,5 @@ class InterviewSchedulingAgent:
         return SchedulingRecommendation(
             recommended_slots=recommended_slots,
             conflicts=conflicts,
-            reasoning=reasoning
+            reasoning=reasoning,
         )

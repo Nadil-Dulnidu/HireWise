@@ -1,29 +1,37 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ShieldAlert, ArrowLeft, Home } from 'lucide-react'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShieldAlert, ArrowLeft, Home } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function UnauthorizedPage() {
-  const navigate = useNavigate()
-  const { role, changeRole } = useCurrentUser()
-  const [isSwitching, setIsSwitching] = useState(false)
+  const navigate = useNavigate();
+  const { role, changeRole } = useCurrentUser();
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const dashboardPath =
-    role === 'ADMIN' ? '/admin/dashboard' :
-    role === 'RECRUITER' ? '/recruiter/dashboard' :
-    role === 'INTERVIEWER' ? '/interviewer/dashboard' :
-    '/candidate/dashboard'
+    role === "ADMIN"
+      ? "/admin/dashboard"
+      : role === "RECRUITER"
+        ? "/recruiter/dashboard"
+        : role === "INTERVIEWER"
+          ? "/interviewer/dashboard"
+          : "/candidate/dashboard";
 
-  const handleSwitch = async (newRole: 'CANDIDATE' | 'RECRUITER') => {
-    setIsSwitching(true)
+  const handleSwitch = async (newRole: "CANDIDATE" | "RECRUITER") => {
+    setIsSwitching(true);
     try {
-      await changeRole(newRole)
-      navigate(newRole === 'CANDIDATE' ? '/candidate/dashboard' : '/recruiter/dashboard', { replace: true })
+      await changeRole(newRole);
+      navigate(
+        newRole === "CANDIDATE"
+          ? "/candidate/dashboard"
+          : "/recruiter/dashboard",
+        { replace: true },
+      );
     } catch (err) {
-      console.error('Failed to switch role:', err)
-      setIsSwitching(false)
+      console.error("Failed to switch role:", err);
+      setIsSwitching(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 text-slate-900">
@@ -32,9 +40,15 @@ export function UnauthorizedPage() {
           <ShieldAlert className="h-8 w-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Access Restricted</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Access Restricted
+          </h1>
           <p className="text-sm text-slate-500">
-            You do not have the required permissions or role (<span className="text-slate-900 font-semibold">{role || 'Guest'}</span>) to view this resource.
+            You do not have the required permissions or role (
+            <span className="text-slate-900 font-semibold">
+              {role || "Guest"}
+            </span>
+            ) to view this resource.
           </p>
         </div>
 
@@ -56,21 +70,21 @@ export function UnauthorizedPage() {
         {role && (
           <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500">
             <span>Need a different role?</span>
-            {role !== 'CANDIDATE' && (
+            {role !== "CANDIDATE" && (
               <button
                 type="button"
                 disabled={isSwitching}
-                onClick={() => handleSwitch('CANDIDATE')}
+                onClick={() => handleSwitch("CANDIDATE")}
                 className="text-blue-600 hover:text-blue-700 underline font-medium cursor-pointer"
               >
                 Switch to Candidate
               </button>
             )}
-            {role !== 'RECRUITER' && (
+            {role !== "RECRUITER" && (
               <button
                 type="button"
                 disabled={isSwitching}
-                onClick={() => handleSwitch('RECRUITER')}
+                onClick={() => handleSwitch("RECRUITER")}
                 className="text-indigo-600 hover:text-indigo-700 underline font-medium cursor-pointer"
               >
                 Switch to Recruiter
@@ -80,5 +94,5 @@ export function UnauthorizedPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -6,7 +6,7 @@ from ai_service.agents import (
     CandidateEvaluationAgent,
     ValidationAgent,
     InterviewQuestionGeneratorAgent,
-    InterviewSchedulingAgent
+    InterviewSchedulingAgent,
 )
 from ai_service.models.schemas import (
     JobAnalysis,
@@ -14,8 +14,9 @@ from ai_service.models.schemas import (
     RecommendationType,
     QuestionCategory,
     AvailabilitySlotInput,
-    SchedulingRequest
+    SchedulingRequest,
 )
+
 
 @pytest.mark.asyncio
 async def test_golden_case_1_high_alignment_senior_backend():
@@ -34,10 +35,14 @@ async def test_golden_case_1_high_alignment_senior_backend():
     job = await job_agent.execute(
         job_title="Senior Backend Engineer",
         job_description="Architect and build high-throughput microservices using C#, ASP.NET Core, PostgreSQL, and Redis.",
-        job_requirements="5+ years experience in C#, .NET 8, SQL/PostgreSQL, distributed caching with Redis, Docker, and CI/CD."
+        job_requirements="5+ years experience in C#, .NET 8, SQL/PostgreSQL, distributed caching with Redis, Docker, and CI/CD.",
     )
     assert job.title == "Senior Backend Engineer"
-    assert "C#" in job.required_skills or "Asp.net" in job.required_skills or "Postgresql" in job.required_skills
+    assert (
+        "C#" in job.required_skills
+        or "Asp.net" in job.required_skills
+        or "Postgresql" in job.required_skills
+    )
 
     # 2. Resume Analysis
     resume_text = """
@@ -57,7 +62,10 @@ async def test_golden_case_1_high_alignment_senior_backend():
     # 3. Candidate Evaluation
     evaluation = await eval_agent.execute(job, cand)
     assert evaluation.overall_match_score >= 80
-    assert evaluation.recommendation in (RecommendationType.STRONG_HIRE, RecommendationType.HIRE)
+    assert evaluation.recommendation in (
+        RecommendationType.STRONG_HIRE,
+        RecommendationType.HIRE,
+    )
     assert len(evaluation.strengths) >= 1
 
     # 4. Validation
@@ -77,13 +85,28 @@ async def test_golden_case_1_high_alignment_senior_backend():
     req = SchedulingRequest(
         candidate_id="cand_elena",
         interviewer_id="int_lead",
-        candidate_slots=[AvailabilitySlotInput(user_id="cand_elena", role="CANDIDATE", start_time=base, end_time=base + timedelta(hours=3))],
-        interviewer_slots=[AvailabilitySlotInput(user_id="int_lead", role="INTERVIEWER", start_time=base, end_time=base + timedelta(hours=2))],
-        duration_minutes=45
+        candidate_slots=[
+            AvailabilitySlotInput(
+                user_id="cand_elena",
+                role="CANDIDATE",
+                start_time=base,
+                end_time=base + timedelta(hours=3),
+            )
+        ],
+        interviewer_slots=[
+            AvailabilitySlotInput(
+                user_id="int_lead",
+                role="INTERVIEWER",
+                start_time=base,
+                end_time=base + timedelta(hours=2),
+            )
+        ],
+        duration_minutes=45,
     )
     sched_res = await sched_agent.execute(req)
     assert len(sched_res.recommended_slots) >= 1
     assert sched_res.recommended_slots[0].start_time == base
+
 
 @pytest.mark.asyncio
 async def test_golden_case_2_moderate_alignment_with_gaps():
@@ -98,7 +121,7 @@ async def test_golden_case_2_moderate_alignment_with_gaps():
         title="Senior React Architect",
         required_skills=["React", "TypeScript", "Next.js", "GraphQL", "WebSockets"],
         min_years_experience=5,
-        technical_domains=["Frontend", "Web Performance"]
+        technical_domains=["Frontend", "Web Performance"],
     )
 
     cand = ResumeAnalysis(
@@ -106,16 +129,20 @@ async def test_golden_case_2_moderate_alignment_with_gaps():
         extracted_skills=["React", "JavaScript", "HTML", "CSS"],
         years_of_experience=2.0,
         education_history=["Bootcamp Certificate"],
-        executive_summary="Junior frontend developer with 2 years of React experience."
+        executive_summary="Junior frontend developer with 2 years of React experience.",
     )
 
     evaluation = await eval_agent.execute(job, cand)
     assert evaluation.overall_match_score < 75
     assert len(evaluation.identified_gaps) > 0
-    assert any("experience" in gap.lower() or "missing" in gap.lower() for gap in evaluation.identified_gaps)
+    assert any(
+        "experience" in gap.lower() or "missing" in gap.lower()
+        for gap in evaluation.identified_gaps
+    )
 
     val_res = val_agent.validate(evaluation)
     assert val_res.is_valid is True
+
 
 @pytest.mark.asyncio
 async def test_golden_case_3_complete_mismatch():
@@ -130,7 +157,7 @@ async def test_golden_case_3_complete_mismatch():
         title="iOS Mobile Engineer",
         required_skills=["Swift", "SwiftUI", "UIKit", "iOS SDK", "CoreData"],
         min_years_experience=4,
-        technical_domains=["Mobile", "iOS"]
+        technical_domains=["Mobile", "iOS"],
     )
 
     cand = ResumeAnalysis(
@@ -138,12 +165,15 @@ async def test_golden_case_3_complete_mismatch():
         extracted_skills=["Python", "Pandas", "Tableau", "SQL", "Excel"],
         years_of_experience=3.0,
         education_history=["B.A. Economics"],
-        executive_summary="Data Analyst focused on business intelligence dashboards."
+        executive_summary="Data Analyst focused on business intelligence dashboards.",
     )
 
     evaluation = await eval_agent.execute(job, cand)
     assert evaluation.overall_match_score < 50
-    assert evaluation.recommendation in (RecommendationType.STRONG_NO_HIRE, RecommendationType.NO_HIRE)
+    assert evaluation.recommendation in (
+        RecommendationType.STRONG_NO_HIRE,
+        RecommendationType.NO_HIRE,
+    )
     assert len(evaluation.identified_gaps) > 0
 
     val_res = val_agent.validate(evaluation)

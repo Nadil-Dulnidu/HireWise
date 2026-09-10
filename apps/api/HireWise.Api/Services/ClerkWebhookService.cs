@@ -107,8 +107,8 @@ public class ClerkWebhookService : IClerkWebhookService
 
         var email = data.EmailAddresses.FirstOrDefault()?.EmailAddress ?? string.Empty;
         var role = DetermineRole(data);
-        var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN) 
-            ? UserStatus.ACTIVE 
+        var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN)
+            ? UserStatus.ACTIVE
             : UserStatus.ONBOARDING;
 
         var user = new User

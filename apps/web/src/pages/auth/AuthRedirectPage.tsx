@@ -1,114 +1,141 @@
-import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { apiClient } from '@/lib/api-client'
-import { Loader2 } from 'lucide-react'
-import type { UserRole } from '@/types/auth'
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { apiClient } from "@/lib/api-client";
+import { Loader2 } from "lucide-react";
+import type { UserRole } from "@/types/auth";
 
 export function AuthRedirectPage() {
-  const navigate = useNavigate()
-  const { isSignedIn, isLoading, role, status, clerkUser, profile, refetchProfile } = useCurrentUser()
-  const syncAttempted = useRef(false)
+  const navigate = useNavigate();
+  const {
+    isSignedIn,
+    isLoading,
+    role,
+    status,
+    clerkUser,
+    profile,
+    refetchProfile,
+  } = useCurrentUser();
+  const syncAttempted = useRef(false);
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading) return;
 
     if (!isSignedIn) {
-      navigate('/sign-in', { replace: true })
-      return
+      navigate("/sign-in", { replace: true });
+      return;
     }
 
     const processRedirect = async () => {
-      const storedRole = (localStorage.getItem('hirewise_selected_role') as UserRole | null)
+      const storedRole = localStorage.getItem(
+        "hirewise_selected_role",
+      ) as UserRole | null;
 
       // If a role was selected during registration/sign-up, apply and sync it
       if (storedRole && !syncAttempted.current) {
-        syncAttempted.current = true
+        syncAttempted.current = true;
 
         try {
           if (clerkUser && clerkUser.unsafeMetadata?.role !== storedRole) {
             await clerkUser.update({
               unsafeMetadata: {
                 ...clerkUser.unsafeMetadata,
-                role: storedRole
-              }
-            })
+                role: storedRole,
+              },
+            });
           }
 
           // Always ensure the backend DB is updated to the chosen role
-          await apiClient.put('/users/me/role', { role: storedRole })
-          await refetchProfile()
+          await apiClient.put("/users/me/role", { role: storedRole });
+          await refetchProfile();
         } catch (err) {
-          console.error('Role sync error during redirect:', err)
+          console.error("Role sync error during redirect:", err);
         } finally {
-          localStorage.removeItem('hirewise_selected_role')
+          localStorage.removeItem("hirewise_selected_role");
         }
 
-        if (storedRole === 'CANDIDATE') {
-          navigate('/candidate/dashboard', { replace: true })
-          return
+        if (storedRole === "CANDIDATE") {
+          navigate("/candidate/dashboard", { replace: true });
+          return;
         }
-        if (storedRole === 'RECRUITER') {
-          const hasClerkOrg = (clerkUser?.organizationMemberships && clerkUser.organizationMemberships.length > 0)
-          const hasDbCompany = !!profile?.companyId
+        if (storedRole === "RECRUITER") {
+          const hasClerkOrg =
+            clerkUser?.organizationMemberships &&
+            clerkUser.organizationMemberships.length > 0;
+          const hasDbCompany = !!profile?.companyId;
           if (!hasClerkOrg && !hasDbCompany) {
-            navigate('/recruiter/onboarding', { replace: true })
+            navigate("/recruiter/onboarding", { replace: true });
           } else {
-            navigate('/recruiter/dashboard', { replace: true })
+            navigate("/recruiter/dashboard", { replace: true });
           }
-          return
+          return;
         }
-        if (storedRole === 'INTERVIEWER') {
-          navigate('/interviewer/dashboard', { replace: true })
-          return
+        if (storedRole === "INTERVIEWER") {
+          navigate("/interviewer/dashboard", { replace: true });
+          return;
         }
       }
 
       // Existing user role-based redirection
-      const metadataRole = (clerkUser?.unsafeMetadata?.role as UserRole | undefined) || (clerkUser?.publicMetadata?.role as UserRole | undefined)
-      const effectiveRole = profile?.role || metadataRole || role
+      const metadataRole =
+        (clerkUser?.unsafeMetadata?.role as UserRole | undefined) ||
+        (clerkUser?.publicMetadata?.role as UserRole | undefined);
+      const effectiveRole = profile?.role || metadataRole || role;
 
       // Candidates NEVER go to recruiter onboarding — send directly to candidate dashboard
-      if (effectiveRole === 'CANDIDATE') {
-        navigate('/candidate/dashboard', { replace: true })
-        return
+      if (effectiveRole === "CANDIDATE") {
+        navigate("/candidate/dashboard", { replace: true });
+        return;
       }
 
-      if (effectiveRole === 'ADMIN') {
-        navigate('/admin/dashboard', { replace: true })
-        return
+      if (effectiveRole === "ADMIN") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
       }
 
-      if (effectiveRole === 'RECRUITER') {
-        const hasClerkOrg = (clerkUser?.organizationMemberships && clerkUser.organizationMemberships.length > 0)
-        const hasDbCompany = !!profile?.companyId
+      if (effectiveRole === "RECRUITER") {
+        const hasClerkOrg =
+          clerkUser?.organizationMemberships &&
+          clerkUser.organizationMemberships.length > 0;
+        const hasDbCompany = !!profile?.companyId;
 
-        if (status === 'ONBOARDING' && !hasClerkOrg && !hasDbCompany) {
-          navigate('/recruiter/onboarding', { replace: true })
+        if (status === "ONBOARDING" && !hasClerkOrg && !hasDbCompany) {
+          navigate("/recruiter/onboarding", { replace: true });
         } else {
-          navigate('/recruiter/dashboard', { replace: true })
+          navigate("/recruiter/dashboard", { replace: true });
         }
-        return
+        return;
       }
 
-      if (effectiveRole === 'INTERVIEWER') {
-        navigate('/interviewer/dashboard', { replace: true })
-        return
+      if (effectiveRole === "INTERVIEWER") {
+        navigate("/interviewer/dashboard", { replace: true });
+        return;
       }
 
       // Fallback: Default to candidate dashboard
-      navigate('/candidate/dashboard', { replace: true })
-    }
+      navigate("/candidate/dashboard", { replace: true });
+    };
 
-    processRedirect()
-  }, [isLoading, isSignedIn, role, status, clerkUser, profile, refetchProfile, navigate])
+    processRedirect();
+  }, [
+    isLoading,
+    isSignedIn,
+    role,
+    status,
+    clerkUser,
+    profile,
+    refetchProfile,
+    navigate,
+  ]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-slate-50 text-slate-900">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        <p className="text-sm text-slate-500 font-medium">Directing to your workspace...</p>
+        <p className="text-sm text-slate-500 font-medium">
+          Directing to your workspace...
+        </p>
       </div>
     </div>
-  )
+  );
 }

@@ -11,8 +11,9 @@ from ai_service.models.schemas import (
     QuestionCategory,
     DifficultyLevel,
     SchedulingRecommendation,
-    RecommendedSlot
+    RecommendedSlot,
 )
+
 
 def test_validation_out_of_bound_scores():
     val = ValidationAgent()
@@ -23,11 +24,16 @@ def test_validation_out_of_bound_scores():
         "strengths": ["Good worker"],
         "identified_gaps": [],
         "recommendation": "HIRE",
-        "recommendation_reasoning": "Good match."
+        "recommendation_reasoning": "Good match.",
     }
     result = val.validate(raw_dict, artifact_type="CandidateEvaluation")
     assert result.is_valid is False
-    assert any("CandidateEvaluation schema validation failed" in err or "overall_match_score" in err for err in result.validation_errors)
+    assert any(
+        "CandidateEvaluation schema validation failed" in err
+        or "overall_match_score" in err
+        for err in result.validation_errors
+    )
+
 
 def test_validation_score_recommendation_contradiction():
     val = ValidationAgent()
@@ -38,11 +44,12 @@ def test_validation_score_recommendation_contradiction():
         strengths=["Outstanding"],
         identified_gaps=[],
         recommendation=RecommendationType.STRONG_NO_HIRE,  # Contradiction!
-        recommendation_reasoning="Score 95 but rejected."
+        recommendation_reasoning="Score 95 but rejected.",
     )
     result = val.validate(ce)
     assert result.is_valid is False
     assert any("Contradiction" in err for err in result.validation_errors)
+
 
 def test_validation_empty_questions_payload():
     val = ValidationAgent()
@@ -50,6 +57,7 @@ def test_validation_empty_questions_payload():
     result = val.validate(payload)
     assert result.is_valid is False
     assert any("cannot be empty" in err for err in result.validation_errors)
+
 
 def test_validation_malformed_scheduling_slots():
     val = ValidationAgent()
@@ -60,11 +68,13 @@ def test_validation_malformed_scheduling_slots():
                 start_time=t,
                 end_time=t - timedelta(minutes=30),  # end_time before start_time!
                 interviewer_id="user_1",
-                candidate_id="user_2"
+                candidate_id="user_2",
             )
         ],
-        reasoning="Test"
+        reasoning="Test",
     )
     result = val.validate(sr)
     assert result.is_valid is False
-    assert any("invalid end_time <= start_time" in err for err in result.validation_errors)
+    assert any(
+        "invalid end_time <= start_time" in err for err in result.validation_errors
+    )

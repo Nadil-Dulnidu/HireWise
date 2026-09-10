@@ -2,10 +2,12 @@
 Repository to fetch AI agent configurations from the AgentConfigs table in PostgreSQL,
 with fallback to default values if unavailable or record not found.
 """
+
 from typing import Optional, Dict, Any
 from psycopg.rows import dict_row
 from ai_service.db.connection import get_db_pool
 from ai_service.core.logging import logger
+
 
 class AgentConfigRepository:
     """
@@ -29,7 +31,10 @@ class AgentConfigRepository:
                     if row:
                         return dict(row)
         except Exception as ex:
-            logger.warning(f"Could not load agent config for '{agent_key}' from DB: {ex}. Using fallback defaults.")
+            logger.warning(
+                f"Could not load agent config for '{agent_key}' from DB: {ex}. Using fallback defaults."
+            )
         return None
+
 
 agent_config_repo = AgentConfigRepository()

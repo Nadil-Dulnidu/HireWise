@@ -6,6 +6,7 @@ import pypdf
 import docx
 from ai_service.core.logging import logger
 
+
 class DocumentParser:
     """
     High-fidelity document parser supporting PDF, DOCX, and plain text resumes.
@@ -50,15 +51,23 @@ class DocumentParser:
         """
         logger.info(f"Fetching document from URL: {url}")
         try:
-            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=timeout, follow_redirects=True
+            ) as client:
                 res = await client.get(url)
                 if res.status_code != 200:
-                    logger.warning(f"Failed to fetch document from URL {url} (HTTP {res.status_code})")
-                    return f"Document content unavailable. HTTP status: {res.status_code}"
+                    logger.warning(
+                        f"Failed to fetch document from URL {url} (HTTP {res.status_code})"
+                    )
+                    return (
+                        f"Document content unavailable. HTTP status: {res.status_code}"
+                    )
 
                 content_type = res.headers.get("content-type", "")
-                parsed_text = DocumentParser.parse_from_bytes(res.content, url + " " + content_type)
-                
+                parsed_text = DocumentParser.parse_from_bytes(
+                    res.content, url + " " + content_type
+                )
+
                 if not parsed_text or not parsed_text.strip():
                     return f"Document at {url} contained no extractable text."
 
@@ -91,7 +100,9 @@ class DocumentParser:
             paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
             for table in doc.tables:
                 for row in table.rows:
-                    row_text = " | ".join(c.text.strip() for c in row.cells if c.text.strip())
+                    row_text = " | ".join(
+                        c.text.strip() for c in row.cells if c.text.strip()
+                    )
                     if row_text:
                         paragraphs.append(row_text)
             return "\n\n".join(paragraphs)

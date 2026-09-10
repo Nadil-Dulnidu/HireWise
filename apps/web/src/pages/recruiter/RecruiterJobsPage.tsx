@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { jobsApi } from '@/lib/api/jobs-api'
-import type { JobStatus } from '@/types/jobs'
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { jobsApi } from "@/lib/api/jobs-api";
+import type { JobStatus } from "@/types/jobs";
 import {
   Briefcase,
   Plus,
@@ -15,81 +15,87 @@ import {
   PauseCircle,
   XCircle,
   Loader2,
-  AlertCircle
-} from 'lucide-react'
+  AlertCircle,
+} from "lucide-react";
 
 export function RecruiterJobsPage() {
-  const queryClient = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState<string>('ALL')
-  const [searchTerm, setSearchTerm] = useState<string>('')
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['recruiterJobs', statusFilter, searchTerm],
+    queryKey: ["recruiterJobs", statusFilter, searchTerm],
     queryFn: () =>
       jobsApi.getRecruiterJobs({
-        status: statusFilter !== 'ALL' ? (statusFilter as JobStatus) : undefined,
+        status:
+          statusFilter !== "ALL" ? (statusFilter as JobStatus) : undefined,
         search: searchTerm || undefined,
-        pageSize: 50
-      })
-  })
+        pageSize: 50,
+      }),
+  });
 
   // Mutation to update job status
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: JobStatus }) =>
       jobsApi.updateJobStatus(id, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruiterJobs'] })
+      queryClient.invalidateQueries({ queryKey: ["recruiterJobs"] });
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || 'Failed to update job status')
-    }
-  })
+      alert(err?.response?.data?.error || "Failed to update job status");
+    },
+  });
 
   // Mutation to delete job
   const deleteMutation = useMutation({
     mutationFn: (id: string) => jobsApi.deleteJob(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruiterJobs'] })
+      queryClient.invalidateQueries({ queryKey: ["recruiterJobs"] });
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || 'Failed to delete job')
-    }
-  })
+      alert(err?.response?.data?.error || "Failed to delete job");
+    },
+  });
 
   const getStatusBadge = (status: JobStatus) => {
     switch (status) {
-      case 'OPEN':
+      case "OPEN":
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Open
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{" "}
+            Open
           </span>
-        )
-      case 'DRAFT':
+        );
+      case "DRAFT":
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
             Draft
           </span>
-        )
-      case 'PAUSED':
+        );
+      case "PAUSED":
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
             Paused
           </span>
-        )
-      case 'CLOSED':
+        );
+      case "CLOSED":
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 border border-rose-200">
             Closed
           </span>
-        )
+        );
     }
-  }
+  };
 
   const handleDelete = (id: string, title: string) => {
-    if (confirm(`Are you sure you want to delete the job "${title}"? This action cannot be undone.`)) {
-      deleteMutation.mutate(id)
+    if (
+      confirm(
+        `Are you sure you want to delete the job "${title}"? This action cannot be undone.`,
+      )
+    ) {
+      deleteMutation.mutate(id);
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -100,7 +106,8 @@ export function RecruiterJobsPage() {
             Job Openings Management
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Create, publish, and track company job listings and active applicant pipelines.
+            Create, publish, and track company job listings and active applicant
+            pipelines.
           </p>
         </div>
 
@@ -153,7 +160,9 @@ export function RecruiterJobsPage() {
       {isError && (
         <div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-center space-y-2">
           <AlertCircle className="h-6 w-6 text-rose-500 mx-auto" />
-          <h3 className="text-sm font-semibold text-rose-900">Failed to load job listings</h3>
+          <h3 className="text-sm font-semibold text-rose-900">
+            Failed to load job listings
+          </h3>
           <p className="text-xs text-rose-700">{(error as Error)?.message}</p>
         </div>
       )}
@@ -189,14 +198,18 @@ export function RecruiterJobsPage() {
                             <div className="flex items-center gap-2 text-xs text-slate-500">
                               <span>{job.location}</span>
                               <span>•</span>
-                              <span>{job.employmentType.replace('_', ' ')}</span>
+                              <span>
+                                {job.employmentType.replace("_", " ")}
+                              </span>
                               <span>•</span>
-                              <span className="text-blue-600 font-semibold">{job.experienceLevel}</span>
+                              <span className="text-blue-600 font-semibold">
+                                {job.experienceLevel}
+                              </span>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-slate-600 text-xs font-medium">
-                          {job.departmentName || 'General'}
+                          {job.departmentName || "General"}
                         </td>
                         <td className="px-6 py-4">
                           {getStatusBadge(job.status)}
@@ -216,37 +229,57 @@ export function RecruiterJobsPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {/* Quick status transitions */}
-                            {job.status === 'DRAFT' && (
+                            {job.status === "DRAFT" && (
                               <button
                                 title="Publish as Open"
-                                onClick={() => statusMutation.mutate({ id: job.id, status: 'OPEN' })}
+                                onClick={() =>
+                                  statusMutation.mutate({
+                                    id: job.id,
+                                    status: "OPEN",
+                                  })
+                                }
                                 className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition"
                               >
                                 <PlayCircle className="h-4 w-4" />
                               </button>
                             )}
-                            {job.status === 'OPEN' && (
+                            {job.status === "OPEN" && (
                               <button
                                 title="Pause Job"
-                                onClick={() => statusMutation.mutate({ id: job.id, status: 'PAUSED' })}
+                                onClick={() =>
+                                  statusMutation.mutate({
+                                    id: job.id,
+                                    status: "PAUSED",
+                                  })
+                                }
                                 className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition"
                               >
                                 <PauseCircle className="h-4 w-4" />
                               </button>
                             )}
-                            {job.status === 'PAUSED' && (
+                            {job.status === "PAUSED" && (
                               <button
                                 title="Resume Job (Open)"
-                                onClick={() => statusMutation.mutate({ id: job.id, status: 'OPEN' })}
+                                onClick={() =>
+                                  statusMutation.mutate({
+                                    id: job.id,
+                                    status: "OPEN",
+                                  })
+                                }
                                 className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition"
                               >
                                 <PlayCircle className="h-4 w-4" />
                               </button>
                             )}
-                            {job.status !== 'CLOSED' && (
+                            {job.status !== "CLOSED" && (
                               <button
                                 title="Close Job"
-                                onClick={() => statusMutation.mutate({ id: job.id, status: 'CLOSED' })}
+                                onClick={() =>
+                                  statusMutation.mutate({
+                                    id: job.id,
+                                    status: "CLOSED",
+                                  })
+                                }
                                 className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition"
                               >
                                 <XCircle className="h-4 w-4" />
@@ -280,9 +313,11 @@ export function RecruiterJobsPage() {
             <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
               <Briefcase className="h-10 w-10 text-slate-400 mx-auto" />
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-900">No jobs found</h3>
+                <h3 className="text-base font-bold text-slate-900">
+                  No jobs found
+                </h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  {statusFilter !== 'ALL'
+                  {statusFilter !== "ALL"
                     ? `No jobs found with status "${statusFilter}". Try changing the filter.`
                     : "You haven't posted any job openings for your company yet."}
                 </p>
@@ -298,5 +333,5 @@ export function RecruiterJobsPage() {
         </>
       )}
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useQuery } from '@tanstack/react-query'
-import { interviewsApi } from '@/lib/api/interviews-api'
-import { Link } from 'react-router-dom'
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useQuery } from "@tanstack/react-query";
+import { interviewsApi } from "@/lib/api/interviews-api";
+import { Link } from "react-router-dom";
 import {
   CalendarCheck,
   Clock,
@@ -9,21 +9,25 @@ import {
   FileQuestion,
   Video,
   ArrowRight,
-  Loader2
-} from 'lucide-react'
+  Loader2,
+} from "lucide-react";
 
 export function InterviewerDashboard() {
-  const { profile } = useCurrentUser()
+  const { profile } = useCurrentUser();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['interviewerDashboardInterviews'],
-    queryFn: () => interviewsApi.getInterviews({ page: 1, pageSize: 50 })
-  })
+    queryKey: ["interviewerDashboardInterviews"],
+    queryFn: () => interviewsApi.getInterviews({ page: 1, pageSize: 50 }),
+  });
 
-  const allInterviews = data?.items || []
-  const upcomingInterviews = allInterviews.filter((i) => i.status === 'SCHEDULED')
-  const pendingFeedback = allInterviews.filter((i) => i.status === 'COMPLETED' && !i.hasFeedback)
-  const completedReviews = allInterviews.filter((i) => i.hasFeedback)
+  const allInterviews = data?.items || [];
+  const upcomingInterviews = allInterviews.filter(
+    (i) => i.status === "SCHEDULED",
+  );
+  const pendingFeedback = allInterviews.filter(
+    (i) => i.status === "COMPLETED" && !i.hasFeedback,
+  );
+  const completedReviews = allInterviews.filter((i) => i.hasFeedback);
 
   return (
     <div className="space-y-8">
@@ -33,7 +37,11 @@ export function InterviewerDashboard() {
           Interviewer Desk
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Welcome, <span className="text-slate-900 font-medium">{profile?.fullName || 'Interviewer'}</span> • Assigned Company: {profile?.companyName || 'HireWise Platform'}
+          Welcome,{" "}
+          <span className="text-slate-900 font-medium">
+            {profile?.fullName || "Interviewer"}
+          </span>{" "}
+          • Assigned Company: {profile?.companyName || "HireWise Platform"}
         </p>
       </div>
 
@@ -41,9 +49,15 @@ export function InterviewerDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Upcoming Interviews</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Upcoming Interviews
+            </p>
             <h3 className="text-2xl font-bold text-slate-900 mt-1">
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-emerald-600" /> : upcomingInterviews.length}
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+              ) : (
+                upcomingInterviews.length
+              )}
             </h3>
           </div>
           <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
@@ -53,9 +67,15 @@ export function InterviewerDashboard() {
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Pending Feedback</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Pending Feedback
+            </p>
             <h3 className="text-2xl font-bold text-amber-700 mt-1">
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-amber-600" /> : pendingFeedback.length}
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
+              ) : (
+                pendingFeedback.length
+              )}
             </h3>
           </div>
           <div className="p-3 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
@@ -65,9 +85,15 @@ export function InterviewerDashboard() {
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Completed Reviews</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Completed Reviews
+            </p>
             <h3 className="text-2xl font-bold text-blue-700 mt-1">
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-blue-600" /> : completedReviews.length}
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              ) : (
+                completedReviews.length
+              )}
             </h3>
           </div>
           <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
@@ -80,7 +106,8 @@ export function InterviewerDashboard() {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <CalendarCheck className="h-4 w-4 text-emerald-600" /> Upcoming Scheduled Technical Rounds
+            <CalendarCheck className="h-4 w-4 text-emerald-600" /> Upcoming
+            Scheduled Technical Rounds
           </h3>
           <Link
             to="/interviewer/interviews"
@@ -96,16 +123,19 @@ export function InterviewerDashboard() {
           </div>
         ) : upcomingInterviews.length === 0 ? (
           <div className="p-8 text-center space-y-2">
-            <p className="text-sm text-slate-500">No upcoming interviews scheduled right now.</p>
+            <p className="text-sm text-slate-500">
+              No upcoming interviews scheduled right now.
+            </p>
             <p className="text-xs text-slate-400">
-              When recruiters assign you candidate rounds, they will appear here.
+              When recruiters assign you candidate rounds, they will appear
+              here.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {upcomingInterviews.slice(0, 5).map((item) => {
-              const startDate = new Date(item.scheduledStartTime)
-              const endDate = new Date(item.scheduledEndTime)
+              const startDate = new Date(item.scheduledStartTime);
+              const endDate = new Date(item.scheduledEndTime);
 
               return (
                 <div
@@ -114,14 +144,30 @@ export function InterviewerDashboard() {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900">{item.candidateName}</span>
-                      <span className="text-xs text-slate-500">({item.jobTitle})</span>
+                      <span className="font-semibold text-sm text-slate-900">
+                        {item.candidateName}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        ({item.jobTitle})
+                      </span>
                     </div>
                     <p className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-emerald-600" />{' '}
-                      {startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })},{' '}
-                      {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
-                      {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <Clock className="h-3.5 w-3.5 text-emerald-600" />{" "}
+                      {startDate.toLocaleDateString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      ,{" "}
+                      {startDate.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {endDate.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
 
@@ -140,15 +186,16 @@ export function InterviewerDashboard() {
                       to={`/interviewer/interviews/${item.id}`}
                       className="rounded-lg bg-white hover:bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 shadow-sm"
                     >
-                      <FileQuestion className="h-3.5 w-3.5 text-indigo-600" /> Assessment Rubric
+                      <FileQuestion className="h-3.5 w-3.5 text-indigo-600" />{" "}
+                      Assessment Rubric
                     </Link>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
