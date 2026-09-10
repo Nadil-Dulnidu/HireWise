@@ -51,7 +51,8 @@ class InterviewQuestionGeneratorAgent(BaseAgent):
         try:
             result = await self.invoke_structured_llm(
                 system_prompt=QUESTION_GENERATOR_SYSTEM_PROMPT,
-                user_prompt=user_content
+                user_prompt=user_content,
+                agent_key="question_generator"
             )
             return result
         except Exception as ex:

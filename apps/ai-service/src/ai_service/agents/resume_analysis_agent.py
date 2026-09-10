@@ -44,7 +44,8 @@ class ResumeAnalysisAgent(BaseAgent):
         try:
             result = await self.invoke_structured_llm(
                 system_prompt=RESUME_ANALYSIS_SYSTEM_PROMPT,
-                user_prompt=user_content
+                user_prompt=user_content,
+                agent_key="resume_analysis"
             )
             return result
         except Exception as ex:

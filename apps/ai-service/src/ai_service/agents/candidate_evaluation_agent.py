@@ -43,7 +43,8 @@ class CandidateEvaluationAgent(BaseAgent):
         try:
             result = await self.invoke_structured_llm(
                 system_prompt=CANDIDATE_EVALUATION_SYSTEM_PROMPT,
-                user_prompt=user_content
+                user_prompt=user_content,
+                agent_key="candidate_evaluation"
             )
             return result
         except Exception as ex:

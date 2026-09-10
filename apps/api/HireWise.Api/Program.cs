@@ -113,6 +113,10 @@ builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<IInterviewFeedbackService, InterviewFeedbackService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddHttpClient<IClerkSyncService, ClerkSyncService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IAgentConfigService, AgentConfigService>();
+builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 
 // Integrations (Google Calendar & Resend)
 var resendApiKey = builder.Configuration["RESEND_API_KEY"]

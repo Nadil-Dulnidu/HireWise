@@ -28,13 +28,20 @@ public class UserService : IUserService
     private readonly ApplicationDbContext _db;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IClerkSyncService _clerkSyncService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(ApplicationDbContext db, IMapper mapper, ICurrentUserService currentUserService, ILogger<UserService> logger)
+    public UserService(
+        ApplicationDbContext db,
+        IMapper mapper,
+        ICurrentUserService currentUserService,
+        IClerkSyncService clerkSyncService,
+        ILogger<UserService> logger)
     {
         _db = db;
         _mapper = mapper;
         _currentUserService = currentUserService;
+        _clerkSyncService = clerkSyncService;
         _logger = logger;
     }
 
@@ -312,8 +319,12 @@ public class UserService : IUserService
         }
 
         user.Role = newRole;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Role updated to {Role} for user {UserId}", newRole, user.Id);
+
+        // Sync role to Clerk publicMetadata
+        await _clerkSyncService.SyncUserRoleAsync(user.ClerkUserId, newRole.ToString(), ct);
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
@@ -348,6 +359,9 @@ public class UserService : IUserService
         user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Self-updated role to {Role} for user {UserId} ({Email})", newRole, user.Id, user.Email);
+
+        // Sync role to Clerk publicMetadata
+        await _clerkSyncService.SyncUserRoleAsync(user.ClerkUserId, newRole.ToString(), ct);
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }

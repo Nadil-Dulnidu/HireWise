@@ -26,7 +26,7 @@ def is_google_api_configured() -> bool:
     """Checks if a valid Google Gemini API key or Vertex configuration is set."""
     return bool(settings.GOOGLE_API_KEY and len(settings.GOOGLE_API_KEY.strip()) > 5)
 
-def get_llm(temperature: float = 0.1):
+def get_llm(model: Optional[str] = None, temperature: float = 0.1, max_tokens: Optional[int] = None):
     """
     Initializes and returns LangChain ChatGoogleGenerativeAI instance.
     """
@@ -36,12 +36,18 @@ def get_llm(temperature: float = 0.1):
 
     from langchain_google_genai import ChatGoogleGenerativeAI
     
-    return ChatGoogleGenerativeAI(
-        model=settings.GEMINI_MODEL,
-        google_api_key=settings.GOOGLE_API_KEY,
-        temperature=temperature,
-        convert_system_message_to_human=True
-    )
+    target_model = model or settings.GEMINI_MODEL
+    kwargs = {
+        "model": target_model,
+        "google_api_key": settings.GOOGLE_API_KEY,
+        "temperature": temperature,
+        "convert_system_message_to_human": True
+    }
+    if max_tokens:
+        kwargs["max_output_tokens"] = max_tokens
+
+    return ChatGoogleGenerativeAI(**kwargs)
+
 
 class MockStructuredLLM:
     """
@@ -181,12 +187,13 @@ class MockStructuredLLM:
         # Generic default instance
         return self.schema_cls.model_construct()
 
-def get_structured_llm(schema_cls: Type[T]):
+def get_structured_llm(schema_cls: Type[T], model: Optional[str] = None, temperature: float = 0.1, max_tokens: Optional[int] = None):
     """
     Returns an async callable that outputs an instance of schema_cls.
     """
-    llm = get_llm()
+    llm = get_llm(model=model, temperature=temperature, max_tokens=max_tokens)
     if llm is None:
         return MockStructuredLLM(schema_cls)
     
     return llm.with_structured_output(schema_cls)
+

@@ -30,7 +30,8 @@ class JobDescriptionAnalysisAgent(BaseAgent):
         try:
             result = await self.invoke_structured_llm(
                 system_prompt=JOB_ANALYSIS_SYSTEM_PROMPT,
-                user_prompt=user_content
+                user_prompt=user_content,
+                agent_key="job_analysis"
             )
             return result
         except Exception as ex:

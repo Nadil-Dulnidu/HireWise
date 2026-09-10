@@ -49,6 +49,10 @@ import { InterviewerAvailabilityPage } from '@/pages/interviewer/InterviewerAvai
 import { InterviewerHistoryPage } from '@/pages/interviewer/InterviewerHistoryPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage'
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminCompaniesPage } from '@/pages/admin/AdminCompaniesPage'
+import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
+import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage'
 
 export function App() {
   return (
@@ -128,11 +132,11 @@ export function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<AdminDashboard />} />
-            <Route path="companies" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="audit-logs" element={<AdminAuditLogsPage />} />
-            <Route path="analytics" element={<AdminDashboard />} />
-            <Route path="settings" element={<AdminDashboard />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>
 
