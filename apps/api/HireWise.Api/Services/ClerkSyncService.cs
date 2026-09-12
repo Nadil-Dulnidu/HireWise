@@ -43,7 +43,7 @@ public class ClerkSyncService : IClerkSyncService
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Patch, $"https://api.clerk.com/v1/users/{clerkUserId}");
+            using var request = new HttpRequestMessage(HttpMethod.Patch, $"https://api.clerk.com/v1/users/{clerkUserId}/metadata");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secretKey);
 
             var payload = new

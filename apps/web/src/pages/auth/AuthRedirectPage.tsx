@@ -31,9 +31,17 @@ export function AuthRedirectPage() {
         "hirewise_selected_role",
       ) as UserRole | null;
 
-      // If a role was selected during registration/sign-up, apply and sync it
-      if (storedRole && !syncAttempted.current) {
+      const metadataRole =
+        (clerkUser?.publicMetadata?.role as UserRole | undefined) ||
+        (clerkUser?.unsafeMetadata?.role as UserRole | undefined);
+      const existingRole = profile?.role || metadataRole;
+
+      // CRITICAL GUARD: Never allow a transient signup role in localStorage to overwrite an established user's role!
+      if (existingRole && existingRole !== "CANDIDATE") {
+        localStorage.removeItem("hirewise_selected_role");
+      } else if (storedRole && !syncAttempted.current) {
         syncAttempted.current = true;
+
 
         try {
           if (clerkUser && clerkUser.unsafeMetadata?.role !== storedRole) {
@@ -77,9 +85,6 @@ export function AuthRedirectPage() {
       }
 
       // Existing user role-based redirection
-      const metadataRole =
-        (clerkUser?.unsafeMetadata?.role as UserRole | undefined) ||
-        (clerkUser?.publicMetadata?.role as UserRole | undefined);
       const effectiveRole = profile?.role || metadataRole || role;
 
       // Candidates NEVER go to recruiter onboarding — send directly to candidate dashboard

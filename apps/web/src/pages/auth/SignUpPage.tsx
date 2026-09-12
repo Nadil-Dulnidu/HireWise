@@ -30,13 +30,20 @@ export function SignUpPage() {
   });
 
   useEffect(() => {
-    localStorage.setItem("hirewise_selected_role", selectedRole);
-  }, [selectedRole]);
+    if (!isSignedIn) {
+      localStorage.setItem("hirewise_selected_role", selectedRole);
+    } else {
+      localStorage.removeItem("hirewise_selected_role");
+    }
+  }, [selectedRole, isSignedIn]);
 
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role);
-    localStorage.setItem("hirewise_selected_role", role);
+    if (!isSignedIn) {
+      localStorage.setItem("hirewise_selected_role", role);
+    }
   };
+
 
   const handleSwitchToCandidate = async () => {
     setIsSwitching(true);

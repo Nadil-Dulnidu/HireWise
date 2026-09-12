@@ -21,8 +21,10 @@ import {
   Zap,
   ChevronRight,
 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function LandingPage() {
+  const { isSignedIn } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState("");
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -575,10 +577,11 @@ export function LandingPage() {
           >
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link
-                to="/sign-up"
+                to={isSignedIn ? "/auth-redirect" : "/sign-up"}
                 className="rounded-xl bg-blue-600 hover:bg-blue-500 px-7 py-3 text-sm font-semibold text-white transition shadow-lg shadow-blue-600/30 flex items-center gap-2"
               >
-                Get Started Free <ChevronRight className="h-4 w-4" />
+                {isSignedIn ? "Go to Dashboard" : "Get Started Free"}{" "}
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
