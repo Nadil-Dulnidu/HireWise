@@ -22,7 +22,71 @@ import {
   getPlatformSettings,
   updatePlatformSettings,
   type UpdateAgentConfigRequest,
+  type AgentConfig,
 } from "@/lib/api/admin-settings-api";
+
+// Generally Available Gemini models accessible via Google Cloud Gemini Enterprise Agent Platform
+const AVAILABLE_GEMINI_MODELS = [
+  {
+    group: "Gemini 3 Series (Latest Agentic GA)",
+    models: [
+      {
+        value: "gemini-3.8-flash",
+        label: "gemini-3.8-flash (Agentic & Long-Horizon Coding)",
+      },
+      {
+        value: "gemini-3.7-flash",
+        label: "gemini-3.7-flash (Developer Everyday Driver)",
+      },
+      {
+        value: "gemini-3.6-flash",
+        label: "gemini-3.6-flash (Complex Multi-step Workflows)",
+      },
+      {
+        value: "gemini-3.5-flash",
+        label: "gemini-3.5-flash (Pro Intelligence at Flash Speed)",
+      },
+      {
+        value: "gemini-3.5-flash-lite",
+        label: "gemini-3.5-flash-lite (Fast Lightweight Agentic)",
+      },
+      {
+        value: "gemini-3.1-flash-lite",
+        label: "gemini-3.1-flash-lite (Cost-Efficient High-Volume)",
+      },
+    ],
+  },
+  {
+    group: "Gemini 2.5 Series (Long-Context GA)",
+    models: [
+      {
+        value: "gemini-2.5-pro",
+        label: "gemini-2.5-pro (Deep Reasoning & 1M Context)",
+      },
+      {
+        value: "gemini-2.5-flash",
+        label: "gemini-2.5-flash (Fast Reasoning & Controllable Thinking)",
+      },
+      {
+        value: "gemini-2.5-flash-lite",
+        label: "gemini-2.5-flash-lite (High-Throughput Scale)",
+      },
+    ],
+  },
+  {
+    group: "Legacy & Compatibility",
+    models: [
+      {
+        value: "gemini-1.5-pro",
+        label: "gemini-1.5-pro (Legacy Pro)",
+      },
+      {
+        value: "gemini-1.5-flash",
+        label: "gemini-1.5-flash (Legacy Flash)",
+      },
+    ],
+  },
+];
 
 export function AdminSettingsPage() {
   const queryClient = useQueryClient();
@@ -49,26 +113,10 @@ export function AdminSettingsPage() {
     queryFn: getAgentConfigs,
   });
 
-  // Local state for editing agent configs
-  const [agentFormState, setAgentFormState] = useState<
-    Record<string, UpdateAgentConfigRequest>
+  // Local draft state for editing agent configs (stores only user modifications)
+  const [agentDrafts, setAgentDrafts] = useState<
+    Record<string, Partial<UpdateAgentConfigRequest>>
   >({});
-
-  useEffect(() => {
-    if (agentConfigs.length > 0) {
-      const initial: Record<string, UpdateAgentConfigRequest> = {};
-      agentConfigs.forEach((c) => {
-        initial[c.id] = {
-          model: c.model,
-          systemPrompt: c.systemPrompt,
-          temperature: c.temperature,
-          maxTokens: c.maxTokens,
-          isActive: c.isActive,
-        };
-      });
-      setAgentFormState(initial);
-    }
-  }, [agentConfigs]);
 
   const updateAgentMutation = useMutation({
     mutationFn: ({
@@ -78,7 +126,12 @@ export function AdminSettingsPage() {
       id: string;
       data: UpdateAgentConfigRequest;
     }) => updateAgentConfig(id, data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      setAgentDrafts((prev) => {
+        const next = { ...prev };
+        delete next[variables.id];
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-agent-configs"] });
       showFeedback(
         "success",
@@ -93,6 +146,7 @@ export function AdminSettingsPage() {
   const resetAgentsMutation = useMutation({
     mutationFn: resetAgentConfigs,
     onSuccess: () => {
+      setAgentDrafts({});
       queryClient.invalidateQueries({ queryKey: ["admin-agent-configs"] });
       showFeedback(
         "success",
@@ -140,7 +194,7 @@ export function AdminSettingsPage() {
     field: keyof UpdateAgentConfigRequest,
     value: any,
   ) => {
-    setAgentFormState((prev) => ({
+    setAgentDrafts((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
@@ -149,10 +203,21 @@ export function AdminSettingsPage() {
     }));
   };
 
-  const handleSaveAgent = (id: string) => {
-    const configData = agentFormState[id];
-    if (!configData) return;
-    updateAgentMutation.mutate({ id, data: configData });
+  const handleSaveAgent = (agent: AgentConfig) => {
+    const agentId = agent.id || (agent as any).Id;
+    const draft = agentDrafts[agentId] || {};
+    const payload: UpdateAgentConfigRequest = {
+      model: draft.model ?? agent.model ?? (agent as any).Model,
+      systemPrompt:
+        draft.systemPrompt ?? agent.systemPrompt ?? (agent as any).SystemPrompt,
+      temperature:
+        draft.temperature ?? agent.temperature ?? (agent as any).Temperature,
+      maxTokens:
+        draft.maxTokens ?? agent.maxTokens ?? (agent as any).MaxTokens,
+      isActive:
+        draft.isActive ?? agent.isActive ?? (agent as any).IsActive ?? true,
+    };
+    updateAgentMutation.mutate({ id: agentId, data: payload });
   };
 
   const handleSaveGeneralSettings = (e: React.FormEvent) => {
@@ -274,17 +339,38 @@ export function AdminSettingsPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {agentConfigs.map((agent) => {
-                const form = agentFormState[agent.id] || {
-                  model: agent.model,
-                  systemPrompt: agent.systemPrompt,
-                  temperature: agent.temperature,
-                  maxTokens: agent.maxTokens,
-                  isActive: agent.isActive,
-                };
+                const agentId = agent.id || (agent as any).Id;
+                const draft = agentDrafts[agentId] || {};
+                const dbModel = agent.model || (agent as any).Model;
+                const activeModel = draft.model ?? dbModel ?? "gemini-3.5-flash";
+                const activeSystemPrompt =
+                  draft.systemPrompt ??
+                  agent.systemPrompt ??
+                  (agent as any).SystemPrompt ??
+                  "";
+                const activeTemperature =
+                  draft.temperature ??
+                  agent.temperature ??
+                  (agent as any).Temperature ??
+                  0.2;
+                const activeMaxTokens =
+                  draft.maxTokens ??
+                  agent.maxTokens ??
+                  (agent as any).MaxTokens ??
+                  4096;
+                const activeIsActive =
+                  draft.isActive ??
+                  agent.isActive ??
+                  (agent as any).IsActive ??
+                  true;
+                const isDirty = Boolean(
+                  agentDrafts[agentId] &&
+                    Object.keys(agentDrafts[agentId]).length > 0,
+                );
 
                 return (
                   <div
-                    key={agent.id}
+                    key={agentId}
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between"
                   >
                     <div>
@@ -295,22 +381,34 @@ export function AdminSettingsPage() {
                             <Bot className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="font-bold text-slate-900 text-sm">
-                              {agent.name}
-                            </h3>
-                            <span className="text-[11px] font-mono text-slate-400">
-                              key: {agent.agentKey}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 text-sm">
+                                {agent.name || (agent as any).Name}
+                              </h3>
+                              {isDirty && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                  Unsaved
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="text-[11px] font-mono text-slate-400">
+                                key: {agent.agentKey || (agent as any).AgentKey}
+                              </span>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 font-medium">
+                                DB: {dbModel}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600">
                           <input
                             type="checkbox"
-                            checked={form.isActive ?? true}
+                            checked={activeIsActive}
                             onChange={(e) =>
                               handleAgentFieldChange(
-                                agent.id,
+                                agentId,
                                 "isActive",
                                 e.target.checked,
                               )
@@ -322,7 +420,7 @@ export function AdminSettingsPage() {
                       </div>
 
                       <p className="text-xs text-slate-500 mb-4">
-                        {agent.description}
+                        {agent.description || (agent as any).Description}
                       </p>
 
                       {/* Config Fields */}
@@ -334,28 +432,42 @@ export function AdminSettingsPage() {
                               LLM Model
                             </label>
                             <select
-                              value={form.model ?? "gemini-1.5-pro"}
+                              value={activeModel}
                               onChange={(e) =>
                                 handleAgentFieldChange(
-                                  agent.id,
+                                  agentId,
                                   "model",
                                   e.target.value,
                                 )
                               }
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500 transition cursor-pointer"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500 transition cursor-pointer font-medium"
                             >
-                              <option value="gemini-1.5-pro">
-                                gemini-1.5-pro (Reasoning)
-                              </option>
-                              <option value="gemini-1.5-flash">
-                                gemini-1.5-flash (Fast)
-                              </option>
-                              <option value="gemini-2.0-flash">
-                                gemini-2.0-flash (NextGen)
-                              </option>
-                              <option value="gemini-1.0-pro">
-                                gemini-1.0-pro (Legacy)
-                              </option>
+                              {AVAILABLE_GEMINI_MODELS.map((group) => (
+                                <optgroup key={group.group} label={group.group}>
+                                  {group.models.map((model) => (
+                                    <option
+                                      key={model.value}
+                                      value={model.value}
+                                    >
+                                      {model.label}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              ))}
+                              {activeModel &&
+                                !AVAILABLE_GEMINI_MODELS.some((g) =>
+                                  g.models.some(
+                                    (m) =>
+                                      m.value.toLowerCase() ===
+                                      activeModel.toLowerCase(),
+                                  ),
+                                ) && (
+                                  <optgroup label="Current / Custom Model">
+                                    <option value={activeModel}>
+                                      {activeModel} (Custom)
+                                    </option>
+                                  </optgroup>
+                                )}
                             </select>
                           </div>
 
@@ -368,10 +480,10 @@ export function AdminSettingsPage() {
                               min={128}
                               max={16384}
                               step={128}
-                              value={form.maxTokens ?? 4096}
+                              value={activeMaxTokens}
                               onChange={(e) =>
                                 handleAgentFieldChange(
-                                  agent.id,
+                                  agentId,
                                   "maxTokens",
                                   parseInt(e.target.value) || 2048,
                                 )
@@ -388,7 +500,7 @@ export function AdminSettingsPage() {
                               Creativity / Temperature
                             </label>
                             <span className="text-[11px] font-mono text-indigo-600 font-bold">
-                              {form.temperature?.toFixed(2) ?? "0.20"}
+                              {activeTemperature.toFixed(2)}
                             </span>
                           </div>
                           <input
@@ -396,10 +508,10 @@ export function AdminSettingsPage() {
                             min={0.0}
                             max={1.0}
                             step={0.05}
-                            value={form.temperature ?? 0.2}
+                            value={activeTemperature}
                             onChange={(e) =>
                               handleAgentFieldChange(
-                                agent.id,
+                                agentId,
                                 "temperature",
                                 parseFloat(e.target.value),
                               )
@@ -419,10 +531,10 @@ export function AdminSettingsPage() {
                           </label>
                           <textarea
                             rows={6}
-                            value={form.systemPrompt ?? ""}
+                            value={activeSystemPrompt}
                             onChange={(e) =>
                               handleAgentFieldChange(
-                                agent.id,
+                                agentId,
                                 "systemPrompt",
                                 e.target.value,
                               )
@@ -437,16 +549,24 @@ export function AdminSettingsPage() {
                     <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400">
                         Updated:{" "}
-                        {new Date(agent.updatedAt).toLocaleDateString()}
+                        {new Date(
+                          agent.updatedAt ||
+                            (agent as any).UpdatedAt ||
+                            Date.now(),
+                        ).toLocaleDateString()}
                       </span>
 
                       <button
-                        onClick={() => handleSaveAgent(agent.id)}
+                        onClick={() => handleSaveAgent(agent)}
                         disabled={updateAgentMutation.isPending}
-                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                        className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50 ${
+                          isDirty
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white ring-2 ring-indigo-300"
+                            : "bg-slate-800 hover:bg-slate-900 text-white"
+                        }`}
                       >
                         <Save className="h-3.5 w-3.5" />
-                        Save Agent
+                        {isDirty ? "Save Changes" : "Save Agent"}
                       </button>
                     </div>
                   </div>
