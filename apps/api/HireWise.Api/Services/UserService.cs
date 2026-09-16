@@ -56,10 +56,20 @@ public class UserService : IUserService
         {
             user.IsDeleted = false;
             user.DeletedAt = null;
+            if (_currentUserService.Role.HasValue)
+            {
+                user.Role = _currentUserService.Role.Value;
+                if (user.Role == UserRole.CANDIDATE)
+                {
+                    user.CompanyId = null;
+                    user.Company = null;
+                    user.Status = UserStatus.ACTIVE;
+                }
+            }
             user.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Reactivated soft-deleted user {UserId} ({Email}) for Clerk ID {ClerkUserId}",
-                user.Id, user.Email, clerkUserId);
+            _logger.LogInformation("Reactivated soft-deleted user {UserId} ({Email}) for Clerk ID {ClerkUserId} with role {Role}",
+                user.Id, user.Email, clerkUserId, user.Role);
         }
 
         if (user == null)
@@ -79,62 +89,84 @@ public class UserService : IUserService
                     user.ClerkUserId = clerkUserId;
                     user.IsDeleted = false;
                     user.DeletedAt = null;
-                    user.UpdatedAt = DateTime.UtcNow;
-                    await _db.SaveChangesAsync(ct);
-                    _logger.LogInformation("Linked and restored existing user {UserId} ({Email}) to new Clerk ID {ClerkUserId}",
-                        user.Id, user.Email, clerkUserId);
-                    return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
-                }
-            }
-
-            // Auto-provision new user from authenticated claims
-            var role = _currentUserService.Role ?? UserRole.CANDIDATE;
-            var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN)
-                ? UserStatus.ACTIVE
-                : UserStatus.ONBOARDING;
-
-            user = new User
-            {
-                ClerkUserId = clerkUserId,
-                Email = !string.IsNullOrEmpty(email) ? email : $"{clerkUserId}@hirewise.dev",
-                FirstName = _currentUserService.FirstName ?? "User",
-                LastName = _currentUserService.LastName ?? "",
-                Role = role,
-                Status = status,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                _db.Users.Add(user);
-                await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role} and status {Status}",
-                    user.Id, user.Email, user.Role, user.Status);
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogWarning(ex, "Concurrency conflict during auto-provisioning for {ClerkUserId}. Reloading existing user.", clerkUserId);
-                _db.ChangeTracker.Clear();
-                user = await _db.Users
-                    .IgnoreQueryFilters()
-                    .Include(u => u.Company)
-                    .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId || (!string.IsNullOrEmpty(email) && u.Email.ToLower() == email.ToLower()), ct);
-
-                if (user != null)
-                {
-                    if (user.IsDeleted)
+                    if (_currentUserService.Role.HasValue)
                     {
-                        user.IsDeleted = false;
-                        user.DeletedAt = null;
+                        user.Role = _currentUserService.Role.Value;
+                        if (user.Role == UserRole.CANDIDATE)
+                        {
+                            user.CompanyId = null;
+                            user.Company = null;
+                            user.Status = UserStatus.ACTIVE;
+                        }
                     }
-                    user.ClerkUserId = clerkUserId;
                     user.UpdatedAt = DateTime.UtcNow;
                     await _db.SaveChangesAsync(ct);
+                    _logger.LogInformation("Linked and restored existing user {UserId} ({Email}) to new Clerk ID {ClerkUserId} with role {Role}",
+                        user.Id, user.Email, clerkUserId, user.Role);
                 }
-                else
+            }
+
+            if (user == null)
+            {
+                // Auto-provision new user from authenticated claims
+                var role = _currentUserService.Role ?? UserRole.CANDIDATE;
+                var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN)
+                    ? UserStatus.ACTIVE
+                    : UserStatus.ONBOARDING;
+
+                user = new User
                 {
-                    throw;
+                    ClerkUserId = clerkUserId,
+                    Email = !string.IsNullOrEmpty(email) ? email : $"{clerkUserId}@hirewise.dev",
+                    FirstName = _currentUserService.FirstName ?? "User",
+                    LastName = _currentUserService.LastName ?? "",
+                    Role = role,
+                    Status = status,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                try
+                {
+                    _db.Users.Add(user);
+                    await _db.SaveChangesAsync(ct);
+                    _logger.LogInformation("Auto-provisioned user {UserId} ({Email}) with role {Role} and status {Status}",
+                        user.Id, user.Email, user.Role, user.Status);
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogWarning(ex, "Concurrency conflict during auto-provisioning for {ClerkUserId}. Reloading existing user.", clerkUserId);
+                    _db.ChangeTracker.Clear();
+                    user = await _db.Users
+                        .IgnoreQueryFilters()
+                        .Include(u => u.Company)
+                        .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId || (!string.IsNullOrEmpty(email) && u.Email.ToLower() == email.ToLower()), ct);
+
+                    if (user != null)
+                    {
+                        if (user.IsDeleted)
+                        {
+                            user.IsDeleted = false;
+                            user.DeletedAt = null;
+                        }
+                        user.ClerkUserId = clerkUserId;
+                        if (_currentUserService.Role.HasValue)
+                        {
+                            user.Role = _currentUserService.Role.Value;
+                            if (user.Role == UserRole.CANDIDATE)
+                            {
+                                user.CompanyId = null;
+                                user.Company = null;
+                                user.Status = UserStatus.ACTIVE;
+                            }
+                        }
+                        user.UpdatedAt = DateTime.UtcNow;
+                        await _db.SaveChangesAsync(ct);
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
         }
