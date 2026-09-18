@@ -32,12 +32,7 @@ class ResumeAnalysisAgent(BaseAgent):
             resume_content = DocumentParser.parse_from_bytes(file_bytes, file_name)
 
         if not resume_content and resume_url:
-            if resume_url.startswith("http://") or resume_url.startswith("https://"):
-                resume_content = await DocumentParser.parse_from_url(resume_url)
-            else:
-                resume_content = (
-                    f"Candidate applied with resume reference: {resume_url}"
-                )
+            resume_content = await DocumentParser.parse_from_relative_path_or_url(resume_url)
 
         if not resume_content.strip():
             resume_content = (

@@ -1,8 +1,4 @@
-"""
-Google Gemini LLM Client wrapper with structured output binding.
-Supports both live Google Gemini API and intelligent mock simulation for local testing.
-"""
-
+import os
 import re
 from typing import Type, TypeVar, Optional, Any, List
 from pydantic import BaseModel
@@ -24,9 +20,23 @@ from ai_service.models.schemas import (
 T = TypeVar("T", bound=BaseModel)
 
 
+def is_vertex_configured() -> bool:
+    """Checks if Google Cloud Vertex AI infrastructure / ADC / Service Account is configured."""
+    if settings.USE_VERTEX_AI:
+        return True
+    if settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT:
+        return True
+    cred_file = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if cred_file and os.path.exists(cred_file):
+        return True
+    return False
+
+
 def is_google_api_configured() -> bool:
-    """Checks if a valid Google Gemini API key or Vertex configuration is set."""
-    return bool(settings.GOOGLE_API_KEY and len(settings.GOOGLE_API_KEY.strip()) > 5)
+    """Checks if a valid Google Gemini API key or Vertex AI / ADC configuration is set."""
+    if bool(settings.GOOGLE_API_KEY and len(settings.GOOGLE_API_KEY.strip()) > 5):
+        return True
+    return is_vertex_configured()
 
 
 def get_llm(
@@ -35,27 +45,76 @@ def get_llm(
     max_tokens: Optional[int] = None,
 ):
     """
-    Initializes and returns LangChain ChatGoogleGenerativeAI instance.
+    Initializes and returns LangChain ChatVertexAI or ChatGoogleGenerativeAI instance.
+    Supports Vertex AI (via Service Account JSON key or Application Default Credentials)
+    and Google AI Studio API key.
     """
     if not is_google_api_configured():
         logger.info(
-            "Google API Key not configured. Using Mock LLM simulation for local execution."
+            "Neither Google API Key nor Vertex AI ADC configured. Using Mock LLM simulation for local execution."
         )
         return None
 
-    from langchain_google_genai import ChatGoogleGenerativeAI
-
     target_model = model or settings.GEMINI_MODEL
-    kwargs = {
-        "model": target_model,
-        "google_api_key": settings.GOOGLE_API_KEY,
-        "temperature": temperature,
-        "convert_system_message_to_human": True,
-    }
-    if max_tokens:
-        kwargs["max_output_tokens"] = max_tokens
 
-    return ChatGoogleGenerativeAI(**kwargs)
+    # 1. Prefer Vertex AI / Service Account / ADC when USE_VERTEX_AI is True or API Key is absent
+    if is_vertex_configured() and (settings.USE_VERTEX_AI or not settings.GOOGLE_API_KEY):
+        try:
+            from langchain_google_vertexai import ChatVertexAI
+            from google.oauth2 import service_account
+
+            project = settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT or os.environ.get("GOOGLE_CLOUD_PROJECT")
+            location = settings.VERTEX_LOCATION or "us-central1"
+            cred_file = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+
+            credentials = None
+            if cred_file and os.path.exists(cred_file):
+                try:
+                    credentials = service_account.Credentials.from_service_account_file(cred_file)
+                    if not project and hasattr(credentials, "project_id"):
+                        project = credentials.project_id
+                    logger.info(f"Loaded Google Service Account credentials from: {cred_file}")
+                except Exception as ex:
+                    logger.warning(f"Failed to load service account credentials from {cred_file}: {ex}")
+
+            kwargs: dict[str, Any] = {
+                "model_name": target_model,
+                "temperature": temperature,
+                "location": location,
+            }
+            if project:
+                kwargs["project"] = project
+            if credentials:
+                kwargs["credentials"] = credentials
+            if max_tokens:
+                kwargs["max_output_tokens"] = max_tokens
+
+            logger.info(f"Initialized ChatVertexAI with model '{target_model}', project '{project}', location '{location}'")
+            return ChatVertexAI(**kwargs)
+        except Exception as ex:
+            logger.error(f"Failed to initialize ChatVertexAI: {ex}. Falling back to API Key if available.")
+
+    # 2. Google AI Studio / Gemini API Key
+    if settings.GOOGLE_API_KEY and len(settings.GOOGLE_API_KEY.strip()) > 5:
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            kwargs = {
+                "model": target_model,
+                "google_api_key": settings.GOOGLE_API_KEY,
+                "temperature": temperature,
+                "convert_system_message_to_human": True,
+            }
+            if max_tokens:
+                kwargs["max_output_tokens"] = max_tokens
+
+            logger.info(f"Initialized ChatGoogleGenerativeAI with model '{target_model}'")
+            return ChatGoogleGenerativeAI(**kwargs)
+        except Exception as ex:
+            logger.error(f"Failed to initialize ChatGoogleGenerativeAI: {ex}")
+
+    logger.warning("No live LLM provider could be initialized. Falling back to Mock LLM simulation.")
+    return None
 
 
 class MockStructuredLLM:

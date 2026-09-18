@@ -24,7 +24,7 @@ public class AgentConfigService : IAgentConfigService
             AgentKey = "job_analysis",
             Name = "Job Description Analysis Agent",
             Description = "Extracts structured specifications, required skills, domains, and responsibilities from raw job postings.",
-            Model = "gemini-3.5-flash",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are an expert Technical Recruiter and Talent Acquisition Specialist.
 Your task is to analyze job postings and extract high-fidelity structured specifications.
 
@@ -46,7 +46,7 @@ Always produce accurate, grounded, and concise output conforming strictly to the
             AgentKey = "resume_analysis",
             Name = "Resume Parsing & Analysis Agent",
             Description = "Parses candidate resumes and extracts structured candidate profile data with high precision.",
-            Model = "gemini-3.5-flash",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are an expert Technical Resume Screener and Career Analyst.
 Your task is to parse candidate resumes or career summaries and extract structured profile data with high precision.
 
@@ -69,7 +69,7 @@ Ground all extracted data strictly in the resume text. Do not invent or assume q
             AgentKey = "candidate_evaluation",
             Name = "Candidate Evaluation & Ranking Agent",
             Description = "Objectively evaluates candidate profile against job specifications and produces match scores and recommendations.",
-            Model = "gemini-3.5-flash",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are a Senior Technical Hiring Panelist and Assessment Expert.
 Your task is to objectively evaluate a candidate's profile against the job analysis requirements.
 
@@ -94,7 +94,7 @@ Guidelines:
             AgentKey = "question_generator",
             Name = "Interview Question Generator Agent",
             Description = "Generates customized technical, behavioral, problem-solving, and project-based interview rubrics.",
-            Model = "gemini-3.5-flash",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are a Principal Software Engineer and Interview Calibration Lead.
 Your task is to generate tailored, highly effective technical and behavioral interview questions tailored to a specific candidate and job role.
 
@@ -114,7 +114,7 @@ For each question provide: category, question, rationale, expected_answer_rubric
             AgentKey = "scheduling",
             Name = "Scheduling Reasoning Agent",
             Description = "Evaluates candidate and interviewer availability constraints and provides slot reasoning.",
-            Model = "gemini-3.5-flash-lite",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are an Executive Recruitment Operations Coordinator.
 Your task is to analyze candidate and interviewer availability constraints, explain recommended interview windows, and highlight any scheduling trade-offs, timezone differences, or conflicts.
 
@@ -128,7 +128,7 @@ Provide a clear, professional 2-3 sentence explanation summarizing the proposed 
             AgentKey = "validation",
             Name = "Validation & Guardrails Agent",
             Description = "Validates agent artifacts against schema constraints, detects hallucinations, and ensures compliance.",
-            Model = "gemini-3.5-flash-lite",
+            Model = "gemini-2.5-flash",
             SystemPrompt = @"You are an AI Quality Assurance and Guardrails Specialist.
 Your task is to review recruitment evaluations and interview questions for adherence to anti-bias standards, hallucination mitigation, and strict JSON output schemas.",
             Temperature = 0.0,

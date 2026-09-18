@@ -77,6 +77,62 @@ class DocumentParser:
             return f"Failed to download and parse resume from URL: {str(ex)}"
 
     @staticmethod
+    async def parse_from_relative_path_or_url(
+        path_or_url: str, timeout: float = 15.0
+    ) -> str:
+        """
+        Resolves a file path or URL. First checks local disk candidate paths,
+        and falls back to DOTNET_API_BASE_URL HTTP download.
+        """
+        if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
+            return await DocumentParser.parse_from_url(path_or_url, timeout=timeout)
+
+        clean_path = path_or_url.lstrip("/\\")
+
+        # 1. Search candidate paths on local disk
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        candidates = [
+            path_or_url,
+            clean_path,
+            os.path.join(os.getcwd(), clean_path),
+            os.path.join(os.getcwd(), "..", "api", "HireWise.Api", clean_path),
+            os.path.join(os.getcwd(), "apps", "api", "HireWise.Api", clean_path),
+            os.path.abspath(
+                os.path.join(
+                    current_dir,
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "api",
+                    "HireWise.Api",
+                    clean_path,
+                )
+            ),
+            os.path.join(
+                "c:\\nadil-dulnidu\\HireWise\\apps\\api\\HireWise.Api", clean_path
+            ),
+        ]
+
+        for candidate in candidates:
+            if candidate and os.path.isfile(candidate):
+                logger.info(f"Found local resume file at: {candidate}")
+                try:
+                    return DocumentParser.parse_from_file(candidate)
+                except Exception as ex:
+                    logger.warning(f"Failed parsing local file {candidate}: {ex}")
+
+        # 2. Try fetching from DOTNET_API_BASE_URL
+        from ai_service.core.config import settings
+
+        if settings.DOTNET_API_BASE_URL:
+            full_url = f"{settings.DOTNET_API_BASE_URL.rstrip('/')}/{clean_path}"
+            logger.info(f"Attempting download from API: {full_url}")
+            return await DocumentParser.parse_from_url(full_url, timeout=timeout)
+
+        return f"Candidate applied with resume reference: {path_or_url}"
+
+    @staticmethod
     def _parse_pdf_bytes(content: bytes) -> str:
         try:
             reader = pypdf.PdfReader(io.BytesIO(content))
