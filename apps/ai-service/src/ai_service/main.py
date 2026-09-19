@@ -56,7 +56,14 @@ app.include_router(workflows_router, prefix=settings.API_V1_STR)
 
 
 def start():
-    uvicorn.run("ai_service.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "ai_service.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_dirs=["src"],
+        reload_excludes=[".venv", "*.log", "__pycache__", ".pytest_cache", ".ruff_cache"],
+    )
 
 
 if __name__ == "__main__":

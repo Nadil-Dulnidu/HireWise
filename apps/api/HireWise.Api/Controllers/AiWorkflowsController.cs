@@ -176,13 +176,50 @@ public class AiWorkflowsController : ControllerBase
         application.Status = ApplicationStatus.AI_REVIEW;
         await _db.SaveChangesAsync(ct);
 
+        // Fetch candidate availability slots
+        var candidateSlots = await _db.AvailabilitySlots
+            .Where(s => s.UserId == application.CandidateId)
+            .Select(s => new
+            {
+                id = s.Id.ToString(),
+                user_id = s.UserId.ToString(),
+                role = "CANDIDATE",
+                start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                timezone = s.Timezone
+            })
+            .ToListAsync(ct);
+
+        // Fetch company interviewer availability slots
+        var interviewerSlots = await _db.AvailabilitySlots
+            .Where(s => s.User.CompanyId == application.Job.CompanyId && s.User.Role == UserRole.INTERVIEWER)
+            .Select(s => new
+            {
+                id = s.Id.ToString(),
+                user_id = s.UserId.ToString(),
+                role = "INTERVIEWER",
+                start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                timezone = s.Timezone
+            })
+            .ToListAsync(ct);
+
+        var firstInterviewerId = await _db.Users
+            .Where(u => u.CompanyId == application.Job.CompanyId && u.Role == UserRole.INTERVIEWER)
+            .Select(u => (Guid?)u.Id)
+            .FirstOrDefaultAsync(ct);
+
         var success = await _aiServiceClient.TriggerApplicationEvaluationAsync(
             application.Id,
             application.Job.Title,
             application.Job.Description,
             application.Job.Requirements,
             application.ResumeSnapshotUrl,
-            ct);
+            candidateId: application.CandidateId.ToString(),
+            interviewerId: firstInterviewerId?.ToString(),
+            candidateSlots: candidateSlots,
+            interviewerSlots: interviewerSlots,
+            ct: ct);
 
         if (!success)
         {

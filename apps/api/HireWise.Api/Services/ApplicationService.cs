@@ -165,7 +165,8 @@ public class ApplicationService : IApplicationService
                     job.Description,
                     job.Requirements,
                     activeResume.FileUrl,
-                    CancellationToken.None);
+                    candidateId: application.CandidateId.ToString(),
+                    ct: CancellationToken.None);
             }
             catch (Exception ex)
             {
@@ -387,11 +388,63 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationDto>.Conflict("Cannot approve: an interview is already scheduled or completed for this applicant.");
         }
 
-        return await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct);
+        var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct);
+        if (!updateResult.IsSuccess)
+        {
+            return updateResult;
+        }
+
+        // Notify AI service to resume LangGraph Stage 2 (Interview Questions & Scheduling)
+        if (application.AiWorkflowId.HasValue)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _aiServiceClient.ApproveCandidateEvaluationAsync(
+                        application.AiWorkflowId.Value,
+                        "APPROVED",
+                        notes: "Candidate approved for technical interview scheduling",
+                        ct: CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to notify AI Service of interview approval for Workflow {WorkflowId}", application.AiWorkflowId.Value);
+                }
+            });
+        }
+
+        return updateResult;
     }
 
     public async Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
-        return await UpdateApplicationStatusAsync(id, ApplicationStatus.REJECTED, recruiterCompanyId, ct);
+        var application = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
+        var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.REJECTED, recruiterCompanyId, ct);
+        if (!updateResult.IsSuccess)
+        {
+            return updateResult;
+        }
+
+        if (application?.AiWorkflowId != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _aiServiceClient.ApproveCandidateEvaluationAsync(
+                        application.AiWorkflowId.Value,
+                        "REJECTED",
+                        notes: "Application rejected by recruiter",
+                        ct: CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to notify AI Service of application rejection for Workflow {WorkflowId}", application.AiWorkflowId.Value);
+                }
+            });
+        }
+
+        return updateResult;
     }
 }

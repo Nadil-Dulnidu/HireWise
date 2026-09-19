@@ -28,61 +28,28 @@ import {
 // Generally Available Gemini models accessible via Google Cloud Gemini Enterprise Agent Platform
 const AVAILABLE_GEMINI_MODELS = [
   {
-    group: "Gemini 3 Series (Latest Agentic GA)",
+    group: "Gemini 2.5 Series (Current Generation)",
     models: [
-      {
-        value: "gemini-3.8-flash",
-        label: "gemini-3.8-flash (Agentic & Long-Horizon Coding)",
-      },
-      {
-        value: "gemini-3.7-flash",
-        label: "gemini-3.7-flash (Developer Everyday Driver)",
-      },
-      {
-        value: "gemini-3.6-flash",
-        label: "gemini-3.6-flash (Complex Multi-step Workflows)",
-      },
-      {
-        value: "gemini-3.5-flash",
-        label: "gemini-3.5-flash (Pro Intelligence at Flash Speed)",
-      },
-      {
-        value: "gemini-3.5-flash-lite",
-        label: "gemini-3.5-flash-lite (Fast Lightweight Agentic)",
-      },
-      {
-        value: "gemini-3.1-flash-lite",
-        label: "gemini-3.1-flash-lite (Cost-Efficient High-Volume)",
-      },
-    ],
-  },
-  {
-    group: "Gemini 2.5 Series (Long-Context GA)",
-    models: [
-      {
-        value: "gemini-2.5-pro",
-        label: "gemini-2.5-pro (Deep Reasoning & 1M Context)",
-      },
       {
         value: "gemini-2.5-flash",
-        label: "gemini-2.5-flash (Fast Reasoning & Controllable Thinking)",
+        label: "gemini-2.5-flash (Recommended: Fast Reasoning & High Throughput)",
       },
       {
-        value: "gemini-2.5-flash-lite",
-        label: "gemini-2.5-flash-lite (High-Throughput Scale)",
+        value: "gemini-2.5-pro",
+        label: "gemini-2.5-pro (Deep Reasoning & Complex Evaluation)",
       },
     ],
   },
   {
-    group: "Legacy & Compatibility",
+    group: "Gemini 1.5 Series (Stable Long-Context)",
     models: [
       {
-        value: "gemini-1.5-pro",
-        label: "gemini-1.5-pro (Legacy Pro)",
+        value: "gemini-1.5-flash",
+        label: "gemini-1.5-flash (High Throughput Baseline)",
       },
       {
-        value: "gemini-1.5-flash",
-        label: "gemini-1.5-flash (Legacy Flash)",
+        value: "gemini-1.5-pro",
+        label: "gemini-1.5-pro (Extended Context & Code Analysis)",
       },
     ],
   },

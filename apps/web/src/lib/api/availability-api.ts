@@ -51,4 +51,11 @@ export const availabilityApi = {
     );
     return response.data.data ?? [];
   },
+
+  getCandidateAvailability: async (candidateId: string) => {
+    const response = await apiClient.get<ApiResponse<AvailabilitySlot[]>>(
+      `/availability/candidate/${candidateId}`,
+    );
+    return response.data.data ?? [];
+  },
 };

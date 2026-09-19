@@ -82,6 +82,22 @@ class WorkflowRepository:
 
         async with pool.connection() as conn:
             async with conn.cursor() as cur:
+                # 1. Clean up existing workflow and steps for this application if one exists (re-evaluation)
+                await cur.execute(
+                    """
+                    DELETE FROM "AiWorkflowSteps"
+                    WHERE "WorkflowId" IN (
+                        SELECT "Id" FROM "AiWorkflows" WHERE "ApplicationId" = %s
+                    );
+                    """,
+                    (str(application_id),),
+                )
+                await cur.execute(
+                    'DELETE FROM "AiWorkflows" WHERE "ApplicationId" = %s;',
+                    (str(application_id),),
+                )
+
+                # 2. Insert new workflow record
                 await cur.execute(
                     query,
                     (
@@ -100,6 +116,13 @@ class WorkflowRepository:
                         False,
                     ),
                 )
+
+                # 3. Keep Applications table in sync with the new workflow
+                await cur.execute(
+                    'UPDATE "Applications" SET "AiWorkflowId" = %s, "Status" = %s, "UpdatedAt" = %s WHERE "Id" = %s;',
+                    (str(workflow_id), "AI_REVIEW", now, str(application_id)),
+                )
+
                 await conn.commit()
                 logger.info(
                     f"Created AiWorkflow {workflow_id} for Application {application_id}"

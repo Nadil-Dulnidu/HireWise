@@ -72,6 +72,11 @@ export function RecruiterAiEvaluationsPage() {
         "AI evaluation workflow successfully triggered! Results will update momentarily.",
       );
       queryClient.invalidateQueries({ queryKey: ["aiEvaluations"] });
+      if (selectedAppId) {
+        queryClient.invalidateQueries({
+          queryKey: ["applicationWorkflow", selectedAppId],
+        });
+      }
       setTimeout(() => setActionSuccess(null), 4000);
     },
     onError: (err: any) => {

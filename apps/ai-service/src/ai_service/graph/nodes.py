@@ -72,7 +72,7 @@ async def job_analysis_node(state: EvaluationState) -> EvaluationState:
             step_name="JOB_ANALYSIS",
             workflow_id=workflow_id_str,
             max_retries=3,
-            timeout_seconds=20.0,
+            timeout_seconds=45.0,
             on_retry=on_retry,
         )
         result_dict = result.model_dump()
@@ -135,7 +135,7 @@ async def resume_analysis_node(state: EvaluationState) -> EvaluationState:
             step_name="RESUME_ANALYSIS",
             workflow_id=workflow_id_str,
             max_retries=3,
-            timeout_seconds=20.0,
+            timeout_seconds=45.0,
             on_retry=on_retry,
         )
         result_dict = result.model_dump()
@@ -208,7 +208,7 @@ async def candidate_evaluation_node(state: EvaluationState) -> EvaluationState:
             step_name="CANDIDATE_EVALUATION",
             workflow_id=workflow_id_str,
             max_retries=3,
-            timeout_seconds=20.0,
+            timeout_seconds=45.0,
             on_retry=on_retry,
         )
         result_dict = result.model_dump()
@@ -451,7 +451,7 @@ async def question_generation_node(state: EvaluationState) -> EvaluationState:
             step_name="QUESTION_GENERATION",
             workflow_id=workflow_id_str,
             max_retries=3,
-            timeout_seconds=25.0,
+            timeout_seconds=60.0,
             on_retry=on_retry,
         )
         result_dict = result.model_dump()
@@ -539,7 +539,7 @@ async def scheduling_recommendation_node(state: EvaluationState) -> EvaluationSt
             step_name="SCHEDULING",
             workflow_id=workflow_id_str,
             max_retries=2,
-            timeout_seconds=15.0,
+            timeout_seconds=30.0,
         )
         result_dict = result.model_dump()
 
