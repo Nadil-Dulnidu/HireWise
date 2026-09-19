@@ -49,15 +49,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }));
 
 // 3. Authentication & Clerk JWT Configuration
-var clerkAuthority = builder.Configuration["CLERK_AUTHORITY"]
+var clerkAuthority = Environment.GetEnvironmentVariable("CLERK_AUTHORITY")
+    ?? builder.Configuration["CLERK_AUTHORITY"]
     ?? builder.Configuration["Clerk:Authority"]
     ?? builder.Configuration["Clerk__Authority"]
-    ?? "https://clerk.hirewise.dev";
+    ?? "https://helping-anemone-4730.clerk.accounts.dev";
+
+var jwksResolver = new ClerkJwksResolver(clerkAuthority);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = clerkAuthority;
+        options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = !builder.Environment.IsDevelopment()
@@ -66,6 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            IssuerSigningKeyResolver = jwksResolver.ResolveSigningKeys,
             NameClaimType = ClaimTypes.NameIdentifier,
             RoleClaimType = ClaimTypes.Role
         };
@@ -81,6 +86,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 {
                     context.Token = accessToken;
                 }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
+                logger?.LogWarning("JWT Authentication failed for request to {Path}: {Error}",
+                    context.HttpContext.Request.Path, context.Exception.Message);
                 return Task.CompletedTask;
             }
         };
@@ -113,6 +125,10 @@ builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<IInterviewFeedbackService, InterviewFeedbackService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddHttpClient<IClerkSyncService, ClerkSyncService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IAgentConfigService, AgentConfigService>();
+builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 
 // Integrations (Google Calendar & Resend)
 var resendApiKey = builder.Configuration["RESEND_API_KEY"]
@@ -234,6 +250,17 @@ app.UseIpRateLimiting();
 app.UseCors("FrontendCorsPolicy");
 app.UseStaticFiles();
 
+var uploadsDir = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsDir),
+    RequestPath = "/uploads"
+});
+
 app.UseAuthentication();
 app.UseMiddleware<UserContextMiddleware>();
 app.UseAuthorization();
@@ -320,4 +347,56 @@ static string ParseConnectionString(string connectionStringOrUrl)
     }
 
     return connectionStringOrUrl;
+}
+
+public class ClerkJwksResolver
+{
+    private readonly HttpClient _httpClient = new();
+    private readonly string _jwksUrl;
+    private IList<SecurityKey>? _cachedKeys;
+    private DateTime _cacheExpiresAt = DateTime.MinValue;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+    public ClerkJwksResolver(string authority)
+    {
+        _jwksUrl = $"{authority.TrimEnd('/')}/.well-known/jwks.json";
+    }
+
+    public IEnumerable<SecurityKey> ResolveSigningKeys(string? token, SecurityToken? securityToken, string? kid, TokenValidationParameters? validationParameters)
+    {
+        if (_cachedKeys != null && DateTime.UtcNow < _cacheExpiresAt)
+        {
+            if (string.IsNullOrEmpty(kid)) return _cachedKeys;
+            var matched = _cachedKeys.Where(k => k.KeyId == kid).ToList();
+            if (matched.Count > 0) return matched;
+        }
+
+        _semaphore.Wait();
+        try
+        {
+            if (_cachedKeys != null && DateTime.UtcNow < _cacheExpiresAt)
+            {
+                if (string.IsNullOrEmpty(kid)) return _cachedKeys;
+                var matched = _cachedKeys.Where(k => k.KeyId == kid).ToList();
+                if (matched.Count > 0) return matched;
+            }
+
+            var json = _httpClient.GetStringAsync(_jwksUrl).GetAwaiter().GetResult();
+            var jwks = new JsonWebKeySet(json);
+            _cachedKeys = jwks.GetSigningKeys();
+            _cacheExpiresAt = DateTime.UtcNow.AddMinutes(30);
+
+            if (string.IsNullOrEmpty(kid)) return _cachedKeys;
+            return _cachedKeys.Where(k => k.KeyId == kid);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Failed to fetch Clerk JWKS keys from {Url}", _jwksUrl);
+            return _cachedKeys ?? (IEnumerable<SecurityKey>)Array.Empty<SecurityKey>();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
 }

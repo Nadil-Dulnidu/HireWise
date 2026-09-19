@@ -32,6 +32,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<AiWorkflow> AiWorkflows => Set<AiWorkflow>();
     public DbSet<AiWorkflowStep> AiWorkflowSteps => Set<AiWorkflowStep>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<AgentConfig> AgentConfigs => Set<AgentConfig>();
+    public DbSet<PlatformSetting> PlatformSettings => Set<PlatformSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +53,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Notification>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<AiWorkflow>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<AiWorkflowStep>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<AgentConfig>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<PlatformSetting>().HasQueryFilter(e => !e.IsDeleted);
 
         // User indexes & constraints
         modelBuilder.Entity<User>(entity =>
@@ -253,6 +257,18 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.EntityType);
             entity.HasIndex(e => e.CreatedAt);
+        });
+
+        // Agent Config
+        modelBuilder.Entity<AgentConfig>(entity =>
+        {
+            entity.HasIndex(e => e.AgentKey).IsUnique();
+        });
+
+        // Platform Setting
+        modelBuilder.Entity<PlatformSetting>(entity =>
+        {
+            entity.HasIndex(e => e.Key).IsUnique();
         });
     }
 

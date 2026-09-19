@@ -18,15 +18,19 @@ if sys.platform == "win32":
 
 setup_logging()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    logger.info(
+        f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]"
+    )
     await init_db_pool()
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
     await close_db_pool()
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -34,7 +38,7 @@ app = FastAPI(
     description="HireWise Multi-Agent AI Orchestrator powered by LangGraph and Google Vertex/Gemini",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS Middleware
@@ -50,8 +54,17 @@ app.add_middleware(
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(workflows_router, prefix=settings.API_V1_STR)
 
+
 def start():
-    uvicorn.run("ai_service.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "ai_service.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_dirs=["src"],
+        reload_excludes=[".venv", "*.log", "__pycache__", ".pytest_cache", ".ruff_cache"],
+    )
+
 
 if __name__ == "__main__":
     start()

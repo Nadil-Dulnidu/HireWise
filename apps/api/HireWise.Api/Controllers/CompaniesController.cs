@@ -15,7 +15,7 @@ public class CompaniesController : ControllerBase
     private readonly IUserService _userService;
 
     public CompaniesController(
-        ICompanyService companyService, 
+        ICompanyService companyService,
         ICurrentUserService currentUserService,
         IUserService userService)
     {

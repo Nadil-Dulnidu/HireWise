@@ -100,8 +100,10 @@ public enum AiWorkflowStatus
     PENDING,
     IN_PROGRESS,
     AWAITING_APPROVAL,
+    AWAITING_SCHEDULE_APPROVAL,
     COMPLETED,
-    FAILED
+    FAILED,
+    REJECTED
 }
 
 public enum AiStepStatus

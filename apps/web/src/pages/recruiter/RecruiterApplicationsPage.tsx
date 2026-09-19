@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { applicationsApi } from '@/lib/api/applications-api'
-import { jobsApi } from '@/lib/api/jobs-api'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { applicationsApi } from "@/lib/api/applications-api";
+import { jobsApi } from "@/lib/api/jobs-api";
+import { Link } from "react-router-dom";
 import {
   Users,
   Search,
@@ -12,61 +12,70 @@ import {
   CheckCircle2,
   XCircle,
   ChevronRight,
-  Loader2
-} from 'lucide-react'
-import type { ApplicationStatus } from '@/types/applications'
-import type { Job } from '@/types/jobs'
+  Loader2,
+} from "lucide-react";
+import type { ApplicationStatus } from "@/types/applications";
+import type { Job } from "@/types/jobs";
 
-const statusOptions: { value: ApplicationStatus | ''; label: string }[] = [
-  { value: '', label: 'All Statuses' },
-  { value: 'APPLIED', label: 'Applied' },
-  { value: 'AI_REVIEW', label: 'AI Reviewing' },
-  { value: 'AI_RECOMMENDED', label: 'AI Recommended' },
-  { value: 'RECRUITER_REVIEW', label: 'Recruiter Review' },
-  { value: 'INTERVIEW_APPROVED', label: 'Interview Approved' },
-  { value: 'INTERVIEW_SCHEDULED', label: 'Interview Scheduled' },
-  { value: 'INTERVIEW_COMPLETED', label: 'Interview Completed' },
-  { value: 'EVALUATION_PENDING', label: 'Evaluation Pending' },
-  { value: 'SELECTED', label: 'Selected' },
-  { value: 'REJECTED', label: 'Rejected' }
-]
+const statusOptions: { value: ApplicationStatus | ""; label: string }[] = [
+  { value: "", label: "All Statuses" },
+  { value: "APPLIED", label: "Applied" },
+  { value: "AI_REVIEW", label: "AI Reviewing" },
+  { value: "AI_RECOMMENDED", label: "AI Recommended" },
+  { value: "RECRUITER_REVIEW", label: "Recruiter Review" },
+  { value: "INTERVIEW_APPROVED", label: "Interview Approved" },
+  { value: "INTERVIEW_SCHEDULED", label: "Interview Scheduled" },
+  { value: "INTERVIEW_COMPLETED", label: "Interview Completed" },
+  { value: "EVALUATION_PENDING", label: "Evaluation Pending" },
+  { value: "SELECTED", label: "Selected" },
+  { value: "REJECTED", label: "Rejected" },
+];
 
 export function RecruiterApplicationsPage() {
-  const queryClient = useQueryClient()
-  const [selectedJobId, setSelectedJobId] = useState<string>('')
-  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | ''>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1)
+  const queryClient = useQueryClient();
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | "">(
+    "",
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data: jobsData } = useQuery({
-    queryKey: ['recruiterJobsList'],
-    queryFn: () => jobsApi.getRecruiterJobs({ page: 1, pageSize: 100 })
-  })
+    queryKey: ["recruiterJobsList"],
+    queryFn: () => jobsApi.getRecruiterJobs({ page: 1, pageSize: 100 }),
+  });
 
   const { data: applicationsData, isLoading } = useQuery({
-    queryKey: ['companyApplications', page, selectedJobId, selectedStatus, searchTerm],
-    queryFn: () => applicationsApi.getCompanyApplications({
+    queryKey: [
+      "companyApplications",
       page,
-      pageSize: 10,
-      jobId: selectedJobId || undefined,
-      status: selectedStatus || undefined,
-      search: searchTerm || undefined
-    })
-  })
+      selectedJobId,
+      selectedStatus,
+      searchTerm,
+    ],
+    queryFn: () =>
+      applicationsApi.getCompanyApplications({
+        page,
+        pageSize: 10,
+        jobId: selectedJobId || undefined,
+        status: selectedStatus || undefined,
+        search: searchTerm || undefined,
+      }),
+  });
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => applicationsApi.approveForInterview(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+    },
+  });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => applicationsApi.rejectApplication(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyApplications'] })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -77,7 +86,8 @@ export function RecruiterApplicationsPage() {
             Application Submissions & Reviews
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Review candidate applications, AI-generated match evaluations, and manage interview approvals.
+            Review candidate applications, AI-generated match evaluations, and
+            manage interview approvals.
           </p>
         </div>
       </div>
@@ -92,8 +102,8 @@ export function RecruiterApplicationsPage() {
             placeholder="Search candidate name or email..."
             value={searchTerm}
             onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setPage(1)
+              setSearchTerm(e.target.value);
+              setPage(1);
             }}
             className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
           />
@@ -104,14 +114,20 @@ export function RecruiterApplicationsPage() {
           <select
             value={selectedJobId}
             onChange={(e) => {
-              setSelectedJobId(e.target.value)
-              setPage(1)
+              setSelectedJobId(e.target.value);
+              setPage(1);
             }}
             className="w-full bg-transparent text-xs text-slate-700 focus:outline-none cursor-pointer"
           >
-            <option value="" className="bg-white text-slate-700">All Job Openings</option>
+            <option value="" className="bg-white text-slate-700">
+              All Job Openings
+            </option>
             {jobsData?.items.map((job: Job) => (
-              <option key={job.id} value={job.id} className="bg-white text-slate-800">
+              <option
+                key={job.id}
+                value={job.id}
+                className="bg-white text-slate-800"
+              >
                 {job.title}
               </option>
             ))}
@@ -123,13 +139,17 @@ export function RecruiterApplicationsPage() {
           <select
             value={selectedStatus}
             onChange={(e) => {
-              setSelectedStatus(e.target.value as ApplicationStatus | '')
-              setPage(1)
+              setSelectedStatus(e.target.value as ApplicationStatus | "");
+              setPage(1);
             }}
             className="w-full bg-transparent text-xs text-slate-700 focus:outline-none cursor-pointer"
           >
             {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-white text-slate-800">
+              <option
+                key={opt.value}
+                value={opt.value}
+                className="bg-white text-slate-800"
+              >
                 {opt.label}
               </option>
             ))}
@@ -158,7 +178,7 @@ export function RecruiterApplicationsPage() {
                     ({app.candidateEmail})
                   </span>
                   <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-semibold">
-                    {app.status.replace(/_/g, ' ')}
+                    {app.status.replace(/_/g, " ")}
                   </span>
                 </div>
 
@@ -168,7 +188,8 @@ export function RecruiterApplicationsPage() {
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" /> Applied {new Date(app.appliedAt).toLocaleDateString()}
+                    <Clock className="h-3.5 w-3.5 text-slate-400" /> Applied{" "}
+                    {new Date(app.appliedAt).toLocaleDateString()}
                   </span>
                   {app.coverLetter && (
                     <span className="text-emerald-600 text-[11px] font-medium flex items-center gap-1">
@@ -192,20 +213,21 @@ export function RecruiterApplicationsPage() {
                 )}
 
                 {/* Schedulability-aware Actions */}
-                {(app.status === 'APPLIED' ||
-                  app.status === 'AI_REVIEW' ||
-                  app.status === 'AI_RECOMMENDED' ||
-                  app.status === 'RECRUITER_REVIEW') && (
+                {(app.status === "APPLIED" ||
+                  app.status === "AI_REVIEW" ||
+                  app.status === "AI_RECOMMENDED" ||
+                  app.status === "RECRUITER_REVIEW") && (
                   <button
                     onClick={() => approveMutation.mutate(app.id)}
                     disabled={approveMutation.isPending}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-3 py-2 text-xs font-semibold transition"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Approve Interview
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />{" "}
+                    Approve Interview
                   </button>
                 )}
 
-                {app.status === 'INTERVIEW_APPROVED' && (
+                {app.status === "INTERVIEW_APPROVED" && (
                   <Link
                     to="/recruiter/scheduling"
                     className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3 py-2 text-xs font-semibold transition"
@@ -214,7 +236,7 @@ export function RecruiterApplicationsPage() {
                   </Link>
                 )}
 
-                {app.status === 'INTERVIEW_SCHEDULED' && (
+                {app.status === "INTERVIEW_SCHEDULED" && (
                   <Link
                     to="/recruiter/interviews"
                     className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition"
@@ -223,7 +245,7 @@ export function RecruiterApplicationsPage() {
                   </Link>
                 )}
 
-                {app.status !== 'REJECTED' && (
+                {app.status !== "REJECTED" && (
                   <button
                     onClick={() => rejectMutation.mutate(app.id)}
                     disabled={rejectMutation.isPending}
@@ -245,13 +267,16 @@ export function RecruiterApplicationsPage() {
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-sm">
             <Users className="h-10 w-10 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900">No candidates found</h3>
+            <h3 className="text-base font-bold text-slate-900">
+              No candidates found
+            </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              No applications match the current filter criteria or have been submitted yet.
+              No applications match the current filter criteria or have been
+              submitted yet.
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

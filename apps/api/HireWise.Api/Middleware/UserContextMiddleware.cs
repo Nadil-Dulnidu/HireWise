@@ -127,7 +127,7 @@ public class UserContextMiddleware
                         cachedDbUserId = dbUser.Id;
                         memoryCache.Set(userIdCacheKey, cachedDbUserId, TimeSpan.FromMinutes(5));
                         resolvedDbUserId = cachedDbUserId;
-                        
+
                         // Also populate companyId if not resolved yet
                         if (!resolvedCompanyId.HasValue && dbUser.CompanyId.HasValue)
                         {

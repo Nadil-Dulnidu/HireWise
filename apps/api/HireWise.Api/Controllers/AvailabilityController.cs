@@ -113,6 +113,28 @@ public class AvailabilityController : ControllerBase
         return Ok(ApiResponse<List<AvailabilitySlotDto>>.Ok(result.Value!));
     }
 
+    [HttpGet("api/availability/candidate/{id:guid}")]
+    [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    public async Task<IActionResult> GetCandidateAvailability(Guid id, CancellationToken ct)
+    {
+        var user = await GetCurrentDbUserAsync(ct);
+        var isAdmin = _currentUserService.IsAdmin;
+        var companyId = user?.CompanyId ?? _currentUserService.CompanyId;
+
+        if (!isAdmin && !companyId.HasValue)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Recruiter must be assigned to a company."));
+        }
+
+        var result = await _availabilityService.GetCandidateAvailabilityAsync(id, companyId, isAdmin, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to retrieve candidate availability"));
+        }
+
+        return Ok(ApiResponse<List<AvailabilitySlotDto>>.Ok(result.Value!));
+    }
+
     private async Task<DTOs.Users.UserDto?> GetCurrentDbUserAsync(CancellationToken ct)
     {
         var clerkId = _currentUserService.ClerkUserId;

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 from ai_service.graph.builder import build_evaluation_graph
 from ai_service.graph.state import EvaluationState
 
+
 @pytest.mark.asyncio
 async def test_langgraph_pipeline_execution():
     """
@@ -15,7 +16,7 @@ async def test_langgraph_pipeline_execution():
         "JOB_ANALYSIS": str(uuid.uuid4()),
         "RESUME_ANALYSIS": str(uuid.uuid4()),
         "CANDIDATE_EVALUATION": str(uuid.uuid4()),
-        "VALIDATION": str(uuid.uuid4())
+        "VALIDATION": str(uuid.uuid4()),
     }
 
     initial_state: EvaluationState = {
@@ -27,14 +28,22 @@ async def test_langgraph_pipeline_execution():
         "job_requirements": "5+ years experience, C#, .NET 8, PostgreSQL, Redis, REST APIs.",
         "candidate_resume_url": "https://storage.hirewise.dev/resumes/candidate123.pdf",
         "resume_raw_text": "Alex Morgan, Senior Software Engineer with 6 years experience in C#, .NET Core, PostgreSQL, and AWS.",
-        "current_step": "JOB_ANALYSIS"
+        "current_step": "JOB_ANALYSIS",
     }
 
     # Patch DB repo and callback client methods
-    with patch("ai_service.graph.nodes.repo.update_step", new_callable=AsyncMock) as mock_update_step, \
-         patch("ai_service.graph.nodes.repo.update_workflow_status", new_callable=AsyncMock) as mock_update_wf, \
-         patch("ai_service.services.callback_client.CallbackClient.notify_workflow_complete", new_callable=AsyncMock) as mock_notify:
-
+    with (
+        patch(
+            "ai_service.graph.nodes.repo.update_step", new_callable=AsyncMock
+        ) as mock_update_step,
+        patch(
+            "ai_service.graph.nodes.repo.update_workflow_status", new_callable=AsyncMock
+        ) as mock_update_wf,
+        patch(
+            "ai_service.services.callback_client.CallbackClient.notify_workflow_complete",
+            new_callable=AsyncMock,
+        ) as mock_notify,
+    ):
         graph = build_evaluation_graph()
         final_state = await graph.ainvoke(initial_state)
 

@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { jobsApi } from '@/lib/api/jobs-api'
-import { applicationsApi } from '@/lib/api/applications-api'
-import { resumesApi } from '@/lib/api/resumes-api'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { jobsApi } from "@/lib/api/jobs-api";
+import { applicationsApi } from "@/lib/api/applications-api";
+import { resumesApi } from "@/lib/api/resumes-api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   Briefcase,
   Building,
@@ -22,98 +22,121 @@ import {
   FileText,
   Upload,
   X,
-  FileCheck2
-} from 'lucide-react'
+  FileCheck2,
+} from "lucide-react";
 
 export function JobDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { isSignedIn } = useCurrentUser()
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isSignedIn } = useCurrentUser();
 
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
-  const [coverLetter, setCoverLetter] = useState('')
-  const [applyError, setApplyError] = useState<string | null>(null)
-  const [applySuccess, setApplySuccess] = useState(false)
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState(false);
 
-  const { data: job, isLoading, isError, error } = useQuery({
-    queryKey: ['jobDetail', id],
+  const {
+    data: job,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["jobDetail", id],
     queryFn: () => jobsApi.getJobById(id!),
-    enabled: !!id
-  })
+    enabled: !!id,
+  });
 
-  const { data: activeResume, isLoading: isResumeLoading, refetch: refetchResume } = useQuery({
-    queryKey: ['myResume'],
+  const {
+    data: activeResume,
+    isLoading: isResumeLoading,
+    refetch: refetchResume,
+  } = useQuery({
+    queryKey: ["myResume"],
     queryFn: async () => {
       try {
-        return await resumesApi.getMyActiveResume()
+        return await resumesApi.getMyActiveResume();
       } catch (err: any) {
-        if (err?.response?.status === 404) return null
-        throw err
+        if (err?.response?.status === 404) return null;
+        throw err;
       }
     },
-    enabled: isSignedIn && isApplyModalOpen
-  })
+    enabled: isSignedIn && isApplyModalOpen,
+  });
 
   const uploadResumeMutation = useMutation({
     mutationFn: (file: File) => resumesApi.uploadResume(file),
     onSuccess: () => {
-      setApplyError(null)
-      refetchResume()
-      queryClient.invalidateQueries({ queryKey: ['myResume'] })
+      setApplyError(null);
+      refetchResume();
+      queryClient.invalidateQueries({ queryKey: ["myResume"] });
     },
     onError: (err: any) => {
-      setApplyError(err?.response?.data?.error || err.message || 'Failed to upload resume')
-    }
-  })
+      setApplyError(
+        err?.response?.data?.error || err.message || "Failed to upload resume",
+      );
+    },
+  });
 
   const applyMutation = useMutation({
-    mutationFn: (data: { coverLetter?: string }) => applicationsApi.applyToJob(id!, data),
+    mutationFn: (data: { coverLetter?: string }) =>
+      applicationsApi.applyToJob(id!, data),
     onSuccess: () => {
-      setApplySuccess(true)
-      queryClient.invalidateQueries({ queryKey: ['myApplications'] })
-      queryClient.invalidateQueries({ queryKey: ['jobDetail', id] })
+      setApplySuccess(true);
+      queryClient.invalidateQueries({ queryKey: ["myApplications"] });
+      queryClient.invalidateQueries({ queryKey: ["jobDetail", id] });
       setTimeout(() => {
-        setIsApplyModalOpen(false)
-        navigate('/candidate/applications')
-      }, 2000)
+        setIsApplyModalOpen(false);
+        navigate("/candidate/applications");
+      }, 2000);
     },
     onError: (err: any) => {
-      setApplyError(err?.response?.data?.error || err.message || 'Failed to submit application')
-    }
-  })
+      setApplyError(
+        err?.response?.data?.error ||
+          err.message ||
+          "Failed to submit application",
+      );
+    },
+  });
 
-  const formatSalary = (min?: number | null, max?: number | null, currency = 'USD') => {
-    if (!min && !max) return 'Competitive salary'
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const formatSalary = (
+    min?: number | null,
+    max?: number | null,
+    currency = "USD",
+  ) => {
+    if (!min && !max) return "Competitive salary";
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
-      maximumFractionDigits: 0
-    })
-    if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}`
-    if (min) return `From ${formatter.format(min)}`
-    return `Up to ${formatter.format(max!)}`
-  }
+      maximumFractionDigits: 0,
+    });
+    if (min && max)
+      return `${formatter.format(min)} - ${formatter.format(max)}`;
+    if (min) return `From ${formatter.format(min)}`;
+    return `Up to ${formatter.format(max!)}`;
+  };
 
   const handleApplyClick = () => {
     if (!isSignedIn) {
-      navigate(`/sign-up?redirect_url=/jobs/${id}`)
+      navigate(`/sign-up?redirect_url=/jobs/${id}`);
     } else {
-      setApplyError(null)
-      setApplySuccess(false)
-      setIsApplyModalOpen(true)
+      setApplyError(null);
+      setApplySuccess(false);
+      setIsApplyModalOpen(true);
     }
-  }
+  };
 
   const handleSubmitApplication = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!activeResume) {
-      setApplyError('Please upload your resume before submitting your application.')
-      return
+      setApplyError(
+        "Please upload your resume before submitting your application.",
+      );
+      return;
     }
-    setApplyError(null)
-    applyMutation.mutate({ coverLetter: coverLetter.trim() || undefined })
-  }
+    setApplyError(null);
+    applyMutation.mutate({ coverLetter: coverLetter.trim() || undefined });
+  };
 
   if (isLoading) {
     return (
@@ -121,16 +144,19 @@ export function JobDetailPage() {
         <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
         <p className="text-sm text-slate-500">Loading job specifications...</p>
       </div>
-    )
+    );
   }
 
   if (isError || !job) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-16 text-center space-y-4">
         <AlertCircle className="h-10 w-10 text-rose-500 mx-auto" />
-        <h2 className="text-xl font-bold text-slate-900">Job opening not found</h2>
+        <h2 className="text-xl font-bold text-slate-900">
+          Job opening not found
+        </h2>
         <p className="text-sm text-slate-600">
-          {(error as Error)?.message || 'This job posting may have been closed or removed by the hiring team.'}
+          {(error as Error)?.message ||
+            "This job posting may have been closed or removed by the hiring team."}
         </p>
         <Link
           to="/jobs"
@@ -139,7 +165,7 @@ export function JobDetailPage() {
           <ArrowLeft className="h-4 w-4" /> Back to open roles
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -163,9 +189,9 @@ export function JobDetailPage() {
                 {job.experienceLevel} Level
               </span>
               <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700 border border-purple-200">
-                {job.employmentType.replace('_', ' ')}
+                {job.employmentType.replace("_", " ")}
               </span>
-              {job.status !== 'OPEN' && (
+              {job.status !== "OPEN" && (
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
                   Status: {job.status}
                 </span>
@@ -178,18 +204,18 @@ export function JobDetailPage() {
 
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-500 pt-1">
               <span className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                <Building className="h-4 w-4 text-slate-400" /> {job.companyName}
+                <Building className="h-4 w-4 text-slate-400" />{" "}
+                {job.companyName}
               </span>
               {job.departmentName && (
-                <span className="text-slate-500">
-                  • {job.departmentName}
-                </span>
+                <span className="text-slate-500">• {job.departmentName}</span>
               )}
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-slate-400" /> {job.location}
               </span>
               <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
-                <DollarSign className="h-4 w-4" /> {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}
+                <DollarSign className="h-4 w-4" />{" "}
+                {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}
               </span>
             </div>
           </div>
@@ -198,15 +224,18 @@ export function JobDetailPage() {
           <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
             <button
               onClick={handleApplyClick}
-              disabled={job.status !== 'OPEN'}
+              disabled={job.status !== "OPEN"}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 py-3 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
             >
-              <Bot className="h-4 w-4" /> {job.status === 'OPEN' ? 'Apply with AI Match' : 'Applications Closed'}
+              <Bot className="h-4 w-4" />{" "}
+              {job.status === "OPEN"
+                ? "Apply with AI Match"
+                : "Applications Closed"}
             </button>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href)
-                alert('Job link copied to clipboard!')
+                navigator.clipboard.writeText(window.location.href);
+                alert("Job link copied to clipboard!");
               }}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 transition shadow-xs"
             >
@@ -220,26 +249,31 @@ export function JobDetailPage() {
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <span className="text-slate-500 block">Total Applicants</span>
             <span className="text-slate-900 font-bold mt-0.5 flex items-center gap-1">
-              <Users className="h-3.5 w-3.5 text-blue-600" /> {job.applicationCount} Applied
+              <Users className="h-3.5 w-3.5 text-blue-600" />{" "}
+              {job.applicationCount} Applied
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <span className="text-slate-500 block">Posted Date</span>
             <span className="text-slate-900 font-bold mt-0.5 flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-indigo-600" /> {new Date(job.createdAt).toLocaleDateString()}
+              <Clock className="h-3.5 w-3.5 text-indigo-600" />{" "}
+              {new Date(job.createdAt).toLocaleDateString()}
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <span className="text-slate-500 block">Application Deadline</span>
             <span className="text-slate-900 font-bold mt-0.5 flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-              {job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString() : 'Rolling basis'}
+              {job.applicationDeadline
+                ? new Date(job.applicationDeadline).toLocaleDateString()
+                : "Rolling basis"}
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <span className="text-slate-500 block">Recruitment Mode</span>
             <span className="text-slate-900 font-bold mt-0.5 flex items-center gap-1">
-              <FileCheck2 className="h-3.5 w-3.5 text-purple-600" /> AI Evaluated
+              <FileCheck2 className="h-3.5 w-3.5 text-purple-600" /> AI
+              Evaluated
             </span>
           </div>
         </div>
@@ -260,7 +294,8 @@ export function JobDetailPage() {
 
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Key Requirements & Qualifications
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Key
+              Requirements & Qualifications
             </h2>
             <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
               {job.requirements}
@@ -276,33 +311,49 @@ export function JobDetailPage() {
                 <Building className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">{job.companyName}</h3>
-                <p className="text-xs text-slate-500">{job.companyLocation || job.location}</p>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {job.companyName}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {job.companyLocation || job.location}
+                </p>
               </div>
             </div>
 
             <div className="space-y-3 pt-2 text-xs text-slate-600 border-t border-slate-100">
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Department</span>
-                <span className="font-medium text-slate-900">{job.departmentName || 'General Engineering'}</span>
+                <span className="font-medium text-slate-900">
+                  {job.departmentName || "General Engineering"}
+                </span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Role Type</span>
-                <span className="font-medium text-slate-900">{job.employmentType.replace('_', ' ')}</span>
+                <span className="font-medium text-slate-900">
+                  {job.employmentType.replace("_", " ")}
+                </span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Experience</span>
-                <span className="font-medium text-slate-900">{job.experienceLevel} Level</span>
+                <span className="font-medium text-slate-900">
+                  {job.experienceLevel} Level
+                </span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Compensation</span>
-                <span className="font-medium text-emerald-600">{formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
+                <span className="font-medium text-emerald-600">
+                  {formatSalary(
+                    job.salaryMin,
+                    job.salaryMax,
+                    job.salaryCurrency,
+                  )}
+                </span>
               </div>
             </div>
 
             <button
               onClick={handleApplyClick}
-              disabled={job.status !== 'OPEN'}
+              disabled={job.status !== "OPEN"}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-3 text-xs font-semibold text-white transition shadow-sm mt-4 cursor-pointer"
             >
               <Bot className="h-4 w-4" /> Apply for this Position
@@ -323,8 +374,12 @@ export function JobDetailPage() {
             </button>
 
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-slate-900">Apply to {job.title}</h2>
-              <p className="text-xs text-slate-500">{job.companyName} • {job.location}</p>
+              <h2 className="text-xl font-bold text-slate-900">
+                Apply to {job.title}
+              </h2>
+              <p className="text-xs text-slate-500">
+                {job.companyName} • {job.location}
+              </p>
             </div>
 
             {applyError && (
@@ -337,7 +392,10 @@ export function JobDetailPage() {
             {applySuccess && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-700 flex items-center gap-2.5">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
-                <span>Application submitted successfully! Redirecting to applications tracker...</span>
+                <span>
+                  Application submitted successfully! Redirecting to
+                  applications tracker...
+                </span>
               </div>
             )}
 
@@ -346,7 +404,11 @@ export function JobDetailPage() {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
                   <span>Attached Resume (Required)</span>
-                  <Link to="/candidate/resume" target="_blank" className="text-blue-600 hover:underline text-[11px]">
+                  <Link
+                    to="/candidate/resume"
+                    target="_blank"
+                    className="text-blue-600 hover:underline text-[11px]"
+                  >
                     Manage Resumes ↗
                   </Link>
                 </label>
@@ -360,8 +422,13 @@ export function JobDetailPage() {
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-blue-600 shrink-0" />
                       <div>
-                        <span className="font-semibold text-slate-900 block">{activeResume.fileName}</span>
-                        <span className="text-[10px] text-slate-500">{(activeResume.fileSize / 1024).toFixed(1)} KB • Active</span>
+                        <span className="font-semibold text-slate-900 block">
+                          {activeResume.fileName}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {(activeResume.fileSize / 1024).toFixed(1)} KB •
+                          Active
+                        </span>
                       </div>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -370,7 +437,9 @@ export function JobDetailPage() {
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-2">
-                    <p className="font-medium">No active resume found on your profile.</p>
+                    <p className="font-medium">
+                      No active resume found on your profile.
+                    </p>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-lg bg-amber-100 hover:bg-amber-200 px-3 py-1.5 font-semibold text-amber-800 border border-amber-300 transition">
                       <Upload className="h-3.5 w-3.5" /> Upload Resume PDF/DOCX
                       <input
@@ -379,7 +448,7 @@ export function JobDetailPage() {
                         className="hidden"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
-                            uploadResumeMutation.mutate(e.target.files[0])
+                            uploadResumeMutation.mutate(e.target.files[0]);
                           }
                         }}
                       />
@@ -391,7 +460,8 @@ export function JobDetailPage() {
               {/* Cover Letter */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">
-                  Cover Letter / Introduction Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                  Cover Letter / Introduction Notes{" "}
+                  <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <textarea
                   rows={4}
@@ -416,7 +486,9 @@ export function JobDetailPage() {
                   disabled={applyMutation.isPending || !activeResume}
                   className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-5 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
                 >
-                  {applyMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {applyMutation.isPending && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
                   Submit Application & Run AI Match
                 </button>
               </div>
@@ -425,5 +497,5 @@ export function JobDetailPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

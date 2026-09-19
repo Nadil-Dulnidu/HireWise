@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { jobsApi, departmentsApi } from '@/lib/api/jobs-api'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import type { EmploymentType, ExperienceLevel, JobStatus, Department } from '@/types/jobs'
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { jobsApi, departmentsApi } from "@/lib/api/jobs-api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import type {
+  EmploymentType,
+  ExperienceLevel,
+  JobStatus,
+  Department,
+} from "@/types/jobs";
 import {
   Briefcase,
   ArrowLeft,
@@ -11,65 +16,67 @@ import {
   DollarSign,
   Loader2,
   AlertCircle,
-  FileCheck2
-} from 'lucide-react'
+  FileCheck2,
+} from "lucide-react";
 
 export function CreateEditJobPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { profile } = useCurrentUser()
-  const isEditing = !!id
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { profile } = useCurrentUser();
+  const isEditing = !!id;
 
   const [formData, setFormData] = useState({
-    title: '',
-    departmentId: '',
-    location: 'San Francisco, CA / Remote',
-    employmentType: 'FULL_TIME' as EmploymentType,
-    experienceLevel: 'MID' as ExperienceLevel,
+    title: "",
+    departmentId: "",
+    location: "San Francisco, CA / Remote",
+    employmentType: "FULL_TIME" as EmploymentType,
+    experienceLevel: "MID" as ExperienceLevel,
     salaryMin: 120000,
     salaryMax: 160000,
-    salaryCurrency: 'USD',
-    applicationDeadline: '',
-    description: '',
-    requirements: '',
-    status: 'OPEN' as JobStatus
-  })
+    salaryCurrency: "USD",
+    applicationDeadline: "",
+    description: "",
+    requirements: "",
+    status: "OPEN" as JobStatus,
+  });
 
-  const [formError, setFormError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Fetch departments for company
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments', profile?.companyId],
+    queryKey: ["departments", profile?.companyId],
     queryFn: () => departmentsApi.getDepartments(profile?.companyId!),
-    enabled: !!profile?.companyId
-  })
+    enabled: !!profile?.companyId,
+  });
 
   // Fetch job if editing
   const { data: existingJob, isLoading: isLoadingJob } = useQuery({
-    queryKey: ['job', id],
+    queryKey: ["job", id],
     queryFn: () => jobsApi.getJobById(id!),
-    enabled: isEditing
-  })
+    enabled: isEditing,
+  });
 
   useEffect(() => {
     if (existingJob) {
       setFormData({
         title: existingJob.title,
-        departmentId: existingJob.departmentId || '',
+        departmentId: existingJob.departmentId || "",
         location: existingJob.location,
         employmentType: existingJob.employmentType,
         experienceLevel: existingJob.experienceLevel,
         salaryMin: existingJob.salaryMin || 0,
         salaryMax: existingJob.salaryMax || 0,
-        salaryCurrency: existingJob.salaryCurrency || 'USD',
-        applicationDeadline: existingJob.applicationDeadline ? existingJob.applicationDeadline.split('T')[0] : '',
+        salaryCurrency: existingJob.salaryCurrency || "USD",
+        applicationDeadline: existingJob.applicationDeadline
+          ? existingJob.applicationDeadline.split("T")[0]
+          : "",
         description: existingJob.description,
         requirements: existingJob.requirements,
-        status: existingJob.status
-      })
+        status: existingJob.status,
+      });
     }
-  }, [existingJob])
+  }, [existingJob]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -82,50 +89,54 @@ export function CreateEditJobPage() {
         salaryMin: formData.salaryMin ? Number(formData.salaryMin) : undefined,
         salaryMax: formData.salaryMax ? Number(formData.salaryMax) : undefined,
         salaryCurrency: formData.salaryCurrency.trim().toUpperCase(),
-        applicationDeadline: formData.applicationDeadline ? new Date(formData.applicationDeadline).toISOString() : undefined,
+        applicationDeadline: formData.applicationDeadline
+          ? new Date(formData.applicationDeadline).toISOString()
+          : undefined,
         description: formData.description.trim(),
-        requirements: formData.requirements.trim()
-      }
+        requirements: formData.requirements.trim(),
+      };
 
       if (isEditing) {
-        return jobsApi.updateJob(id!, payload)
+        return jobsApi.updateJob(id!, payload);
       } else {
         return jobsApi.createJob({
           ...payload,
-          status: formData.status
-        })
+          status: formData.status,
+        });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruiterJobs'] })
-      queryClient.invalidateQueries({ queryKey: ['publicJobs'] })
-      queryClient.invalidateQueries({ queryKey: ['public-jobs'] })
-      navigate('/recruiter/jobs')
+      queryClient.invalidateQueries({ queryKey: ["recruiterJobs"] });
+      queryClient.invalidateQueries({ queryKey: ["publicJobs"] });
+      queryClient.invalidateQueries({ queryKey: ["public-jobs"] });
+      navigate("/recruiter/jobs");
     },
     onError: (err: any) => {
-      setFormError(err?.response?.data?.error || err.message || 'Failed to save job.')
-    }
-  })
+      setFormError(
+        err?.response?.data?.error || err.message || "Failed to save job.",
+      );
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
+    e.preventDefault();
+    setFormError(null);
 
     if (!formData.title.trim()) {
-      setFormError('Job title is required.')
-      return
+      setFormError("Job title is required.");
+      return;
     }
     if (!formData.description.trim() || formData.description.length < 20) {
-      setFormError('Job description must be at least 20 characters.')
-      return
+      setFormError("Job description must be at least 20 characters.");
+      return;
     }
     if (!formData.requirements.trim()) {
-      setFormError('Job requirements are required.')
-      return
+      setFormError("Job requirements are required.");
+      return;
     }
 
-    mutation.mutate()
-  }
+    mutation.mutate();
+  };
 
   if (isEditing && isLoadingJob) {
     return (
@@ -133,7 +144,7 @@ export function CreateEditJobPage() {
         <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
         <p className="text-sm text-slate-500">Loading job specifications...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -151,10 +162,11 @@ export function CreateEditJobPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            {isEditing ? 'Edit Job Posting' : 'Create New Job Opening'}
+            {isEditing ? "Edit Job Posting" : "Create New Job Opening"}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Specify technical requirements, compensation, and department details for AI evaluation matching.
+            Specify technical requirements, compensation, and department details
+            for AI evaluation matching.
           </p>
         </div>
       </div>
@@ -170,7 +182,8 @@ export function CreateEditJobPage() {
         {/* Section 1: General Info */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-blue-600" /> Basic Job Information
+            <Briefcase className="h-4 w-4 text-blue-600" /> Basic Job
+            Information
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -183,16 +196,22 @@ export function CreateEditJobPage() {
                 required
                 placeholder="e.g. Senior Full Stack Engineer (React + .NET)"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Department</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Department
+              </label>
               <select
                 value={formData.departmentId}
-                onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, departmentId: e.target.value })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="">General Engineering (No Dept)</option>
@@ -213,16 +232,25 @@ export function CreateEditJobPage() {
                 required
                 placeholder="e.g. San Francisco, CA / Remote"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Employment Type</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Employment Type
+              </label>
               <select
                 value={formData.employmentType}
-                onChange={(e) => setFormData({ ...formData, employmentType: e.target.value as EmploymentType })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    employmentType: e.target.value as EmploymentType,
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="FULL_TIME">Full-time</option>
@@ -233,10 +261,17 @@ export function CreateEditJobPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Experience Level</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Experience Level
+              </label>
               <select
                 value={formData.experienceLevel}
-                onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as ExperienceLevel })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    experienceLevel: e.target.value as ExperienceLevel,
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 <option value="ENTRY">Entry Level (0-2 yrs)</option>
@@ -251,61 +286,97 @@ export function CreateEditJobPage() {
         {/* Section 2: Compensation & Schedule */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-emerald-600" /> Compensation & Lifecycle
+            <DollarSign className="h-4 w-4 text-emerald-600" /> Compensation &
+            Lifecycle
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Minimum Annual Salary</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Minimum Annual Salary
+              </label>
               <input
                 type="number"
                 min="0"
                 step="1000"
                 value={formData.salaryMin}
-                onChange={(e) => setFormData({ ...formData, salaryMin: Number(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salaryMin: Number(e.target.value),
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Maximum Annual Salary</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Maximum Annual Salary
+              </label>
               <input
                 type="number"
                 min="0"
                 step="1000"
                 value={formData.salaryMax}
-                onChange={(e) => setFormData({ ...formData, salaryMax: Number(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salaryMax: Number(e.target.value),
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Currency</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Currency
+              </label>
               <input
                 type="text"
                 maxLength={3}
                 value={formData.salaryCurrency}
-                onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value.toUpperCase() })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salaryCurrency: e.target.value.toUpperCase(),
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white uppercase"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Application Deadline (Optional)</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Application Deadline (Optional)
+              </label>
               <input
                 type="date"
                 value={formData.applicationDeadline}
-                onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    applicationDeadline: e.target.value,
+                  })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
             {!isEditing && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Publishing Status</label>
+                <label className="text-xs font-semibold text-slate-700">
+                  Publishing Status
+                </label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as JobStatus })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      status: e.target.value as JobStatus,
+                    })
+                  }
                   className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 >
                   <option value="OPEN">Open (Published immediately)</option>
@@ -319,7 +390,8 @@ export function CreateEditJobPage() {
         {/* Section 3: Description & Requirements */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <FileCheck2 className="h-4 w-4 text-purple-600" /> Detailed Specifications & Rubric
+            <FileCheck2 className="h-4 w-4 text-purple-600" /> Detailed
+            Specifications & Rubric
           </h2>
 
           <div className="space-y-4">
@@ -332,25 +404,31 @@ export function CreateEditJobPage() {
                 rows={5}
                 placeholder="Describe team mission, day-to-day responsibilities, and architecture scope..."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white leading-relaxed font-mono text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700">
-                Requirements & Technical Qualifications <span className="text-rose-500">*</span>
+                Requirements & Technical Qualifications{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <textarea
                 required
                 rows={5}
                 placeholder="• 5+ years building backend systems&#10;• Experience with React, TypeScript, C#, and PostgreSQL&#10;• Understanding of distributed state and CI/CD"
                 value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, requirements: e.target.value })
+                }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white leading-relaxed font-mono text-xs"
               />
               <span className="text-[11px] text-slate-500">
-                Tip: Use bullet points (•) for clean rendering and optimal AI parser token extraction.
+                Tip: Use bullet points (•) for clean rendering and optimal AI
+                parser token extraction.
               </span>
             </div>
           </div>
@@ -375,12 +453,13 @@ export function CreateEditJobPage() {
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" /> {isEditing ? 'Save Changes' : 'Publish Job Opening'}
+                <Save className="h-4 w-4" />{" "}
+                {isEditing ? "Save Changes" : "Publish Job Opening"}
               </>
             )}
           </button>
         </div>
       </form>
     </div>
-  )
+  );
 }

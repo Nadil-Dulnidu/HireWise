@@ -6,7 +6,7 @@ from ai_service.agents import (
     CandidateEvaluationAgent,
     ValidationAgent,
     InterviewQuestionGeneratorAgent,
-    InterviewSchedulingAgent
+    InterviewSchedulingAgent,
 )
 from ai_service.models.schemas import (
     JobAnalysis,
@@ -19,8 +19,9 @@ from ai_service.models.schemas import (
     DifficultyLevel,
     AvailabilitySlotInput,
     SchedulingRecommendation,
-    SchedulingRequest
+    SchedulingRequest,
 )
+
 
 @pytest.mark.asyncio
 async def test_job_analysis_agent():
@@ -28,12 +29,13 @@ async def test_job_analysis_agent():
     res = await agent.execute(
         job_title="Senior Full Stack Engineer",
         job_description="We are seeking a senior engineer to build scalable web apps with React and ASP.NET Core.",
-        job_requirements="5+ years experience, React, TypeScript, C#, PostgreSQL, Docker, Kubernetes."
+        job_requirements="5+ years experience, React, TypeScript, C#, PostgreSQL, Docker, Kubernetes.",
     )
     assert isinstance(res, JobAnalysis)
     assert res.title == "Senior Full Stack Engineer"
     assert len(res.required_skills) > 0
     assert res.min_years_experience >= 3
+
 
 @pytest.mark.asyncio
 async def test_resume_analysis_agent():
@@ -49,6 +51,7 @@ async def test_resume_analysis_agent():
     assert len(res.extracted_skills) > 0
     assert res.years_of_experience > 0
 
+
 @pytest.mark.asyncio
 async def test_candidate_evaluation_agent():
     eval_agent = CandidateEvaluationAgent()
@@ -57,7 +60,7 @@ async def test_candidate_evaluation_agent():
         required_skills=["React", "TypeScript", "C#", "PostgreSQL"],
         preferred_skills=["Docker"],
         min_years_experience=4,
-        technical_domains=["Web", "Backend"]
+        technical_domains=["Web", "Backend"],
     )
     cand = ResumeAnalysis(
         candidate_name="Alex Johnson",
@@ -65,15 +68,19 @@ async def test_candidate_evaluation_agent():
         years_of_experience=5.0,
         education_history=["B.S. CS"],
         project_highlights=["Built SaaS platform"],
-        executive_summary="Experienced Full Stack Developer."
+        executive_summary="Experienced Full Stack Developer.",
     )
     res = await eval_agent.execute(job, cand)
     assert isinstance(res, CandidateEvaluation)
     assert 0 <= res.overall_match_score <= 100
     assert 0 <= res.skill_match_percentage <= 100
-    assert res.recommendation in (RecommendationType.STRONG_HIRE, RecommendationType.HIRE)
+    assert res.recommendation in (
+        RecommendationType.STRONG_HIRE,
+        RecommendationType.HIRE,
+    )
     assert len(res.strengths) > 0
     assert len(res.recommendation_reasoning) > 0
+
 
 def test_validation_agent():
     val_agent = ValidationAgent()
@@ -84,12 +91,13 @@ def test_validation_agent():
         strengths=["Strong React experience"],
         identified_gaps=[],
         recommendation=RecommendationType.STRONG_HIRE,
-        recommendation_reasoning="Candidate satisfies all technical requirements."
+        recommendation_reasoning="Candidate satisfies all technical requirements.",
     )
     result = val_agent.validate(ce)
     assert isinstance(result, ValidationResult)
     assert result.is_valid is True
     assert len(result.validation_errors) == 0
+
 
 @pytest.mark.asyncio
 async def test_interview_question_generator_agent():
@@ -97,12 +105,12 @@ async def test_interview_question_generator_agent():
     job = JobAnalysis(
         title="Backend Engineer",
         required_skills=["Go", "PostgreSQL", "Kubernetes"],
-        min_years_experience=3
+        min_years_experience=3,
     )
     cand = ResumeAnalysis(
         candidate_name="Sam Smith",
         extracted_skills=["Go", "PostgreSQL", "Docker"],
-        years_of_experience=4.0
+        years_of_experience=4.0,
     )
     eval_res = CandidateEvaluation(
         overall_match_score=85,
@@ -111,7 +119,7 @@ async def test_interview_question_generator_agent():
         strengths=["Strong backend Go development"],
         identified_gaps=["No explicit Kubernetes experience"],
         recommendation=RecommendationType.STRONG_HIRE,
-        recommendation_reasoning="Solid match."
+        recommendation_reasoning="Solid match.",
     )
 
     res = await q_agent.execute(job, cand, eval_res)
@@ -122,6 +130,7 @@ async def test_interview_question_generator_agent():
     assert QuestionCategory.TECHNICAL in categories
     assert QuestionCategory.PROBLEM_SOLVING in categories
     assert QuestionCategory.BEHAVIORAL in categories
+
 
 @pytest.mark.asyncio
 async def test_interview_scheduling_agent():
@@ -134,7 +143,7 @@ async def test_interview_scheduling_agent():
             role="CANDIDATE",
             start_time=base_time,
             end_time=base_time + timedelta(hours=3),
-            timezone="UTC"
+            timezone="UTC",
         )
     ]
     interviewer_slots = [
@@ -143,7 +152,7 @@ async def test_interview_scheduling_agent():
             role="INTERVIEWER",
             start_time=base_time + timedelta(hours=1),
             end_time=base_time + timedelta(hours=4),
-            timezone="UTC"
+            timezone="UTC",
         )
     ]
 
@@ -153,7 +162,7 @@ async def test_interview_scheduling_agent():
         candidate_slots=candidate_slots,
         interviewer_slots=interviewer_slots,
         duration_minutes=45,
-        timezone="UTC"
+        timezone="UTC",
     )
 
     res = await sched_agent.execute(req)

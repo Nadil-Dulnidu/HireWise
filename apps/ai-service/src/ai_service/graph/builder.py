@@ -1,6 +1,7 @@
 """
 LangGraph StateGraph builder for HireWise multi-agent evaluation, approval, and scheduling pipeline.
 """
+
 from langgraph.graph import StateGraph, START, END
 from ai_service.graph.state import EvaluationState
 from ai_service.graph.nodes import (
@@ -14,7 +15,7 @@ from ai_service.graph.nodes import (
     schedule_approval_gate_node,
     interview_creation_node,
     rejection_node,
-    error_node
+    error_node,
 )
 from ai_service.graph.edges import (
     route_from_start,
@@ -25,8 +26,9 @@ from ai_service.graph.edges import (
     check_evaluation_approval_edge,
     check_question_generation_edge,
     check_scheduling_edge,
-    check_schedule_approval_edge
+    check_schedule_approval_edge,
 )
+
 
 def build_evaluation_graph():
     """
@@ -57,36 +59,27 @@ def build_evaluation_graph():
             "scheduling_recommendation": "scheduling_recommendation",
             "evaluation_approval_gate": "evaluation_approval_gate",
             "schedule_approval_gate": "schedule_approval_gate",
-            "interview_creation": "interview_creation"
-        }
+            "interview_creation": "interview_creation",
+        },
     )
 
     # Stage 1: Screening & Evaluation
     workflow.add_conditional_edges(
         "job_analysis",
         check_job_analysis_edge,
-        {
-            "resume_analysis": "resume_analysis",
-            "error_node": "error_node"
-        }
+        {"resume_analysis": "resume_analysis", "error_node": "error_node"},
     )
 
     workflow.add_conditional_edges(
         "resume_analysis",
         check_resume_analysis_edge,
-        {
-            "candidate_evaluation": "candidate_evaluation",
-            "error_node": "error_node"
-        }
+        {"candidate_evaluation": "candidate_evaluation", "error_node": "error_node"},
     )
 
     workflow.add_conditional_edges(
         "candidate_evaluation",
         check_candidate_evaluation_edge,
-        {
-            "validation": "validation",
-            "error_node": "error_node"
-        }
+        {"validation": "validation", "error_node": "error_node"},
     )
 
     workflow.add_conditional_edges(
@@ -94,8 +87,8 @@ def build_evaluation_graph():
         check_validation_edge,
         {
             "evaluation_approval_gate": "evaluation_approval_gate",
-            "error_node": "error_node"
-        }
+            "error_node": "error_node",
+        },
     )
 
     # Gate 1: Human Evaluation Review Gate
@@ -106,8 +99,8 @@ def build_evaluation_graph():
             "question_generation": "question_generation",
             "rejection_node": "rejection_node",
             "pause": END,
-            "error_node": "error_node"
-        }
+            "error_node": "error_node",
+        },
     )
 
     # Stage 2: Question Generation & Scheduling
@@ -116,8 +109,8 @@ def build_evaluation_graph():
         check_question_generation_edge,
         {
             "scheduling_recommendation": "scheduling_recommendation",
-            "error_node": "error_node"
-        }
+            "error_node": "error_node",
+        },
     )
 
     workflow.add_conditional_edges(
@@ -125,8 +118,8 @@ def build_evaluation_graph():
         check_scheduling_edge,
         {
             "schedule_approval_gate": "schedule_approval_gate",
-            "error_node": "error_node"
-        }
+            "error_node": "error_node",
+        },
     )
 
     # Gate 2: Schedule Confirmation Gate
@@ -136,8 +129,8 @@ def build_evaluation_graph():
         {
             "interview_creation": "interview_creation",
             "pause": END,
-            "error_node": "error_node"
-        }
+            "error_node": "error_node",
+        },
     )
 
     # Terminal edges

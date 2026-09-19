@@ -112,11 +112,11 @@ public class CompanyService : ICompanyService
         }
 
         var company = _mapper.Map<Company>(request);
-        company.ClerkOrganizationId = !string.IsNullOrEmpty(request.ClerkOrganizationId) 
-            ? request.ClerkOrganizationId 
+        company.ClerkOrganizationId = !string.IsNullOrEmpty(request.ClerkOrganizationId)
+            ? request.ClerkOrganizationId
             : $"org_{Guid.NewGuid():N}";
-        company.Slug = !string.IsNullOrEmpty(request.Slug) 
-            ? request.Slug 
+        company.Slug = !string.IsNullOrEmpty(request.Slug)
+            ? request.Slug
             : request.Name.ToLower().Replace(" ", "-");
         company.CreatedByUserId = createdByUserId;
         company.CreatedAt = DateTime.UtcNow;

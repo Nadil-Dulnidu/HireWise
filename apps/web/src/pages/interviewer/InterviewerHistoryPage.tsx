@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { interviewsApi } from '@/lib/api/interviews-api'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { interviewsApi } from "@/lib/api/interviews-api";
+import { Link } from "react-router-dom";
 import {
   History,
   CheckCircle2,
@@ -9,25 +9,25 @@ import {
   Star,
   ArrowRight,
   Loader2,
-  Search
-} from 'lucide-react'
+  Search,
+} from "lucide-react";
 
 export function InterviewerHistoryPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [page] = useState(1)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['interviewerHistory', page, searchTerm],
+    queryKey: ["interviewerHistory", page, searchTerm],
     queryFn: () =>
       interviewsApi.getInterviews({
         page,
         pageSize: 15,
-        status: 'COMPLETED',
-        search: searchTerm || undefined
-      })
-  })
+        status: "COMPLETED",
+        search: searchTerm || undefined,
+      }),
+  });
 
-  const interviews = data?.items || []
+  const interviews = data?.items || [];
 
   return (
     <div className="space-y-6">
@@ -37,7 +37,8 @@ export function InterviewerHistoryPage() {
           <History className="h-7 w-7 text-blue-600" /> Evaluation History
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Review your completed technical interview rubrics and candidate recommendation records.
+          Review your completed technical interview rubrics and candidate
+          recommendation records.
         </p>
       </div>
 
@@ -59,12 +60,16 @@ export function InterviewerHistoryPage() {
       {isLoading ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
           <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-          <p className="text-sm text-slate-500">Loading evaluation history...</p>
+          <p className="text-sm text-slate-500">
+            Loading evaluation history...
+          </p>
         </div>
       ) : interviews.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
           <CheckCircle2 className="h-8 w-8 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">No completed evaluations found</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            No completed evaluations found
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Interviews you conduct and submit feedback for will appear here.
           </p>
@@ -72,7 +77,7 @@ export function InterviewerHistoryPage() {
       ) : (
         <div className="space-y-4">
           {interviews.map((item) => {
-            const date = new Date(item.scheduledStartTime)
+            const date = new Date(item.scheduledStartTime);
 
             return (
               <div
@@ -82,15 +87,21 @@ export function InterviewerHistoryPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-base font-bold text-slate-900">{item.candidateName}</h3>
+                      <h3 className="text-base font-bold text-slate-900">
+                        {item.candidateName}
+                      </h3>
                       {item.recommendation && (
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          {item.recommendation.replace('_', ' ')}
+                          {item.recommendation.replace("_", " ")}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-500">
-                      Position: <span className="text-slate-800 font-medium">{item.jobTitle}</span> • {item.companyName}
+                      Position:{" "}
+                      <span className="text-slate-800 font-medium">
+                        {item.jobTitle}
+                      </span>{" "}
+                      • {item.companyName}
                     </p>
                   </div>
 
@@ -112,13 +123,20 @@ export function InterviewerHistoryPage() {
 
                 <div className="pt-2 border-t border-slate-100 text-xs text-slate-400 flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Conducted on {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span>
+                    Conducted on{" "}
+                    {date.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

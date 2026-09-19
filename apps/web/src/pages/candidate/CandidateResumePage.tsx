@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { resumesApi } from '@/lib/api/resumes-api'
+import React, { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { resumesApi } from "@/lib/api/resumes-api";
 import {
   FileText,
   Upload,
@@ -10,83 +10,87 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  FileCheck2
-} from 'lucide-react'
+  FileCheck2,
+} from "lucide-react";
 
 export function CandidateResumePage() {
-  const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [dragActive, setDragActive] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const { data: resume, isLoading } = useQuery({
-    queryKey: ['myResume'],
+    queryKey: ["myResume"],
     queryFn: async () => {
       try {
-        return await resumesApi.getMyActiveResume()
+        return await resumesApi.getMyActiveResume();
       } catch (err: any) {
-        if (err?.response?.status === 404) return null
-        throw err
+        if (err?.response?.status === 404) return null;
+        throw err;
       }
-    }
-  })
+    },
+  });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => resumesApi.uploadResume(file),
     onSuccess: () => {
-      setUploadError(null)
-      setSuccessMessage('Resume uploaded and set as active profile resume!')
-      queryClient.invalidateQueries({ queryKey: ['myResume'] })
-      setTimeout(() => setSuccessMessage(null), 5000)
+      setUploadError(null);
+      setSuccessMessage("Resume uploaded and set as active profile resume!");
+      queryClient.invalidateQueries({ queryKey: ["myResume"] });
+      setTimeout(() => setSuccessMessage(null), 5000);
     },
     onError: (err: any) => {
-      setSuccessMessage(null)
-      setUploadError(err?.response?.data?.error || err.message || 'Failed to upload resume')
-    }
-  })
+      setSuccessMessage(null);
+      setUploadError(
+        err?.response?.data?.error || err.message || "Failed to upload resume",
+      );
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => resumesApi.deleteResume(id),
     onSuccess: () => {
-      setSuccessMessage('Resume deleted successfully.')
-      queryClient.invalidateQueries({ queryKey: ['myResume'] })
-      setTimeout(() => setSuccessMessage(null), 5000)
-    }
-  })
+      setSuccessMessage("Resume deleted successfully.");
+      queryClient.invalidateQueries({ queryKey: ["myResume"] });
+      setTimeout(() => setSuccessMessage(null), 5000);
+    },
+  });
 
   const handleFile = (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File size exceeds the 5MB limit.')
-      return
+      setUploadError("File size exceeds the 5MB limit.");
+      return;
     }
-    const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!['pdf', 'docx', 'doc'].includes(ext || '')) {
-      setUploadError('Only PDF and Word documents (.pdf, .docx, .doc) are permitted.')
-      return
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!["pdf", "docx", "doc"].includes(ext || "")) {
+      setUploadError(
+        "Only PDF and Word documents (.pdf, .docx, .doc) are permitted.",
+      );
+      return;
     }
-    setUploadError(null)
-    uploadMutation.mutate(file)
-  }
+    setUploadError(null);
+    uploadMutation.mutate(file);
+  };
 
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
-  }
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0])
+      handleFile(e.dataTransfer.files[0]);
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -96,7 +100,8 @@ export function CandidateResumePage() {
           Manage Resume & CV
         </h1>
         <p className="text-sm text-slate-600 mt-1">
-          Upload your latest technical resume. Our AI analysis agent parses your projects, skills, and experience when you apply to jobs.
+          Upload your latest technical resume. Our AI analysis agent parses your
+          projects, skills, and experience when you apply to jobs.
         </p>
       </div>
 
@@ -144,7 +149,8 @@ export function CandidateResumePage() {
                   <span>{(resume.fileSize / 1024).toFixed(1)} KB</span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-slate-400" /> Uploaded {new Date(resume.uploadedAt).toLocaleDateString()}
+                    <Clock className="h-3 w-3 text-slate-400" /> Uploaded{" "}
+                    {new Date(resume.uploadedAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -169,9 +175,12 @@ export function CandidateResumePage() {
           </div>
         ) : (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center space-y-2">
-            <p className="text-sm text-slate-700 font-medium">No active resume uploaded</p>
+            <p className="text-sm text-slate-700 font-medium">
+              No active resume uploaded
+            </p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Upload your PDF or Word resume below so you can apply to jobs with one-click AI evaluation.
+              Upload your PDF or Word resume below so you can apply to jobs with
+              one-click AI evaluation.
             </p>
           </div>
         )}
@@ -191,8 +200,8 @@ export function CandidateResumePage() {
           onClick={() => fileInputRef.current?.click()}
           className={`cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
             dragActive
-              ? 'border-blue-500 bg-blue-50/50'
-              : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+              ? "border-blue-500 bg-blue-50/50"
+              : "border-slate-300 hover:border-slate-400 bg-slate-50/50"
           }`}
         >
           <input
@@ -202,7 +211,7 @@ export function CandidateResumePage() {
             className="hidden"
             onChange={(e) => {
               if (e.target.files && e.target.files[0]) {
-                handleFile(e.target.files[0])
+                handleFile(e.target.files[0]);
               }
             }}
           />
@@ -218,7 +227,9 @@ export function CandidateResumePage() {
 
             <div className="space-y-1">
               <p className="text-sm font-semibold text-slate-900">
-                {uploadMutation.isPending ? 'Processing & uploading resume...' : 'Click to browse or drag and drop your file'}
+                {uploadMutation.isPending
+                  ? "Processing & uploading resume..."
+                  : "Click to browse or drag and drop your file"}
               </p>
               <p className="text-xs text-slate-500">
                 PDF, DOCX or DOC up to 5MB
@@ -228,5 +239,5 @@ export function CandidateResumePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

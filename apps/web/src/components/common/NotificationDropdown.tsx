@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Cpu,
@@ -9,133 +9,170 @@ import {
   CheckCheck,
   CheckCircle2,
   AlertTriangle,
-  Loader2
-} from 'lucide-react'
-import { notificationsApi } from '@/lib/api/notifications-api'
-import type { AppNotification } from '@/lib/api/notifications-api'
-import { useSignalR } from '@/hooks/useSignalR'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+  Loader2,
+} from "lucide-react";
+import { notificationsApi } from "@/lib/api/notifications-api";
+import type { AppNotification } from "@/lib/api/notifications-api";
+import { useSignalR } from "@/hooks/useSignalR";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface NotificationDropdownProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownProps) {
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const { role, isSignedIn } = useCurrentUser()
-  const { subscribe } = useSignalR()
+export function NotificationDropdown({
+  isOpen,
+  onClose,
+}: NotificationDropdownProps) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { role, isSignedIn } = useCurrentUser();
+  const { subscribe } = useSignalR();
 
   // Query notifications list
   const {
     data: notifications = [],
     isLoading,
     isError,
-    refetch
+    refetch,
   } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: ["notifications"],
     queryFn: () => notificationsApi.getNotifications(30),
     enabled: isOpen && !!isSignedIn,
-    staleTime: 10000
-  })
+    staleTime: 10000,
+  });
 
   // Query unread count
   const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['notifications', 'unread-count'],
+    queryKey: ["notifications", "unread-count"],
     queryFn: () => notificationsApi.getUnreadCount(),
     enabled: !!isSignedIn,
-    staleTime: 10000
-  })
+    staleTime: 10000,
+  });
 
   // Mutation: Mark single as read
   const markAsReadMutation = useMutation({
     mutationFn: (id: string) => notificationsApi.markAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
+    },
+  });
 
   // Mutation: Mark all as read
   const markAllAsReadMutation = useMutation({
     mutationFn: () => notificationsApi.markAllAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
+    },
+  });
 
   // Listen to live SignalR events to invalidate query cache
   useEffect(() => {
     const handleNewNotification = () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
+    };
 
-    const unsubReceive = subscribe('ReceiveNotification', handleNewNotification)
-    const unsubInterview = subscribe('InterviewScheduled', handleNewNotification)
-    const unsubApp = subscribe('ApplicationUpdate', handleNewNotification)
-    const unsubAi = subscribe('AiEvaluationComplete', handleNewNotification)
-    const unsubApproval = subscribe('ApprovalRequired', handleNewNotification)
-    const unsubFeedback = subscribe('FeedbackSubmitted', handleNewNotification)
+    const unsubReceive = subscribe(
+      "ReceiveNotification",
+      handleNewNotification,
+    );
+    const unsubInterview = subscribe(
+      "InterviewScheduled",
+      handleNewNotification,
+    );
+    const unsubApp = subscribe("ApplicationUpdate", handleNewNotification);
+    const unsubAi = subscribe("AiEvaluationComplete", handleNewNotification);
+    const unsubApproval = subscribe("ApprovalRequired", handleNewNotification);
+    const unsubFeedback = subscribe("FeedbackSubmitted", handleNewNotification);
 
     return () => {
-      unsubReceive()
-      unsubInterview()
-      unsubApp()
-      unsubAi()
-      unsubApproval()
-      unsubFeedback()
-    }
-  }, [subscribe, queryClient])
+      unsubReceive();
+      unsubInterview();
+      unsubApp();
+      unsubAi();
+      unsubApproval();
+      unsubFeedback();
+    };
+  }, [subscribe, queryClient]);
 
   // Close on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose()
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        onClose();
       }
     }
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen, onClose])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleNotificationClick = async (notification: AppNotification) => {
     if (!notification.isRead) {
-      markAsReadMutation.mutate(notification.id)
+      markAsReadMutation.mutate(notification.id);
     }
 
-    onClose()
+    onClose();
 
     // Determine target route based on notification type and user role
-    if (notification.type === 'AI_EVALUATION_COMPLETE') {
-      navigate('/recruiter/ai-evaluations')
-    } else if (notification.type === 'INTERVIEW_SCHEDULED') {
+    if (notification.type === "AI_EVALUATION_COMPLETE") {
+      navigate("/recruiter/ai-evaluations");
+    } else if (notification.type === "INTERVIEW_SCHEDULED") {
       if (notification.referenceId) {
-        navigate(role === 'CANDIDATE' ? `/candidate/interviews/${notification.referenceId}` : `/recruiter/interviews/${notification.referenceId}`)
+        navigate(
+          role === "CANDIDATE"
+            ? `/candidate/interviews/${notification.referenceId}`
+            : `/recruiter/interviews/${notification.referenceId}`,
+        );
       } else {
-        navigate(role === 'CANDIDATE' ? '/candidate/interviews' : '/recruiter/interviews')
+        navigate(
+          role === "CANDIDATE"
+            ? "/candidate/interviews"
+            : "/recruiter/interviews",
+        );
       }
-    } else if (notification.type === 'APPLICATION_UPDATE' || notification.type === 'APPROVAL_REQUIRED') {
+    } else if (
+      notification.type === "APPLICATION_UPDATE" ||
+      notification.type === "APPROVAL_REQUIRED"
+    ) {
       if (notification.referenceId) {
-        navigate(role === 'CANDIDATE' ? `/candidate/applications/${notification.referenceId}` : `/recruiter/applications/${notification.referenceId}`)
+        navigate(
+          role === "CANDIDATE"
+            ? `/candidate/applications/${notification.referenceId}`
+            : `/recruiter/applications/${notification.referenceId}`,
+        );
       } else {
-        navigate(role === 'CANDIDATE' ? '/candidate/applications' : '/recruiter/applications')
+        navigate(
+          role === "CANDIDATE"
+            ? "/candidate/applications"
+            : "/recruiter/applications",
+        );
       }
-    } else if (notification.type === 'FEEDBACK_SUBMITTED') {
-      navigate('/recruiter/interviews')
+    } else if (notification.type === "FEEDBACK_SUBMITTED") {
+      navigate("/recruiter/interviews");
     }
-  }
+  };
 
   return (
     <div
@@ -145,7 +182,9 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-slate-50/70">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Notifications
+          </h3>
           {unreadCount > 0 && (
             <span className="flex h-5 items-center justify-center rounded-full bg-blue-100 px-2 text-[11px] font-bold text-blue-700 border border-blue-200">
               {unreadCount} new
@@ -175,7 +214,9 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             <AlertTriangle className="w-6 h-6 text-amber-500 mb-2" />
-            <p className="text-xs text-slate-600">Could not load notifications</p>
+            <p className="text-xs text-slate-600">
+              Could not load notifications
+            </p>
             <button
               onClick={() => refetch()}
               className="mt-2 text-xs text-blue-600 hover:text-blue-700 underline font-medium"
@@ -188,7 +229,9 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
               <Bell className="w-6 h-6 text-slate-400" />
             </div>
-            <p className="text-sm font-semibold text-slate-800">All caught up!</p>
+            <p className="text-sm font-semibold text-slate-800">
+              All caught up!
+            </p>
             <p className="text-xs text-slate-500 mt-1 max-w-[220px]">
               You have no new notifications right now.
             </p>
@@ -204,76 +247,80 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function NotificationItem({
   notification,
-  onClick
+  onClick,
 }: {
-  notification: AppNotification
-  onClick: () => void
+  notification: AppNotification;
+  onClick: () => void;
 }) {
-  const { title, message, type, isRead, createdAt } = notification
+  const { title, message, type, isRead, createdAt } = notification;
 
   const config = {
     APPLICATION_UPDATE: {
       icon: FileText,
-      iconColor: 'text-blue-600',
-      bg: 'bg-blue-50 border border-blue-100'
+      iconColor: "text-blue-600",
+      bg: "bg-blue-50 border border-blue-100",
     },
     INTERVIEW_SCHEDULED: {
       icon: Calendar,
-      iconColor: 'text-emerald-600',
-      bg: 'bg-emerald-50 border border-emerald-100'
+      iconColor: "text-emerald-600",
+      bg: "bg-emerald-50 border border-emerald-100",
     },
     AI_EVALUATION_COMPLETE: {
       icon: Cpu,
-      iconColor: 'text-purple-600',
-      bg: 'bg-purple-50 border border-purple-100'
+      iconColor: "text-purple-600",
+      bg: "bg-purple-50 border border-purple-100",
     },
     APPROVAL_REQUIRED: {
       icon: AlertTriangle,
-      iconColor: 'text-amber-600',
-      bg: 'bg-amber-50 border border-amber-100'
+      iconColor: "text-amber-600",
+      bg: "bg-amber-50 border border-amber-100",
     },
     FEEDBACK_SUBMITTED: {
       icon: CheckCircle2,
-      iconColor: 'text-emerald-600',
-      bg: 'bg-emerald-50 border border-emerald-100'
+      iconColor: "text-emerald-600",
+      bg: "bg-emerald-50 border border-emerald-100",
     },
     GENERAL: {
       icon: Bell,
-      iconColor: 'text-slate-500',
-      bg: 'bg-slate-100'
-    }
+      iconColor: "text-slate-500",
+      bg: "bg-slate-100",
+    },
   }[type] || {
     icon: Bell,
-    iconColor: 'text-slate-500',
-    bg: 'bg-slate-100'
-  }
+    iconColor: "text-slate-500",
+    bg: "bg-slate-100",
+  };
 
-  const Icon = config.icon
+  const Icon = config.icon;
 
   // Format relative or date time
-  const timeAgo = formatTimeAgo(createdAt)
+  const timeAgo = formatTimeAgo(createdAt);
 
   return (
     <div
       onClick={onClick}
       className={`group relative flex items-start gap-3 p-3.5 cursor-pointer transition-colors ${
-        !isRead ? 'bg-blue-50/60 hover:bg-blue-50/90' : 'hover:bg-slate-50'
+        !isRead ? "bg-blue-50/60 hover:bg-blue-50/90" : "hover:bg-slate-50"
       }`}
     >
       {/* Type Icon */}
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${config.bg} mt-0.5`}>
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${config.bg} mt-0.5`}
+      >
         <Icon className={`w-4 h-4 ${config.iconColor}`} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center justify-between gap-1.5">
-          <h4 className={`text-xs font-semibold truncate ${!isRead ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>
+          <h4
+            className={`text-xs font-semibold truncate ${!isRead ? "text-slate-900 font-bold" : "text-slate-700"}`}
+          >
             {title}
           </h4>
           <span className="text-[10px] text-slate-400 shrink-0">{timeAgo}</span>
@@ -288,24 +335,27 @@ function NotificationItem({
         <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5"></span>
       )}
     </div>
-  )
+  );
 }
 
 function formatTimeAgo(dateString: string): string {
   try {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
   } catch {
-    return ''
+    return "";
   }
 }

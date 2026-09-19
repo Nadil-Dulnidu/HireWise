@@ -4,12 +4,13 @@ from ai_service.models.schemas import (
     JobAnalysis,
     ResumeAnalysis,
     CandidateEvaluation,
-    RecommendationType
+    RecommendationType,
 )
 from ai_service.prompts.templates import (
     CANDIDATE_EVALUATION_SYSTEM_PROMPT,
-    CANDIDATE_EVALUATION_USER_PROMPT
+    CANDIDATE_EVALUATION_USER_PROMPT,
 )
+
 
 class CandidateEvaluationAgent(BaseAgent):
     """
@@ -20,11 +21,11 @@ class CandidateEvaluationAgent(BaseAgent):
         super().__init__(name="CandidateEvaluationAgent", schema=CandidateEvaluation)
 
     async def execute(
-        self,
-        job_analysis: JobAnalysis,
-        resume_analysis: ResumeAnalysis
+        self, job_analysis: JobAnalysis, resume_analysis: ResumeAnalysis
     ) -> CandidateEvaluation:
-        self.logger.info(f"[{self.name}] Evaluating candidate against '{job_analysis.title}'...")
+        self.logger.info(
+            f"[{self.name}] Evaluating candidate against '{job_analysis.title}'..."
+        )
 
         user_content = CANDIDATE_EVALUATION_USER_PROMPT.format(
             job_title=job_analysis.title,
@@ -37,23 +38,24 @@ class CandidateEvaluationAgent(BaseAgent):
             education_history=", ".join(resume_analysis.education_history),
             project_highlights="; ".join(resume_analysis.project_highlights),
             certifications=", ".join(resume_analysis.certifications),
-            executive_summary=resume_analysis.executive_summary
+            executive_summary=resume_analysis.executive_summary,
         )
 
         try:
             result = await self.invoke_structured_llm(
                 system_prompt=CANDIDATE_EVALUATION_SYSTEM_PROMPT,
-                user_prompt=user_content
+                user_prompt=user_content,
+                agent_key="candidate_evaluation",
             )
             return result
         except Exception as ex:
-            self.logger.warning(f"[{self.name}] LLM invocation failed, using deterministic scoring fallback: {ex}")
+            self.logger.warning(
+                f"[{self.name}] LLM invocation failed, using deterministic scoring fallback: {ex}"
+            )
             return self._deterministic_scoring(job_analysis, resume_analysis)
 
     def _deterministic_scoring(
-        self,
-        job: JobAnalysis,
-        cand: ResumeAnalysis
+        self, job: JobAnalysis, cand: ResumeAnalysis
     ) -> CandidateEvaluation:
         """
         Deterministic scoring algorithm computing skill overlap and experience ratios.
@@ -90,14 +92,18 @@ class CandidateEvaluationAgent(BaseAgent):
 
         strengths = [
             f"Proficiency in key technologies: {', '.join(list(cand_set)[:4])}",
-            f"Possesses {cand.years_of_experience:.1f} years of relevant engineering background"
+            f"Possesses {cand.years_of_experience:.1f} years of relevant engineering background",
         ]
 
         gaps = []
         if missing_skills:
-            gaps.append(f"Missing explicit required skill(s): {', '.join(missing_skills[:3])}")
+            gaps.append(
+                f"Missing explicit required skill(s): {', '.join(missing_skills[:3])}"
+            )
         if cand.years_of_experience < job.min_years_experience:
-            gaps.append(f"Experience ({cand.years_of_experience:.1f} yrs) below role requirement ({job.min_years_experience} yrs)")
+            gaps.append(
+                f"Experience ({cand.years_of_experience:.1f} yrs) below role requirement ({job.min_years_experience} yrs)"
+            )
 
         reasoning = (
             f"Candidate achieved a {overall_score}% holistic match with {skill_score}% skill alignment "
@@ -111,5 +117,5 @@ class CandidateEvaluationAgent(BaseAgent):
             strengths=strengths,
             identified_gaps=gaps,
             recommendation=recommendation,
-            recommendation_reasoning=reasoning
+            recommendation_reasoning=reasoning,
         )

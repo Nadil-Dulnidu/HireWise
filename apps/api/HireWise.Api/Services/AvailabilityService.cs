@@ -17,6 +17,7 @@ public interface IAvailabilityService
     Task<Result<AvailabilitySlotDto>> UpdateAvailabilitySlotAsync(Guid slotId, Guid userId, UpdateAvailabilitySlotRequest request, CancellationToken ct = default);
     Task<Result> DeleteAvailabilitySlotAsync(Guid slotId, Guid userId, CancellationToken ct = default);
     Task<Result<List<AvailabilitySlotDto>>> GetInterviewerAvailabilityAsync(Guid interviewerId, Guid recruiterCompanyId, CancellationToken ct = default);
+    Task<Result<List<AvailabilitySlotDto>>> GetCandidateAvailabilityAsync(Guid candidateId, Guid? recruiterCompanyId, bool isAdmin, CancellationToken ct = default);
 }
 
 public class AvailabilityService : IAvailabilityService
@@ -179,6 +180,39 @@ public class AvailabilityService : IAvailabilityService
         var slots = await _db.AvailabilitySlots
             .Include(s => s.User)
             .Where(s => s.UserId == interviewerId)
+            .OrderBy(s => s.DayOfWeek)
+            .ThenBy(s => s.StartTime)
+            .ProjectTo<AvailabilitySlotDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(ct);
+
+        return Result<List<AvailabilitySlotDto>>.Success(slots);
+    }
+
+    public async Task<Result<List<AvailabilitySlotDto>>> GetCandidateAvailabilityAsync(Guid candidateId, Guid? recruiterCompanyId, bool isAdmin, CancellationToken ct = default)
+    {
+        var candidate = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == candidateId && u.Role == UserRole.CANDIDATE, ct);
+
+        if (candidate == null)
+        {
+            return Result<List<AvailabilitySlotDto>>.NotFound("Candidate user profile not found.");
+        }
+
+        // If not admin, verify candidate has at least one application in recruiter's company
+        if (!isAdmin && recruiterCompanyId.HasValue)
+        {
+            var hasApplication = await _db.Applications
+                .AnyAsync(a => a.CandidateId == candidateId && a.Job.CompanyId == recruiterCompanyId.Value, ct);
+
+            if (!hasApplication)
+            {
+                return Result<List<AvailabilitySlotDto>>.Forbidden("You can only view availability for candidates who applied to your company.");
+            }
+        }
+
+        var slots = await _db.AvailabilitySlots
+            .Include(s => s.User)
+            .Where(s => s.UserId == candidateId)
             .OrderBy(s => s.DayOfWeek)
             .ThenBy(s => s.StartTime)
             .ProjectTo<AvailabilitySlotDto>(_mapper.ConfigurationProvider)

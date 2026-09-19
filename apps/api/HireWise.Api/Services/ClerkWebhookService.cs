@@ -98,18 +98,40 @@ public class ClerkWebhookService : IClerkWebhookService
 
     private async Task HandleUserCreatedAsync(ClerkUserData data, CancellationToken ct)
     {
-        var existing = await _db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.ClerkUserId == data.Id, ct);
-        if (existing != null)
-        {
-            _logger.LogInformation("User with Clerk ID {ClerkUserId} already exists. Skipping creation.", data.Id);
-            return;
-        }
-
         var email = data.EmailAddresses.FirstOrDefault()?.EmailAddress ?? string.Empty;
         var role = DetermineRole(data);
-        var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN) 
-            ? UserStatus.ACTIVE 
+        var status = (role == UserRole.CANDIDATE || role == UserRole.ADMIN)
+            ? UserStatus.ACTIVE
             : UserStatus.ONBOARDING;
+
+        var existing = await _db.Users.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.ClerkUserId == data.Id || (!string.IsNullOrEmpty(email) && u.Email.ToLower() == email.ToLower()), ct);
+
+        if (existing != null)
+        {
+            existing.ClerkUserId = data.Id;
+            if (!string.IsNullOrEmpty(data.FirstName)) existing.FirstName = data.FirstName;
+            if (!string.IsNullOrEmpty(data.LastName)) existing.LastName = data.LastName;
+            if (!string.IsNullOrEmpty(data.ImageUrl)) existing.ProfileImageUrl = data.ImageUrl;
+
+            if (existing.IsDeleted)
+            {
+                existing.IsDeleted = false;
+                existing.DeletedAt = null;
+                existing.Role = role;
+                existing.Status = status;
+                if (role == UserRole.CANDIDATE)
+                {
+                    existing.CompanyId = null;
+                }
+            }
+            existing.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Restored/updated user {UserId} ({Email}) from Clerk webhook with role {Role} and status {Status}",
+                existing.Id, existing.Email, existing.Role, existing.Status);
+            return;
+        }
 
         var user = new User
         {

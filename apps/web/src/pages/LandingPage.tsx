@@ -1,6 +1,12 @@
-import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { motion, useScroll, useSpring, useTransform, type Variants } from 'framer-motion'
+import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import {
+  motion,
+  useScroll,
+  useSpring,
+  useTransform,
+  type Variants,
+} from "framer-motion";
 import {
   Search,
   ArrowRight,
@@ -13,28 +19,30 @@ import {
   CheckCircle2,
   Lock,
   Zap,
-  ChevronRight
-} from 'lucide-react'
+  ChevronRight,
+} from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function LandingPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const heroRef = useRef<HTMLDivElement>(null)
+  const { isSignedIn } = useCurrentUser();
+  const [searchQuery, setSearchQuery] = useState("");
+  const heroRef = useRef<HTMLDivElement>(null);
 
   // Top Page Scroll Progress Indicator with spring smoothing
-  const { scrollYProgress } = useScroll()
+  const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.001
-  })
+    restDelta: 0.001,
+  });
 
   // Hero section parallax depth on scroll
   const { scrollYProgress: heroScroll } = useScroll({
     target: heroRef,
-    offset: ['start start', 'end start']
-  })
-  const heroImageY = useTransform(heroScroll, [0, 1], [0, 45])
-  const heroImageScale = useTransform(heroScroll, [0, 1], [1, 0.97])
+    offset: ["start start", "end start"],
+  });
+  const heroImageY = useTransform(heroScroll, [0, 1], [0, 45]);
+  const heroImageScale = useTransform(heroScroll, [0, 1], [1, 0.97]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -42,19 +50,19 @@ export function LandingPage() {
       opacity: 1,
       transition: {
         staggerChildren: 0.12,
-        delayChildren: 0.1
-      }
-    }
-  }
+        delayChildren: 0.1,
+      },
+    },
+  };
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-    }
-  }
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
 
   // Scroll In-View Variants for Sections and Cards
   const scrollSectionVariants: Variants = {
@@ -64,10 +72,10 @@ export function LandingPage() {
       y: 0,
       transition: {
         duration: 0.7,
-        ease: [0.16, 1, 0.3, 1]
-      }
-    }
-  }
+        ease: [0.16, 1, 0.3, 1],
+      },
+    },
+  };
 
   const scrollStaggerContainer: Variants = {
     hidden: { opacity: 0 },
@@ -75,10 +83,10 @@ export function LandingPage() {
       opacity: 1,
       transition: {
         staggerChildren: 0.12,
-        delayChildren: 0.1
-      }
-    }
-  }
+        delayChildren: 0.1,
+      },
+    },
+  };
 
   const scrollCardVariants: Variants = {
     hidden: { opacity: 0, y: 28, scale: 0.98 },
@@ -88,73 +96,97 @@ export function LandingPage() {
       scale: 1,
       transition: {
         duration: 0.55,
-        ease: [0.16, 1, 0.3, 1]
-      }
-    }
-  }
+        ease: [0.16, 1, 0.3, 1],
+      },
+    },
+  };
 
   const agents = [
     {
-      image: '/agent-job.jpg',
-      title: 'Job Analysis Agent',
-      badge: 'Specification Engine',
+      image: "/agent-job.jpg",
+      title: "Job Analysis Agent",
+      badge: "Specification Engine",
       icon: FileCheck2,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      desc: 'Parses complex engineering requirements, decomposes tech stacks, and builds deterministic competency rubrics from job descriptions.',
-      capabilities: ['Tech Stack Decomposition', 'Seniority Mapping', 'Requirement Extraction']
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      desc: "Parses complex engineering requirements, decomposes tech stacks, and builds deterministic competency rubrics from job descriptions.",
+      capabilities: [
+        "Tech Stack Decomposition",
+        "Seniority Mapping",
+        "Requirement Extraction",
+      ],
     },
     {
-      image: '/agent-resume.jpg',
-      title: 'Resume Analysis Agent',
-      badge: 'Candidate Profiler',
+      image: "/agent-resume.jpg",
+      title: "Resume Analysis Agent",
+      badge: "Candidate Profiler",
       icon: Bot,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-      desc: 'Transforms unstructured candidate CVs and portfolios into strictly typed Pydantic models without data loss or parsing artifacts.',
-      capabilities: ['Structured Profile Parsing', 'Project Verification', 'Skill Graph Extraction']
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
+      desc: "Transforms unstructured candidate CVs and portfolios into strictly typed Pydantic models without data loss or parsing artifacts.",
+      capabilities: [
+        "Structured Profile Parsing",
+        "Project Verification",
+        "Skill Graph Extraction",
+      ],
     },
     {
-      image: '/agent-eval.jpg',
-      title: 'Evaluation & Ranking Agent',
-      badge: 'Objective Scorer',
+      image: "/agent-eval.jpg",
+      title: "Evaluation & Ranking Agent",
+      badge: "Objective Scorer",
       icon: Layers,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-      desc: 'Executes multi-dimensional fit scoring and objective role alignment analysis with fully explainable evidence citations.',
-      capabilities: ['Deterministic Scoring', 'Evidence Attribution', 'Anomaly Detection']
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      desc: "Executes multi-dimensional fit scoring and objective role alignment analysis with fully explainable evidence citations.",
+      capabilities: [
+        "Deterministic Scoring",
+        "Evidence Attribution",
+        "Anomaly Detection",
+      ],
     },
     {
-      image: '/agent-validation.jpg',
-      title: 'Validation & Governance Agent',
-      badge: 'Security Shield',
+      image: "/agent-validation.jpg",
+      title: "Validation & Governance Agent",
+      badge: "Security Shield",
       icon: ShieldCheck,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-      desc: 'Enforces business rules, prevents unauthorized state transitions, and guarantees strict schema compliance across all workflows.',
-      capabilities: ['Pydantic Verification', 'Policy Enforcement', 'Human Gatekeeping']
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      desc: "Enforces business rules, prevents unauthorized state transitions, and guarantees strict schema compliance across all workflows.",
+      capabilities: [
+        "Pydantic Verification",
+        "Policy Enforcement",
+        "Human Gatekeeping",
+      ],
     },
     {
-      image: '/agent-question.jpg',
-      title: 'Interview Question Generator',
-      badge: 'Rubric Synthesizer',
+      image: "/agent-question.jpg",
+      title: "Interview Question Generator",
+      badge: "Rubric Synthesizer",
       icon: HelpCircle,
-      color: 'text-rose-600',
-      bg: 'bg-rose-50',
-      desc: 'Synthesizes targeted technical interview questions, coding scenarios, and behavioral probes tailored to individual candidate profiles.',
-      capabilities: ['Dynamic Problem Synthesis', 'Gap Analysis Probes', 'Standardized Rubrics']
+      color: "text-rose-600",
+      bg: "bg-rose-50",
+      desc: "Synthesizes targeted technical interview questions, coding scenarios, and behavioral probes tailored to individual candidate profiles.",
+      capabilities: [
+        "Dynamic Problem Synthesis",
+        "Gap Analysis Probes",
+        "Standardized Rubrics",
+      ],
     },
     {
-      image: '/agent-schedule.jpg',
-      title: 'Autonomous Scheduling Agent',
-      badge: 'Calendar Orchestrator',
+      image: "/agent-schedule.jpg",
+      title: "Autonomous Scheduling Agent",
+      badge: "Calendar Orchestrator",
       icon: CalendarCheck2,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      desc: 'Calculates non-conflicting interview windows across multi-party calendars with automated Google Calendar integration.',
-      capabilities: ['Conflict Resolution', 'Timezone Normalization', 'Automated Invites']
-    }
-  ]
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      desc: "Calculates non-conflicting interview windows across multi-party calendars with automated Google Calendar integration.",
+      capabilities: [
+        "Conflict Resolution",
+        "Timezone Normalization",
+        "Automated Invites",
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-24 sm:space-y-32 pb-24 relative">
@@ -165,13 +197,15 @@ export function LandingPage() {
       />
 
       {/* Hero Section - 2 Column Split Layout (Headline & Search on Left, Image on Right) */}
-      <section ref={heroRef} className="relative pt-8 sm:pt-16 pb-4 overflow-hidden">
+      <section
+        ref={heroRef}
+        className="relative pt-8 sm:pt-16 pb-4 overflow-hidden"
+      >
         {/* Subtle Ambient Radial Glow */}
         <div className="absolute top-0 right-1/4 w-[700px] h-[450px] bg-gradient-to-bl from-blue-100/50 via-indigo-50/30 to-transparent blur-3xl rounded-full pointer-events-none -z-10" />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            
             {/* Left Column: High-Impact Enterprise Value Prop & Search */}
             <motion.div
               variants={containerVariants}
@@ -184,8 +218,9 @@ export function LandingPage() {
                 variants={itemVariants}
                 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
               >
-                Autonomous Multi-Agent AI for{' '}
-                <span className="text-blue-600">Enterprise Technical</span> Recruitment.
+                Autonomous Multi-Agent AI for{" "}
+                <span className="text-blue-600">Enterprise Technical</span>{" "}
+                Recruitment.
               </motion.h1>
 
               {/* Professional Subheading */}
@@ -193,7 +228,11 @@ export function LandingPage() {
                 variants={itemVariants}
                 className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl"
               >
-                HireWise coordinates specialized autonomous agents to decompose job specifications, parse technical competencies, score candidate alignment deterministically, and synchronize conflict-free interviews — with strict human authorization at every stage.
+                HireWise coordinates specialized autonomous agents to decompose
+                job specifications, parse technical competencies, score
+                candidate alignment deterministically, and synchronize
+                conflict-free interviews — with strict human authorization at
+                every stage.
               </motion.p>
 
               {/* Search / Exploration Widget */}
@@ -210,7 +249,7 @@ export function LandingPage() {
                     />
                   </div>
                   <Link
-                    to={`/jobs${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ''}`}
+                    to={`/jobs${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ""}`}
                     className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-sm font-semibold text-white transition flex items-center justify-center gap-2 shadow-sm shrink-0"
                   >
                     Explore Positions <ArrowRight className="h-4 w-4" />
@@ -261,11 +300,11 @@ export function LandingPage() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{
                     opacity: 1,
-                    y: [0, -6, 0]
+                    y: [0, -6, 0],
                   }}
                   transition={{
                     opacity: { delay: 0.4, duration: 0.5 },
-                    y: { repeat: Infinity, duration: 4, ease: 'easeInOut' }
+                    y: { repeat: Infinity, duration: 4, ease: "easeInOut" },
                   }}
                   className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 shadow-lg flex items-center gap-3"
                 >
@@ -274,8 +313,12 @@ export function LandingPage() {
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                   </span>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">Multi-Agent Grid</div>
-                    <div className="text-[10px] text-slate-500 font-medium">6 Coordinated Agents Active</div>
+                    <div className="text-xs font-bold text-slate-900">
+                      Multi-Agent Grid
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      6 Coordinated Agents Active
+                    </div>
                   </div>
                 </motion.div>
 
@@ -284,11 +327,16 @@ export function LandingPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{
                     opacity: 1,
-                    y: [0, 6, 0]
+                    y: [0, 6, 0],
                   }}
                   transition={{
                     opacity: { delay: 0.5, duration: 0.5 },
-                    y: { repeat: Infinity, duration: 4.5, delay: 0.6, ease: 'easeInOut' }
+                    y: {
+                      repeat: Infinity,
+                      duration: 4.5,
+                      delay: 0.6,
+                      ease: "easeInOut",
+                    },
                   }}
                   className="absolute -bottom-3 -left-3 sm:-bottom-4 sm:-left-4 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 shadow-lg flex items-center gap-3"
                 >
@@ -296,19 +344,25 @@ export function LandingPage() {
                     99%
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">Deterministic Match</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Zero Hallucination Scoring</div>
+                    <div className="text-xs font-bold text-slate-900">
+                      Deterministic Match
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      Zero Hallucination Scoring
+                    </div>
                   </div>
                 </motion.div>
               </div>
             </motion.div>
-
           </div>
         </div>
       </section>
 
       {/* How It Works Section - Scroll In-View Reveal & Stagger */}
-      <section id="how-it-works" className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        id="how-it-works"
+        className="container mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <motion.div
           variants={scrollSectionVariants}
           initial="hidden"
@@ -320,7 +374,9 @@ export function LandingPage() {
             Architected for Enterprise Rigor and Precision
           </h2>
           <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Every candidate evaluation stage is strictly governed by typed data contracts, cross-verified by multi-agent consensus, and validated by human hiring managers.
+            Every candidate evaluation stage is strictly governed by typed data
+            contracts, cross-verified by multi-agent consensus, and validated by
+            human hiring managers.
           </p>
         </motion.div>
 
@@ -333,33 +389,40 @@ export function LandingPage() {
         >
           {[
             {
-              step: '01',
-              title: 'Deterministic Specification Ingestion',
-              desc: 'Technical job descriptions and candidate portfolios are decomposed into strict Pydantic schemas, eliminating unstructured data anomalies.'
+              step: "01",
+              title: "Deterministic Specification Ingestion",
+              desc: "Technical job descriptions and candidate portfolios are decomposed into strict Pydantic schemas, eliminating unstructured data anomalies.",
             },
             {
-              step: '02',
-              title: 'Multi-Agent Consensus & Scoring',
-              desc: 'Autonomous agents independently evaluate candidate depth, system design capabilities, and career trajectory against concrete rubric criteria.'
+              step: "02",
+              title: "Multi-Agent Consensus & Scoring",
+              desc: "Autonomous agents independently evaluate candidate depth, system design capabilities, and career trajectory against concrete rubric criteria.",
             },
             {
-              step: '03',
-              title: 'Synthesized Rubrics & Scheduling',
-              desc: 'Custom interview questionnaires are generated to probe specific candidate gaps, while calendars are seamlessly orchestrated with zero manual friction.'
-            }
+              step: "03",
+              title: "Synthesized Rubrics & Scheduling",
+              desc: "Custom interview questionnaires are generated to probe specific candidate gaps, while calendars are seamlessly orchestrated with zero manual friction.",
+            },
           ].map((item, index) => (
             <motion.div
               key={index}
               variants={scrollCardVariants}
-              whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+              whileHover={{
+                y: -6,
+                transition: { duration: 0.25, ease: "easeOut" },
+              }}
               className="relative p-8 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 transition-all duration-300 flex flex-col justify-between group"
             >
               <div>
                 <span className="text-4xl font-black text-blue-600/20 block mb-4 font-mono group-hover:text-blue-600/40 transition-colors duration-300">
                   {item.step}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.desc}
+                </p>
               </div>
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-blue-600">
                 <span>Enterprise Verified</span>
@@ -371,7 +434,10 @@ export function LandingPage() {
       </section>
 
       {/* AI Agents Architecture Showcase - Scroll In-View Reveal & Stagger */}
-      <section id="ai-agents" className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        id="ai-agents"
+        className="container mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <motion.div
           variants={scrollSectionVariants}
           initial="hidden"
@@ -383,7 +449,8 @@ export function LandingPage() {
             Six Autonomous Agents Working in Orchestration
           </h2>
           <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            State-persisted, schema-validated agents executing discrete phases of the recruitment lifecycle under strict human oversight.
+            State-persisted, schema-validated agents executing discrete phases
+            of the recruitment lifecycle under strict human oversight.
           </p>
         </motion.div>
 
@@ -399,7 +466,10 @@ export function LandingPage() {
             <motion.div
               key={i}
               variants={scrollCardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
+              whileHover={{
+                y: -4,
+                transition: { duration: 0.25, ease: "easeOut" },
+              }}
               className="rounded-2xl bg-white border border-slate-200 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 shadow-sm transition-all duration-300 overflow-hidden flex flex-col sm:flex-row group"
             >
               {/* Left Side: Reduced Size Image Container */}
@@ -420,12 +490,18 @@ export function LandingPage() {
               <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-3.5">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <div className={`h-7 w-7 rounded-lg ${agent.bg} ${agent.color} flex items-center justify-center shrink-0`}>
+                    <div
+                      className={`h-7 w-7 rounded-lg ${agent.bg} ${agent.color} flex items-center justify-center shrink-0`}
+                    >
                       <agent.icon className="h-3.5 w-3.5" />
                     </div>
-                    <h3 className="text-base font-bold text-slate-900">{agent.title}</h3>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {agent.title}
+                    </h3>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-0.5">{agent.desc}</p>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-0.5">
+                    {agent.desc}
+                  </p>
                 </div>
 
                 {/* Capabilities Tags */}
@@ -460,34 +536,36 @@ export function LandingPage() {
           <motion.div
             animate={{
               scale: [1, 1.25, 1],
-              opacity: [0.15, 0.3, 0.15]
+              opacity: [0.15, 0.3, 0.15],
             }}
             transition={{
               duration: 6,
               repeat: Infinity,
-              ease: 'easeInOut'
+              ease: "easeInOut",
             }}
             className="absolute -right-16 -bottom-16 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"
           />
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
-              opacity: [0.1, 0.22, 0.1]
+              opacity: [0.1, 0.22, 0.1],
             }}
             transition={{
               duration: 7,
               repeat: Infinity,
               delay: 2,
-              ease: 'easeInOut'
+              ease: "easeInOut",
             }}
             className="absolute -left-16 -top-16 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"
           />
-          
+
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
             Modernize Your Technical Hiring Operations
           </h2>
           <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
-            Eliminate subjective screening biases, reduce time-to-hire by 65%, and empower recruitment teams with explainable multi-agent intelligence.
+            Eliminate subjective screening biases, reduce time-to-hire by 65%,
+            and empower recruitment teams with explainable multi-agent
+            intelligence.
           </p>
 
           <motion.div
@@ -499,10 +577,11 @@ export function LandingPage() {
           >
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link
-                to="/sign-up"
+                to={isSignedIn ? "/auth-redirect" : "/sign-up"}
                 className="rounded-xl bg-blue-600 hover:bg-blue-500 px-7 py-3 text-sm font-semibold text-white transition shadow-lg shadow-blue-600/30 flex items-center gap-2"
               >
-                Get Started Free <ChevronRight className="h-4 w-4" />
+                {isSignedIn ? "Go to Dashboard" : "Get Started Free"}{" "}
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
@@ -517,5 +596,5 @@ export function LandingPage() {
         </div>
       </motion.section>
     </div>
-  )
+  );
 }

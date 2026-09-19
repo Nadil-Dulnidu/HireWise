@@ -1,19 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 import {
   CheckCircle,
   AlertTriangle,
   Info,
   Bot,
   X,
-  ExternalLink
-} from 'lucide-react'
-import { useToastNotifications } from '@/hooks/useToastNotifications'
-import type { ToastItem } from '@/hooks/useToastNotifications'
+  ExternalLink,
+} from "lucide-react";
+import { useToastNotifications } from "@/hooks/useToastNotifications";
+import type { ToastItem } from "@/hooks/useToastNotifications";
 
 export function ToastContainer() {
-  const { toasts, dismiss } = useToastNotifications()
+  const { toasts, dismiss } = useToastNotifications();
 
-  if (toasts.length === 0) return null
+  if (toasts.length === 0) return null;
 
   return (
     <div
@@ -21,65 +21,69 @@ export function ToastContainer() {
       className="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm sm:max-w-md w-full pointer-events-none"
     >
       {toasts.map((toast) => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
+        <ToastCard
+          key={toast.id}
+          toast={toast}
+          onDismiss={() => dismiss(toast.id)}
+        />
       ))}
     </div>
-  )
+  );
 }
 
 interface ToastCardProps {
-  toast: ToastItem
-  onDismiss: () => void
+  toast: ToastItem;
+  onDismiss: () => void;
 }
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
-  const { id, title, message, type, link } = toast
+  const { id, title, message, type, link } = toast;
 
   const config = {
     success: {
       icon: CheckCircle,
-      iconColor: 'text-emerald-600',
-      borderColor: 'border-emerald-200',
-      glow: 'shadow-emerald-500/5',
-      badgeBg: 'bg-emerald-50 text-emerald-700'
+      iconColor: "text-emerald-600",
+      borderColor: "border-emerald-200",
+      glow: "shadow-emerald-500/5",
+      badgeBg: "bg-emerald-50 text-emerald-700",
     },
     info: {
       icon: Info,
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200',
-      glow: 'shadow-blue-500/5',
-      badgeBg: 'bg-blue-50 text-blue-700'
+      iconColor: "text-blue-600",
+      borderColor: "border-blue-200",
+      glow: "shadow-blue-500/5",
+      badgeBg: "bg-blue-50 text-blue-700",
     },
     warning: {
       icon: AlertTriangle,
-      iconColor: 'text-amber-600',
-      borderColor: 'border-amber-200',
-      glow: 'shadow-amber-500/5',
-      badgeBg: 'bg-amber-50 text-amber-700'
+      iconColor: "text-amber-600",
+      borderColor: "border-amber-200",
+      glow: "shadow-amber-500/5",
+      badgeBg: "bg-amber-50 text-amber-700",
     },
     error: {
       icon: AlertTriangle,
-      iconColor: 'text-rose-600',
-      borderColor: 'border-rose-200',
-      glow: 'shadow-rose-500/5',
-      badgeBg: 'bg-rose-50 text-rose-700'
+      iconColor: "text-rose-600",
+      borderColor: "border-rose-200",
+      glow: "shadow-rose-500/5",
+      badgeBg: "bg-rose-50 text-rose-700",
     },
     ai: {
       icon: Bot,
-      iconColor: 'text-indigo-600',
-      borderColor: 'border-indigo-200',
-      glow: 'shadow-indigo-500/5',
-      badgeBg: 'bg-indigo-50 text-indigo-700'
-    }
+      iconColor: "text-indigo-600",
+      borderColor: "border-indigo-200",
+      glow: "shadow-indigo-500/5",
+      badgeBg: "bg-indigo-50 text-indigo-700",
+    },
   }[type] || {
     icon: Info,
-    iconColor: 'text-blue-600',
-    borderColor: 'border-blue-200',
-    glow: 'shadow-blue-500/5',
-    badgeBg: 'bg-blue-50 text-blue-700'
-  }
+    iconColor: "text-blue-600",
+    borderColor: "border-blue-200",
+    glow: "shadow-blue-500/5",
+    badgeBg: "bg-blue-50 text-blue-700",
+  };
 
-  const Icon = config.icon
+  const Icon = config.icon;
 
   return (
     <div
@@ -123,5 +127,5 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         <X className="w-4 h-4" />
       </button>
     </div>
-  )
+  );
 }

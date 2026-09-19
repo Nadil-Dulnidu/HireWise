@@ -2,6 +2,7 @@
 Async Repository for persisting and querying AI Workflows and Steps in PostgreSQL.
 Directly interfaces with EF Core managed 'AiWorkflows' and 'AiWorkflowSteps' tables.
 """
+
 import json
 import uuid
 from datetime import datetime, timezone
@@ -9,6 +10,7 @@ from typing import Optional, List, Dict, Any
 from psycopg.rows import dict_row
 from ai_service.db.connection import get_db_pool
 from ai_service.core.logging import logger
+
 
 class WorkflowRepository:
     def __init__(self):
@@ -19,21 +21,51 @@ class WorkflowRepository:
         workflow_id: uuid.UUID,
         application_id: uuid.UUID,
         objective: str,
-        plan: Optional[List[Dict[str, Any]]] = None
+        plan: Optional[List[Dict[str, Any]]] = None,
     ) -> uuid.UUID:
         """
         Creates a new AiWorkflow record with status IN_PROGRESS.
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
-        plan_json = json.dumps(plan) if plan else json.dumps([
-            {"step": 1, "name": "JOB_ANALYSIS", "agent": "Job Description Analysis Agent"},
-            {"step": 2, "name": "RESUME_ANALYSIS", "agent": "Resume Analysis Agent"},
-            {"step": 3, "name": "CANDIDATE_EVALUATION", "agent": "Candidate Evaluation & Ranking Agent"},
-            {"step": 4, "name": "VALIDATION", "agent": "Deterministic Validation Agent"},
-            {"step": 5, "name": "QUESTION_GENERATION", "agent": "Interview Question Generator Agent"},
-            {"step": 6, "name": "SCHEDULING", "agent": "Interview Scheduling Agent"}
-        ])
+        plan_json = (
+            json.dumps(plan)
+            if plan
+            else json.dumps(
+                [
+                    {
+                        "step": 1,
+                        "name": "JOB_ANALYSIS",
+                        "agent": "Job Description Analysis Agent",
+                    },
+                    {
+                        "step": 2,
+                        "name": "RESUME_ANALYSIS",
+                        "agent": "Resume Analysis Agent",
+                    },
+                    {
+                        "step": 3,
+                        "name": "CANDIDATE_EVALUATION",
+                        "agent": "Candidate Evaluation & Ranking Agent",
+                    },
+                    {
+                        "step": 4,
+                        "name": "VALIDATION",
+                        "agent": "Deterministic Validation Agent",
+                    },
+                    {
+                        "step": 5,
+                        "name": "QUESTION_GENERATION",
+                        "agent": "Interview Question Generator Agent",
+                    },
+                    {
+                        "step": 6,
+                        "name": "SCHEDULING",
+                        "agent": "Interview Scheduling Agent",
+                    },
+                ]
+            )
+        )
 
         query = """
         INSERT INTO "AiWorkflows" (
@@ -50,6 +82,22 @@ class WorkflowRepository:
 
         async with pool.connection() as conn:
             async with conn.cursor() as cur:
+                # 1. Clean up existing workflow and steps for this application if one exists (re-evaluation)
+                await cur.execute(
+                    """
+                    DELETE FROM "AiWorkflowSteps"
+                    WHERE "WorkflowId" IN (
+                        SELECT "Id" FROM "AiWorkflows" WHERE "ApplicationId" = %s
+                    );
+                    """,
+                    (str(application_id),),
+                )
+                await cur.execute(
+                    'DELETE FROM "AiWorkflows" WHERE "ApplicationId" = %s;',
+                    (str(application_id),),
+                )
+
+                # 2. Insert new workflow record
                 await cur.execute(
                     query,
                     (
@@ -65,11 +113,20 @@ class WorkflowRepository:
                         now,
                         now,
                         now,
-                        False
-                    )
+                        False,
+                    ),
                 )
+
+                # 3. Keep Applications table in sync with the new workflow
+                await cur.execute(
+                    'UPDATE "Applications" SET "AiWorkflowId" = %s, "Status" = %s, "UpdatedAt" = %s WHERE "Id" = %s;',
+                    (str(workflow_id), "AI_REVIEW", now, str(application_id)),
+                )
+
                 await conn.commit()
-                logger.info(f"Created AiWorkflow {workflow_id} for Application {application_id}")
+                logger.info(
+                    f"Created AiWorkflow {workflow_id} for Application {application_id}"
+                )
                 return workflow_id
 
     async def update_workflow_status(
@@ -79,14 +136,25 @@ class WorkflowRepository:
         current_step: str,
         final_result: Optional[Dict[str, Any]] = None,
         error_state: Optional[Dict[str, Any]] = None,
-        completed_steps: Optional[List[str]] = None
+        completed_steps: Optional[List[str]] = None,
     ):
         """
         Updates workflow lifecycle state, progress, or completion result.
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
-        completed_at = now if status in ("COMPLETED", "AWAITING_APPROVAL", "AWAITING_SCHEDULE_APPROVAL", "FAILED", "REJECTED") else None
+        completed_at = (
+            now
+            if status
+            in (
+                "COMPLETED",
+                "AWAITING_APPROVAL",
+                "AWAITING_SCHEDULE_APPROVAL",
+                "FAILED",
+                "REJECTED",
+            )
+            else None
+        )
 
         query = """
         UPDATE "AiWorkflows"
@@ -103,7 +171,9 @@ class WorkflowRepository:
 
         final_json = json.dumps(final_result) if final_result is not None else None
         err_json = json.dumps(error_state) if error_state is not None else None
-        steps_json = json.dumps(completed_steps) if completed_steps is not None else None
+        steps_json = (
+            json.dumps(completed_steps) if completed_steps is not None else None
+        )
 
         async with pool.connection() as conn:
             async with conn.cursor() as cur:
@@ -117,8 +187,8 @@ class WorkflowRepository:
                         steps_json,
                         completed_at,
                         now,
-                        str(workflow_id)
-                    )
+                        str(workflow_id),
+                    ),
                 )
                 await conn.commit()
 
@@ -150,7 +220,7 @@ class WorkflowRepository:
         step_name: str,
         step_order: int,
         status: str = "PENDING",
-        input_data: Optional[Dict[str, Any]] = None
+        input_data: Optional[Dict[str, Any]] = None,
     ) -> uuid.UUID:
         """
         Creates an individual AiWorkflowStep record.
@@ -190,8 +260,8 @@ class WorkflowRepository:
                         now if status == "IN_PROGRESS" else None,
                         now,
                         now,
-                        False
-                    )
+                        False,
+                    ),
                 )
                 await conn.commit()
                 return step_id
@@ -203,14 +273,18 @@ class WorkflowRepository:
         output_data: Optional[Dict[str, Any]] = None,
         validation_data: Optional[Dict[str, Any]] = None,
         started_at: Optional[datetime] = None,
-        retry_count: Optional[int] = None
+        retry_count: Optional[int] = None,
     ):
         """
         Updates step execution status, retry count, and payload.
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
-        completed_at = now if status in ("COMPLETED", "FAILED", "SKIPPED", "AWAITING_APPROVAL") else None
+        completed_at = (
+            now
+            if status in ("COMPLETED", "FAILED", "SKIPPED", "AWAITING_APPROVAL")
+            else None
+        )
         output_json = json.dumps(output_data) if output_data is not None else None
         val_json = json.dumps(validation_data) if validation_data is not None else None
 
@@ -239,8 +313,8 @@ class WorkflowRepository:
                         completed_at,
                         retry_count,
                         now,
-                        str(step_id)
-                    )
+                        str(step_id),
+                    ),
                 )
                 await conn.commit()
 
@@ -249,7 +323,7 @@ class WorkflowRepository:
         step_id: uuid.UUID,
         approval_status: str,
         approved_by_user_id: Optional[uuid.UUID] = None,
-        approval_notes: Optional[str] = None
+        approval_notes: Optional[str] = None,
     ):
         """
         Updates step human approval status, approver user ID, and notes.
@@ -278,8 +352,8 @@ class WorkflowRepository:
                         now,
                         approval_notes,
                         now,
-                        str(step_id)
-                    )
+                        str(step_id),
+                    ),
                 )
                 await conn.commit()
 

@@ -1,8 +1,8 @@
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { jobsApi, companiesApi } from '@/lib/api/jobs-api'
-import { applicationsApi } from '@/lib/api/applications-api'
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { jobsApi, companiesApi } from "@/lib/api/jobs-api";
+import { applicationsApi } from "@/lib/api/applications-api";
 import {
   Briefcase,
   Bot,
@@ -10,47 +10,48 @@ import {
   Plus,
   Building,
   ArrowRight,
-  Loader2
-} from 'lucide-react'
+  Loader2,
+} from "lucide-react";
 
 export function RecruiterDashboard() {
-  const { profile } = useCurrentUser()
-  const companyId = profile?.companyId
+  const { profile } = useCurrentUser();
+  const companyId = profile?.companyId;
 
   const { data: jobsData, isLoading: isJobsLoading } = useQuery({
-    queryKey: ['recruiterJobsCount'],
+    queryKey: ["recruiterJobsCount"],
     queryFn: () => jobsApi.getRecruiterJobs({ pageSize: 100 }),
-    enabled: !!companyId
-  })
+    enabled: !!companyId,
+  });
 
   const { data: company } = useQuery({
-    queryKey: ['company', companyId],
+    queryKey: ["company", companyId],
     queryFn: () => companiesApi.getCompanyById(companyId!),
-    enabled: !!companyId
-  })
+    enabled: !!companyId,
+  });
 
   const { data: appsData, isLoading: isAppsLoading } = useQuery({
-    queryKey: ['recruiterDashboardApplications', companyId],
+    queryKey: ["recruiterDashboardApplications", companyId],
     queryFn: () => applicationsApi.getCompanyApplications({ pageSize: 50 }),
-    enabled: !!companyId
-  })
+    enabled: !!companyId,
+  });
 
-  const allApplications = appsData?.items || []
+  const allApplications = appsData?.items || [];
   const evaluationsReadyCount = allApplications.filter(
-    (a) => a.status === 'AI_RECOMMENDED' || a.status === 'AI_REVIEW'
-  ).length
+    (a) => a.status === "AI_RECOMMENDED" || a.status === "AI_REVIEW",
+  ).length;
   const pendingApprovalsCount = allApplications.filter(
-    (a) => a.status === 'RECRUITER_REVIEW' || a.status === 'INTERVIEW_APPROVED'
-  ).length
+    (a) => a.status === "RECRUITER_REVIEW" || a.status === "INTERVIEW_APPROVED",
+  ).length;
   const activeWorkflowsCount = allApplications.filter(
-    (a) => a.status === 'AI_REVIEW'
-  ).length
+    (a) => a.status === "AI_REVIEW",
+  ).length;
   const pendingAiRecommendations = allApplications.filter(
-    (a) => a.status === 'AI_RECOMMENDED' || a.status === 'AI_REVIEW'
-  )
+    (a) => a.status === "AI_RECOMMENDED" || a.status === "AI_REVIEW",
+  );
 
-  const activeJobsCount = jobsData?.items?.filter((j) => j.status === 'OPEN').length ?? 0
-  const totalJobsCount = jobsData?.totalCount ?? 0
+  const activeJobsCount =
+    jobsData?.items?.filter((j) => j.status === "OPEN").length ?? 0;
+  const totalJobsCount = jobsData?.totalCount ?? 0;
 
   return (
     <div className="space-y-8">
@@ -61,10 +62,13 @@ export function RecruiterDashboard() {
             Recruiter Workspace
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Company:{' '}
-            <Link to="/recruiter/companies" className="text-blue-600 font-semibold hover:underline">
-              {company?.name || profile?.companyName || 'HireWise Organization'}
-            </Link>{' '}
+            Company:{" "}
+            <Link
+              to="/recruiter/companies"
+              className="text-blue-600 font-semibold hover:underline"
+            >
+              {company?.name || profile?.companyName || "HireWise Organization"}
+            </Link>{" "}
             • Role: Recruiter
           </p>
         </div>
@@ -83,36 +87,36 @@ export function RecruiterDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
         {[
           {
-            label: 'Active Job Openings',
-            value: isJobsLoading ? '...' : activeJobsCount.toString(),
+            label: "Active Job Openings",
+            value: isJobsLoading ? "..." : activeJobsCount.toString(),
             icon: Briefcase,
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50 border border-indigo-100',
-            link: '/recruiter/jobs'
+            color: "text-indigo-600",
+            bg: "bg-indigo-50 border border-indigo-100",
+            link: "/recruiter/jobs",
           },
           {
-            label: 'Total Postings',
-            value: isJobsLoading ? '...' : totalJobsCount.toString(),
+            label: "Total Postings",
+            value: isJobsLoading ? "..." : totalJobsCount.toString(),
             icon: Building,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50 border border-blue-100',
-            link: '/recruiter/jobs'
+            color: "text-blue-600",
+            bg: "bg-blue-50 border border-blue-100",
+            link: "/recruiter/jobs",
           },
           {
-            label: 'AI Evaluations Ready',
-            value: isAppsLoading ? '...' : evaluationsReadyCount.toString(),
+            label: "AI Evaluations Ready",
+            value: isAppsLoading ? "..." : evaluationsReadyCount.toString(),
             icon: Bot,
-            color: 'text-purple-600',
-            bg: 'bg-purple-50 border border-purple-100',
-            link: '/recruiter/ai-evaluations'
+            color: "text-purple-600",
+            bg: "bg-purple-50 border border-purple-100",
+            link: "/recruiter/ai-evaluations",
           },
           {
-            label: 'Pending Approvals',
-            value: isAppsLoading ? '...' : pendingApprovalsCount.toString(),
+            label: "Pending Approvals",
+            value: isAppsLoading ? "..." : pendingApprovalsCount.toString(),
             icon: Activity,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50 border border-amber-100',
-            link: '/recruiter/scheduling'
+            color: "text-amber-600",
+            bg: "bg-amber-50 border border-amber-100",
+            link: "/recruiter/scheduling",
           },
         ].map((kpi, i) => (
           <Link
@@ -122,7 +126,9 @@ export function RecruiterDashboard() {
           >
             <div>
               <p className="text-xs text-slate-500 font-medium">{kpi.label}</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">{kpi.value}</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">
+                {kpi.value}
+              </h3>
             </div>
             <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}>
               <kpi.icon className="h-5 w-5" />
@@ -137,9 +143,13 @@ export function RecruiterDashboard() {
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Bot className="h-4 w-4 text-purple-600" /> Pending AI Hiring Recommendations
+              <Bot className="h-4 w-4 text-purple-600" /> Pending AI Hiring
+              Recommendations
             </h3>
-            <Link to="/recruiter/ai-evaluations" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            <Link
+              to="/recruiter/ai-evaluations"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
               Review Queue <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -151,23 +161,34 @@ export function RecruiterDashboard() {
           ) : pendingAiRecommendations.length === 0 ? (
             <div className="p-8 text-center rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <Bot className="h-8 w-8 text-slate-400 mx-auto" />
-              <p className="text-sm text-slate-700 font-medium">No pending AI evaluations awaiting review.</p>
+              <p className="text-sm text-slate-700 font-medium">
+                No pending AI evaluations awaiting review.
+              </p>
               <p className="text-xs text-slate-500">
-                When candidates submit applications to your open roles, AI multi-agent evaluations will appear here.
+                When candidates submit applications to your open roles, AI
+                multi-agent evaluations will appear here.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {pendingAiRecommendations.slice(0, 4).map((item) => (
-                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 gap-3">
+                <div
+                  key={item.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 gap-3"
+                >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900">{item.candidateName}</span>
+                      <span className="font-semibold text-sm text-slate-900">
+                        {item.candidateName}
+                      </span>
                       <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                        {item.status.replace('_', ' ')}
+                        {item.status.replace("_", " ")}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">{item.jobTitle} • Applied {new Date(item.appliedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500">
+                      {item.jobTitle} • Applied{" "}
+                      {new Date(item.appliedAt).toLocaleDateString()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
@@ -189,21 +210,36 @@ export function RecruiterDashboard() {
             <Activity className="h-4 w-4 text-indigo-600" /> AI Workflow Monitor
           </h3>
           <p className="text-xs text-slate-600">
-            Real-time telemetry of LangGraph agents executing resume parsing, rubric scoring, and schedule optimization.
+            Real-time telemetry of LangGraph agents executing resume parsing,
+            rubric scoring, and schedule optimization.
           </p>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-700 font-semibold">Active Workflows</span>
-              <span className={activeWorkflowsCount > 0 ? "text-emerald-700 font-bold" : "text-slate-500 font-medium"}>
-                {activeWorkflowsCount > 0 ? `${activeWorkflowsCount} Running` : 'Idle / Ready'}
+              <span className="text-slate-700 font-semibold">
+                Active Workflows
+              </span>
+              <span
+                className={
+                  activeWorkflowsCount > 0
+                    ? "text-emerald-700 font-bold"
+                    : "text-slate-500 font-medium"
+                }
+              >
+                {activeWorkflowsCount > 0
+                  ? `${activeWorkflowsCount} Running`
+                  : "Idle / Ready"}
               </span>
             </div>
             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-              <div className={`h-full ${activeWorkflowsCount > 0 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 w-2/3 animate-pulse' : 'bg-slate-300 w-full'}`}></div>
+              <div
+                className={`h-full ${activeWorkflowsCount > 0 ? "bg-gradient-to-r from-blue-600 to-indigo-600 w-2/3 animate-pulse" : "bg-slate-300 w-full"}`}
+              ></div>
             </div>
             <span className="text-[10px] text-slate-500 block">
-              {activeWorkflowsCount > 0 ? 'Agent Step: Orchestrating evaluation pipeline' : 'System standby • 6 recruitment agents ready'}
+              {activeWorkflowsCount > 0
+                ? "Agent Step: Orchestrating evaluation pipeline"
+                : "System standby • 6 recruitment agents ready"}
             </span>
           </div>
 
@@ -216,5 +252,5 @@ export function RecruiterDashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }

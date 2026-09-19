@@ -4,54 +4,54 @@
 
 All decisions below were resolved during the architecture interview.
 
-| Decision | Choice |
-|---|---|
-| .NET project structure | Single project with folder-based separation |
-| .NET version | .NET 8 (LTS) |
-| Secrets management | `appsettings.Development.json` (local) + env vars (prod) |
-| Company model | Multi-tenant, shared database with CompanyId column filtering |
-| Recruiter-company | One recruiter → one company |
-| Candidate scope | Global (platform-wide, can apply to any company) |
-| Interviewer scope | Company-scoped, assigned by recruiter/admin |
-| Resume handling | File upload to GCP Cloud Storage, URL in DB |
-| File storage | GCP Cloud Storage |
-| LLM provider | Google Vertex AI (Gemini models) |
-| ASP.NET ↔ FastAPI | Synchronous trigger + polling for status |
-| AI workflow trigger | Automatic on application submission |
-| Service-to-service auth | API key in `X-Api-Key` header |
-| AI state persistence | PostgreSQL (same Supabase DB) |
-| Calendar integration | Google Calendar API |
-| Email service | Resend |
-| Notifications | In-app (DB) + real-time via SignalR |
-| User registration | Open role selection + admin approval for Recruiter/Interviewer |
-| Admin bootstrap | Database seed script |
-| Interview structure | Single round per candidate per job |
-| Interview feedback | Structured form (1-5 ratings + notes + recommendation) |
-| Interviewer assignment | Recruiter selects manually |
-| Availability | Stored in PostgreSQL, cross-checked with Google Calendar |
-| Final hiring decision | Recruiter manual decision after reviewing feedback |
-| Frontend routing | React Router v7 with layout-based nested routes |
-| UI theme | Dark default + light toggle, minimalistic design |
-| State management | TanStack Query (server) + Redux Toolkit (UI state only) |
-| Charts | shadcn/ui Charts (Recharts wrapper) |
-| API docs | Swagger/OpenAPI + Postman collection |
-| Primary keys | UUIDs (Guid) |
-| Delete strategy | Soft delete (IsDeleted + DeletedAt) |
-| Company creation | Recruiter + Admin can create companies |
-| Departments | Optional department FK on jobs |
-| Error handling | Result pattern + global exception middleware |
-| Job lifecycle | DRAFT → OPEN → PAUSED → CLOSED |
-| Resume model | One per candidate, snapshotted at application time |
-| Backend testing | xUnit + Moq + FluentAssertions |
-| Frontend testing | Vitest + React Testing Library |
-| AI testing | pytest + httpx + pytest-asyncio |
-| E2E testing | Playwright |
-| Logging | Serilog (structured, JSON) |
-| Rate limiting | AspNetCoreRateLimit |
-| Request validation | FluentValidation |
-| Object mapping | AutoMapper |
-| Pagination | Offset-based on all list endpoints |
-| Public pages | Landing page with public job browse |
+| Decision                | Choice                                                         |
+| ----------------------- | -------------------------------------------------------------- |
+| .NET project structure  | Single project with folder-based separation                    |
+| .NET version            | .NET 8 (LTS)                                                   |
+| Secrets management      | `appsettings.Development.json` (local) + env vars (prod)       |
+| Company model           | Multi-tenant, shared database with CompanyId column filtering  |
+| Recruiter-company       | One recruiter → one company                                    |
+| Candidate scope         | Global (platform-wide, can apply to any company)               |
+| Interviewer scope       | Company-scoped, assigned by recruiter/admin                    |
+| Resume handling         | File upload to GCP Cloud Storage, URL in DB                    |
+| File storage            | GCP Cloud Storage                                              |
+| LLM provider            | Google Vertex AI (Gemini models)                               |
+| ASP.NET ↔ FastAPI      | Synchronous trigger + polling for status                       |
+| AI workflow trigger     | Automatic on application submission                            |
+| Service-to-service auth | API key in `X-Api-Key` header                                  |
+| AI state persistence    | PostgreSQL (same Supabase DB)                                  |
+| Calendar integration    | Google Calendar API                                            |
+| Email service           | Resend                                                         |
+| Notifications           | In-app (DB) + real-time via SignalR                            |
+| User registration       | Open role selection + admin approval for Recruiter/Interviewer |
+| Admin bootstrap         | Database seed script                                           |
+| Interview structure     | Single round per candidate per job                             |
+| Interview feedback      | Structured form (1-5 ratings + notes + recommendation)         |
+| Interviewer assignment  | Recruiter selects manually                                     |
+| Availability            | Stored in PostgreSQL, cross-checked with Google Calendar       |
+| Final hiring decision   | Recruiter manual decision after reviewing feedback             |
+| Frontend routing        | React Router v7 with layout-based nested routes                |
+| UI theme                | Dark default + light toggle, minimalistic design               |
+| State management        | TanStack Query (server) + Redux Toolkit (UI state only)        |
+| Charts                  | shadcn/ui Charts (Recharts wrapper)                            |
+| API docs                | Swagger/OpenAPI + Postman collection                           |
+| Primary keys            | UUIDs (Guid)                                                   |
+| Delete strategy         | Soft delete (IsDeleted + DeletedAt)                            |
+| Company creation        | Recruiter + Admin can create companies                         |
+| Departments             | Optional department FK on jobs                                 |
+| Error handling          | Result pattern + global exception middleware                   |
+| Job lifecycle           | DRAFT → OPEN → PAUSED → CLOSED                                 |
+| Resume model            | One per candidate, snapshotted at application time             |
+| Backend testing         | xUnit + Moq + FluentAssertions                                 |
+| Frontend testing        | Vitest + React Testing Library                                 |
+| AI testing              | pytest + httpx + pytest-asyncio                                |
+| E2E testing             | Playwright                                                     |
+| Logging                 | Serilog (structured, JSON)                                     |
+| Rate limiting           | AspNetCoreRateLimit                                            |
+| Request validation      | FluentValidation                                               |
+| Object mapping          | AutoMapper                                                     |
+| Pagination              | Offset-based on all list endpoints                             |
+| Public pages            | Landing page with public job browse                            |
 
 ---
 
@@ -347,6 +347,7 @@ erDiagram
 ## Onboarding Sequence Diagrams
 
 ### Recruiter Flow
+
 ```mermaid
 sequenceDiagram
     participant R as Recruiter
@@ -365,6 +366,7 @@ sequenceDiagram
 ```
 
 ### Interviewer Flow
+
 ```mermaid
 sequenceDiagram
     participant R as Recruiter
@@ -388,147 +390,164 @@ sequenceDiagram
 ## API Endpoint Plan
 
 ### Auth & Webhooks
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/webhooks/clerk` | Clerk signature | Handle Clerk events (`user.*`, `organization.*`, `organizationMembership.*`) |
+
+| Method | Endpoint              | Auth            | Description                                                                  |
+| ------ | --------------------- | --------------- | ---------------------------------------------------------------------------- |
+| POST   | `/api/webhooks/clerk` | Clerk signature | Handle Clerk events (`user.*`, `organization.*`, `organizationMembership.*`) |
 
 ### Users
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/users/me` | Any authenticated | Get current user profile |
-| PUT | `/api/users/me` | Any authenticated | Update current user profile |
-| GET | `/api/users` | Admin | List all users (paginated) |
-| GET | `/api/users/{id}` | Admin | Get user details |
-| PUT | `/api/users/{id}/role` | Admin | Update user role |
-| PUT | `/api/users/{id}/deactivate` | Admin | Deactivate user |
-| PUT | `/api/admin/users/{id}/ban` | Admin | Ban/suspend abusive user |
+
+| Method | Endpoint                     | Auth              | Description                 |
+| ------ | ---------------------------- | ----------------- | --------------------------- |
+| GET    | `/api/users/me`              | Any authenticated | Get current user profile    |
+| PUT    | `/api/users/me`              | Any authenticated | Update current user profile |
+| GET    | `/api/users`                 | Admin             | List all users (paginated)  |
+| GET    | `/api/users/{id}`            | Admin             | Get user details            |
+| PUT    | `/api/users/{id}/role`       | Admin             | Update user role            |
+| PUT    | `/api/users/{id}/deactivate` | Admin             | Deactivate user             |
+| PUT    | `/api/admin/users/{id}/ban`  | Admin             | Ban/suspend abusive user    |
 
 ### Organizations & Team (Recruiter & Admin)
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/admin/organizations` | Admin | List all organizations across platform |
-| GET | `/api/recruiter/team` | Recruiter | Get organization team members with HireWise stats |
+
+| Method | Endpoint                   | Auth      | Description                                       |
+| ------ | -------------------------- | --------- | ------------------------------------------------- |
+| GET    | `/api/admin/organizations` | Admin     | List all organizations across platform            |
+| GET    | `/api/recruiter/team`      | Recruiter | Get organization team members with HireWise stats |
 
 ### Companies
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/companies` | Admin, Recruiter | List companies |
-| POST | `/api/companies` | Admin, Recruiter | Create company |
-| GET | `/api/companies/{id}` | Admin, Recruiter | Get company details |
-| PUT | `/api/companies/{id}` | Admin, Recruiter (own) | Update company |
-| DELETE | `/api/companies/{id}` | Admin | Soft delete company |
+
+| Method | Endpoint              | Auth                   | Description         |
+| ------ | --------------------- | ---------------------- | ------------------- |
+| GET    | `/api/companies`      | Admin, Recruiter       | List companies      |
+| POST   | `/api/companies`      | Admin, Recruiter       | Create company      |
+| GET    | `/api/companies/{id}` | Admin, Recruiter       | Get company details |
+| PUT    | `/api/companies/{id}` | Admin, Recruiter (own) | Update company      |
+| DELETE | `/api/companies/{id}` | Admin                  | Soft delete company |
 
 ### Departments
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/companies/{companyId}/departments` | Admin, Recruiter | List departments |
-| POST | `/api/companies/{companyId}/departments` | Admin, Recruiter (own) | Create department |
-| PUT | `/api/departments/{id}` | Admin, Recruiter (own) | Update department |
-| DELETE | `/api/departments/{id}` | Admin, Recruiter (own) | Soft delete department |
+
+| Method | Endpoint                                 | Auth                   | Description            |
+| ------ | ---------------------------------------- | ---------------------- | ---------------------- |
+| GET    | `/api/companies/{companyId}/departments` | Admin, Recruiter       | List departments       |
+| POST   | `/api/companies/{companyId}/departments` | Admin, Recruiter (own) | Create department      |
+| PUT    | `/api/departments/{id}`                  | Admin, Recruiter (own) | Update department      |
+| DELETE | `/api/departments/{id}`                  | Admin, Recruiter (own) | Soft delete department |
 
 ### Jobs
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/jobs` | Public (OPEN only) / Recruiter (all own) | List jobs (paginated, filterable) |
-| POST | `/api/jobs` | Recruiter | Create job |
-| GET | `/api/jobs/{id}` | Public (if OPEN) / Recruiter | Get job details |
-| PUT | `/api/jobs/{id}` | Recruiter (own) | Update job |
-| PUT | `/api/jobs/{id}/status` | Recruiter (own) | Change job status (DRAFT→OPEN→PAUSED→CLOSED) |
-| DELETE | `/api/jobs/{id}` | Recruiter (own), Admin | Soft delete job |
+
+| Method | Endpoint                | Auth                                     | Description                                  |
+| ------ | ----------------------- | ---------------------------------------- | -------------------------------------------- |
+| GET    | `/api/jobs`             | Public (OPEN only) / Recruiter (all own) | List jobs (paginated, filterable)            |
+| POST   | `/api/jobs`             | Recruiter                                | Create job                                   |
+| GET    | `/api/jobs/{id}`        | Public (if OPEN) / Recruiter             | Get job details                              |
+| PUT    | `/api/jobs/{id}`        | Recruiter (own)                          | Update job                                   |
+| PUT    | `/api/jobs/{id}/status` | Recruiter (own)                          | Change job status (DRAFT→OPEN→PAUSED→CLOSED) |
+| DELETE | `/api/jobs/{id}`        | Recruiter (own), Admin                   | Soft delete job                              |
 
 ### Resumes
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/resumes/upload` | Candidate | Upload resume (GCS) |
-| GET | `/api/resumes/me` | Candidate | Get current resume info |
-| GET | `/api/resumes/{id}/download` | Candidate (own), Recruiter, Interviewer | Download resume |
-| DELETE | `/api/resumes/{id}` | Candidate (own) | Delete resume |
+
+| Method | Endpoint                     | Auth                                    | Description             |
+| ------ | ---------------------------- | --------------------------------------- | ----------------------- |
+| POST   | `/api/resumes/upload`        | Candidate                               | Upload resume (GCS)     |
+| GET    | `/api/resumes/me`            | Candidate                               | Get current resume info |
+| GET    | `/api/resumes/{id}/download` | Candidate (own), Recruiter, Interviewer | Download resume         |
+| DELETE | `/api/resumes/{id}`          | Candidate (own)                         | Delete resume           |
 
 ### Applications
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/jobs/{jobId}/applications` | Candidate | Apply to job (triggers AI workflow) |
-| GET | `/api/applications/me` | Candidate | List my applications |
-| GET | `/api/applications/{id}` | Candidate (own), Recruiter, Admin | Get application details |
-| GET | `/api/jobs/{jobId}/applications` | Recruiter (own company) | List applications for a job |
-| PUT | `/api/applications/{id}/status` | Recruiter | Update application status |
-| PUT | `/api/applications/{id}/approve-interview` | Recruiter | Approve for interview (select interviewer) |
-| PUT | `/api/applications/{id}/select` | Recruiter | Mark as SELECTED |
-| PUT | `/api/applications/{id}/reject` | Recruiter | Mark as REJECTED |
+
+| Method | Endpoint                                   | Auth                              | Description                                |
+| ------ | ------------------------------------------ | --------------------------------- | ------------------------------------------ |
+| POST   | `/api/jobs/{jobId}/applications`           | Candidate                         | Apply to job (triggers AI workflow)        |
+| GET    | `/api/applications/me`                     | Candidate                         | List my applications                       |
+| GET    | `/api/applications/{id}`                   | Candidate (own), Recruiter, Admin | Get application details                    |
+| GET    | `/api/jobs/{jobId}/applications`           | Recruiter (own company)           | List applications for a job                |
+| PUT    | `/api/applications/{id}/status`            | Recruiter                         | Update application status                  |
+| PUT    | `/api/applications/{id}/approve-interview` | Recruiter                         | Approve for interview (select interviewer) |
+| PUT    | `/api/applications/{id}/select`            | Recruiter                         | Mark as SELECTED                           |
+| PUT    | `/api/applications/{id}/reject`            | Recruiter                         | Mark as REJECTED                           |
 
 ### AI Workflows
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/ai-workflows/{id}` | Recruiter, Admin | Get workflow status & details |
-| GET | `/api/ai-workflows/{id}/steps` | Recruiter, Admin | Get workflow steps |
-| GET | `/api/applications/{id}/ai-evaluation` | Recruiter | Get AI evaluation result for application |
-| GET | `/api/jobs/{jobId}/candidate-rankings` | Recruiter | Get AI-ranked candidates for a job |
-| PUT | `/api/ai-workflows/{id}/steps/{stepId}/approve` | Recruiter | Approve an AI workflow step |
-| PUT | `/api/ai-workflows/{id}/steps/{stepId}/reject` | Recruiter | Reject an AI workflow step |
-| POST | `/api/ai-workflows/{id}/retry` | Recruiter, Admin | Retry failed workflow |
+
+| Method | Endpoint                                        | Auth             | Description                              |
+| ------ | ----------------------------------------------- | ---------------- | ---------------------------------------- |
+| GET    | `/api/ai-workflows/{id}`                        | Recruiter, Admin | Get workflow status & details            |
+| GET    | `/api/ai-workflows/{id}/steps`                  | Recruiter, Admin | Get workflow steps                       |
+| GET    | `/api/applications/{id}/ai-evaluation`          | Recruiter        | Get AI evaluation result for application |
+| GET    | `/api/jobs/{jobId}/candidate-rankings`          | Recruiter        | Get AI-ranked candidates for a job       |
+| PUT    | `/api/ai-workflows/{id}/steps/{stepId}/approve` | Recruiter        | Approve an AI workflow step              |
+| PUT    | `/api/ai-workflows/{id}/steps/{stepId}/reject`  | Recruiter        | Reject an AI workflow step               |
+| POST   | `/api/ai-workflows/{id}/retry`                  | Recruiter, Admin | Retry failed workflow                    |
 
 ### Interviews
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/interviews` | Recruiter | Create interview (after scheduling approval) |
-| GET | `/api/interviews` | Recruiter (company), Interviewer (assigned) | List interviews |
-| GET | `/api/interviews/{id}` | Recruiter, Interviewer (assigned), Candidate (own) | Get interview details |
-| PUT | `/api/interviews/{id}` | Recruiter | Update interview |
-| PUT | `/api/interviews/{id}/cancel` | Recruiter | Cancel interview |
-| PUT | `/api/interviews/{id}/complete` | Interviewer | Mark interview as completed |
-| GET | `/api/interviews/me` | Candidate, Interviewer | My interviews |
+
+| Method | Endpoint                        | Auth                                               | Description                                  |
+| ------ | ------------------------------- | -------------------------------------------------- | -------------------------------------------- |
+| POST   | `/api/interviews`               | Recruiter                                          | Create interview (after scheduling approval) |
+| GET    | `/api/interviews`               | Recruiter (company), Interviewer (assigned)        | List interviews                              |
+| GET    | `/api/interviews/{id}`          | Recruiter, Interviewer (assigned), Candidate (own) | Get interview details                        |
+| PUT    | `/api/interviews/{id}`          | Recruiter                                          | Update interview                             |
+| PUT    | `/api/interviews/{id}/cancel`   | Recruiter                                          | Cancel interview                             |
+| PUT    | `/api/interviews/{id}/complete` | Interviewer                                        | Mark interview as completed                  |
+| GET    | `/api/interviews/me`            | Candidate, Interviewer                             | My interviews                                |
 
 ### Interview Questions
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/interviews/{id}/questions` | Recruiter, Interviewer (assigned) | Get AI-generated questions |
+
+| Method | Endpoint                         | Auth                              | Description                |
+| ------ | -------------------------------- | --------------------------------- | -------------------------- |
+| GET    | `/api/interviews/{id}/questions` | Recruiter, Interviewer (assigned) | Get AI-generated questions |
 
 ### Interview Feedback
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/interviews/{id}/feedback` | Interviewer | Submit feedback |
-| GET | `/api/interviews/{id}/feedback` | Recruiter, Interviewer (own) | Get feedback |
-| PUT | `/api/feedback/{id}` | Interviewer (own) | Update feedback |
+
+| Method | Endpoint                        | Auth                         | Description     |
+| ------ | ------------------------------- | ---------------------------- | --------------- |
+| POST   | `/api/interviews/{id}/feedback` | Interviewer                  | Submit feedback |
+| GET    | `/api/interviews/{id}/feedback` | Recruiter, Interviewer (own) | Get feedback    |
+| PUT    | `/api/feedback/{id}`            | Interviewer (own)            | Update feedback |
 
 ### Availability
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/availability/me` | Candidate, Interviewer | Get my availability slots |
-| POST | `/api/availability` | Candidate, Interviewer | Create availability slot |
-| PUT | `/api/availability/{id}` | Candidate (own), Interviewer (own) | Update availability |
-| DELETE | `/api/availability/{id}` | Candidate (own), Interviewer (own) | Delete availability slot |
-| GET | `/api/availability/interviewer/{id}` | Recruiter | Get interviewer's availability |
+
+| Method | Endpoint                             | Auth                               | Description                    |
+| ------ | ------------------------------------ | ---------------------------------- | ------------------------------ |
+| GET    | `/api/availability/me`               | Candidate, Interviewer             | Get my availability slots      |
+| POST   | `/api/availability`                  | Candidate, Interviewer             | Create availability slot       |
+| PUT    | `/api/availability/{id}`             | Candidate (own), Interviewer (own) | Update availability            |
+| DELETE | `/api/availability/{id}`             | Candidate (own), Interviewer (own) | Delete availability slot       |
+| GET    | `/api/availability/interviewer/{id}` | Recruiter                          | Get interviewer's availability |
 
 ### Scheduling (AI-assisted)
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/scheduling/recommend` | Recruiter | Request AI scheduling recommendations |
-| GET | `/api/scheduling/{id}/slots` | Recruiter | Get recommended time slots |
-| POST | `/api/scheduling/{id}/confirm` | Recruiter | Confirm a selected slot (creates interview) |
+
+| Method | Endpoint                       | Auth      | Description                                 |
+| ------ | ------------------------------ | --------- | ------------------------------------------- |
+| POST   | `/api/scheduling/recommend`    | Recruiter | Request AI scheduling recommendations       |
+| GET    | `/api/scheduling/{id}/slots`   | Recruiter | Get recommended time slots                  |
+| POST   | `/api/scheduling/{id}/confirm` | Recruiter | Confirm a selected slot (creates interview) |
 
 ### Notifications
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/notifications` | Any authenticated | Get my notifications (paginated) |
-| GET | `/api/notifications/unread-count` | Any authenticated | Get unread count |
-| PUT | `/api/notifications/{id}/read` | Any authenticated | Mark as read |
-| PUT | `/api/notifications/read-all` | Any authenticated | Mark all as read |
+
+| Method | Endpoint                          | Auth              | Description                      |
+| ------ | --------------------------------- | ----------------- | -------------------------------- |
+| GET    | `/api/notifications`              | Any authenticated | Get my notifications (paginated) |
+| GET    | `/api/notifications/unread-count` | Any authenticated | Get unread count                 |
+| PUT    | `/api/notifications/{id}/read`    | Any authenticated | Mark as read                     |
+| PUT    | `/api/notifications/read-all`     | Any authenticated | Mark all as read                 |
 
 ### Analytics & Dashboard
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/analytics/recruiter/dashboard` | Recruiter | Recruiter dashboard stats |
-| GET | `/api/analytics/recruiter/pipeline` | Recruiter | Hiring pipeline data |
-| GET | `/api/analytics/admin/dashboard` | Admin | Platform-wide stats |
-| GET | `/api/analytics/admin/system` | Admin | System health metrics |
-| GET | `/api/analytics/candidate/dashboard` | Candidate | Candidate dashboard stats |
-| GET | `/api/analytics/interviewer/dashboard` | Interviewer | Interviewer dashboard stats |
+
+| Method | Endpoint                               | Auth        | Description                 |
+| ------ | -------------------------------------- | ----------- | --------------------------- |
+| GET    | `/api/analytics/recruiter/dashboard`   | Recruiter   | Recruiter dashboard stats   |
+| GET    | `/api/analytics/recruiter/pipeline`    | Recruiter   | Hiring pipeline data        |
+| GET    | `/api/analytics/admin/dashboard`       | Admin       | Platform-wide stats         |
+| GET    | `/api/analytics/admin/system`          | Admin       | System health metrics       |
+| GET    | `/api/analytics/candidate/dashboard`   | Candidate   | Candidate dashboard stats   |
+| GET    | `/api/analytics/interviewer/dashboard` | Interviewer | Interviewer dashboard stats |
 
 ### Audit Logs
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/audit-logs` | Admin | List audit logs (paginated, filterable) |
-| GET | `/api/audit-logs/{id}` | Admin | Get audit log details |
+
+| Method | Endpoint               | Auth  | Description                             |
+| ------ | ---------------------- | ----- | --------------------------------------- |
+| GET    | `/api/audit-logs`      | Admin | List audit logs (paginated, filterable) |
+| GET    | `/api/audit-logs/{id}` | Admin | Get audit log details                   |
 
 ---
 
@@ -603,14 +622,14 @@ sequenceDiagram
 
 ### Agents
 
-| # | Agent | Input | Output | Tools |
-|---|-------|-------|--------|-------|
-| 1 | Job Description Analysis | Job description text | `JobAnalysis(skills, qualifications, experience_requirements, technical_requirements, soft_skills)` | Text extraction, keyword extraction |
-| 2 | Resume Analysis | Resume file URL | `ResumeAnalysis(skills, education, experience, projects, certifications, summary)` | PDF/DOCX parser, text extraction |
-| 3 | Candidate Evaluation & Ranking | `JobAnalysis` + `ResumeAnalysis` | `CandidateEvaluation(overall_score, skill_match, experience_match, education_match, strengths, weaknesses, recommendation, reasoning)` | Scoring calculator |
-| 4 | Validation | Any agent output | `ValidationResult(is_valid, errors, warnings)` | Schema validator, business rule checker |
-| 5 | Interview Question Generator | `JobAnalysis` + `ResumeAnalysis` + `CandidateEvaluation` | `InterviewQuestions(technical[], behavioral[], problem_solving[], project_based[])` | Question template library |
-| 6 | Interview Scheduling | Interviewer + candidate availability, constraints | `SchedulingRecommendation(recommended_slots[], conflicts[], reasoning)` | Availability query, calendar check |
+| #   | Agent                          | Input                                                    | Output                                                                                                                                 | Tools                                   |
+| --- | ------------------------------ | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| 1   | Job Description Analysis       | Job description text                                     | `JobAnalysis(skills, qualifications, experience_requirements, technical_requirements, soft_skills)`                                    | Text extraction, keyword extraction     |
+| 2   | Resume Analysis                | Resume file URL                                          | `ResumeAnalysis(skills, education, experience, projects, certifications, summary)`                                                     | PDF/DOCX parser, text extraction        |
+| 3   | Candidate Evaluation & Ranking | `JobAnalysis` + `ResumeAnalysis`                         | `CandidateEvaluation(overall_score, skill_match, experience_match, education_match, strengths, weaknesses, recommendation, reasoning)` | Scoring calculator                      |
+| 4   | Validation                     | Any agent output                                         | `ValidationResult(is_valid, errors, warnings)`                                                                                         | Schema validator, business rule checker |
+| 5   | Interview Question Generator   | `JobAnalysis` + `ResumeAnalysis` + `CandidateEvaluation` | `InterviewQuestions(technical[], behavioral[], problem_solving[], project_based[])`                                                    | Question template library               |
+| 6   | Interview Scheduling           | Interviewer + candidate availability, constraints        | `SchedulingRecommendation(recommended_slots[], conflicts[], reasoning)`                                                                | Availability query, calendar check      |
 
 ### LangGraph Workflow
 
@@ -636,21 +655,22 @@ graph TD
 
 ### FastAPI Endpoints (Internal)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/workflows/evaluate` | Start evaluation workflow (job analysis → resume → evaluation → validation) |
-| GET | `/api/v1/workflows/{id}` | Get workflow status |
-| GET | `/api/v1/workflows/{id}/steps` | Get workflow steps |
-| POST | `/api/v1/workflows/{id}/resume` | Resume workflow after approval |
-| POST | `/api/v1/workflows/generate-questions` | Generate interview questions |
-| POST | `/api/v1/workflows/recommend-schedule` | Get scheduling recommendations |
-| GET | `/api/v1/health` | Health check |
+| Method | Endpoint                               | Description                                                                 |
+| ------ | -------------------------------------- | --------------------------------------------------------------------------- |
+| POST   | `/api/v1/workflows/evaluate`           | Start evaluation workflow (job analysis → resume → evaluation → validation) |
+| GET    | `/api/v1/workflows/{id}`               | Get workflow status                                                         |
+| GET    | `/api/v1/workflows/{id}/steps`         | Get workflow steps                                                          |
+| POST   | `/api/v1/workflows/{id}/resume`        | Resume workflow after approval                                              |
+| POST   | `/api/v1/workflows/generate-questions` | Generate interview questions                                                |
+| POST   | `/api/v1/workflows/recommend-schedule` | Get scheduling recommendations                                              |
+| GET    | `/api/v1/health`                       | Health check                                                                |
 
 ---
 
 ## Testing Strategy
 
 ### Backend (xUnit + Moq + FluentAssertions)
+
 - **Unit tests**: Services, validators, middleware, mapping profiles
 - **Integration tests**: EF Core with in-memory/test database, full request pipeline
 - **Authorization tests**: Role-based access control on all endpoints
@@ -658,6 +678,7 @@ graph TD
 - **Controller tests**: HTTP status codes, response shapes
 
 ### Frontend (Vitest + React Testing Library)
+
 - **Component tests**: All reusable components render correctly
 - **Form tests**: Validation, submission, error display
 - **Route guard tests**: ProtectedRoute redirects unauthorized users
@@ -665,6 +686,7 @@ graph TD
 - **Dashboard tests**: Charts render with mock data
 
 ### AI Service (pytest + httpx)
+
 - **Golden case tests**: Known inputs → expected structured outputs
 - **Schema validation tests**: Agent outputs conform to Pydantic models
 - **Business rule tests**: Validation agent catches invalid data
@@ -674,6 +696,7 @@ graph TD
 - **Approval enforcement**: Workflow pauses at approval gates
 
 ### E2E (Playwright)
+
 - Full candidate application flow
 - Recruiter AI evaluation review & approval
 - Interview scheduling & creation
@@ -734,6 +757,7 @@ graph TB
 ### Phase 1+2: Scaffolding + Authentication (Current)
 
 **Backend (`apps/api/HireWise.Api/`)**:
+
 - Reorganize into folder structure: `Controllers/`, `Services/`, `Models/`, `Data/`, `Middleware/`, `DTOs/`, `Validators/`, `Mappings/`, `Hubs/`
 - Install NuGet packages: EF Core (Npgsql), Clerk JWT validation, Serilog, FluentValidation, AutoMapper, SignalR, AspNetCoreRateLimit, Swashbuckle
 - Configure `Program.cs`: auth, CORS, rate limiting, Serilog, Swagger, SignalR
@@ -745,6 +769,7 @@ graph TB
 - Create `appsettings.Development.json` template
 
 **Frontend (`apps/web/`)**:
+
 - Install dependencies: TailwindCSS, shadcn/ui, React Router v7, Axios, TanStack Query, Redux Toolkit, React Hook Form, Zod, @clerk/clerk-react
 - Configure TailwindCSS + shadcn/ui (dark theme default)
 - Set up Clerk provider + sign-in/sign-up pages
@@ -756,6 +781,7 @@ graph TB
 - Create basic routing structure
 
 **AI Service (`apps/ai-service/`)**:
+
 - Set up FastAPI project structure
 - Install dependencies: fastapi, uvicorn, langchain, langgraph, pydantic, psycopg, google-cloud-aiplatform
 - Implement health check endpoint
@@ -763,6 +789,7 @@ graph TB
 - Configure structured logging
 
 **Acceptance Criteria**:
+
 - [ ] User can sign up with role selection via Clerk
 - [ ] JWT is validated on protected API endpoints
 - [ ] Clerk webhook creates User records in PostgreSQL
@@ -784,6 +811,7 @@ graph TB
 - Configure indexes and constraints
 
 **Acceptance Criteria**:
+
 - [ ] All tables created in Supabase PostgreSQL
 - [ ] Migrations run successfully
 - [ ] Soft delete query filters work
@@ -802,6 +830,7 @@ graph TB
 - Landing page with job search
 
 **Acceptance Criteria**:
+
 - [ ] Recruiter can create company, departments, and jobs
 - [ ] Jobs follow status lifecycle rules
 - [ ] Public job listing works without auth
@@ -819,6 +848,7 @@ graph TB
 - Recruiter application list view
 
 **Acceptance Criteria**:
+
 - [ ] Candidate can upload resume to GCS
 - [ ] Candidate can apply to OPEN jobs
 - [ ] Duplicate applications rejected
@@ -836,6 +866,7 @@ graph TB
 - Interview history
 
 **Acceptance Criteria**:
+
 - [ ] Users can set availability slots
 - [ ] Recruiter can create interviews
 - [ ] Interviewer can submit structured feedback
@@ -848,6 +879,7 @@ graph TB
 Refactor the authentication, onboarding, and multi-tenancy models to use self-service Clerk Organizations.
 
 **Tasks**:
+
 1. **Enum & Entity Updates**:
    - Replace `UserStatus.PENDING_APPROVAL` with `UserStatus.ONBOARDING` in `DomainEnums.cs`
    - Add `ClerkOrganizationId` (UK) and `Slug` to `Company` entity in `Entities.cs`
@@ -873,6 +905,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
    - Update all references to `PENDING_APPROVAL` across web app
 
 **Acceptance Criteria**:
+
 - [ ] Recruiter can sign up and create a Clerk Organization seamlessly
 - [ ] Creating an organization automatically creates the `Company` in PostgreSQL
 - [ ] Recruiters can invite interviewers directly via Clerk email invitation
@@ -891,6 +924,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - Connect to Vertex AI (Gemini)
 
 **Acceptance Criteria**:
+
 - [ ] LangGraph workflow compiles and runs
 - [ ] Workflow state persisted to PostgreSQL
 - [ ] Vertex AI connectivity verified
@@ -908,6 +942,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - Interview Scheduling Agent
 
 **Acceptance Criteria**:
+
 - [ ] Each agent produces valid Pydantic output
 - [ ] Golden case tests pass
 - [ ] Schema validation tests pass
@@ -924,6 +959,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - End-to-end workflow test
 
 **Acceptance Criteria**:
+
 - [ ] Full workflow runs: application → evaluation → approval → questions → scheduling → approval → interview creation
 - [ ] Workflow pauses at approval gates
 - [ ] Failed steps retry correctly
@@ -940,6 +976,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - Schedule approval UI
 
 **Acceptance Criteria**:
+
 - [ ] Recruiter can review AI evaluations
 - [ ] Recruiter can approve/reject recommendations
 - [ ] Workflow monitoring shows real-time step status
@@ -954,6 +991,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - SignalR: real-time notifications hub
 
 **Acceptance Criteria**:
+
 - [ ] Calendar events created with meeting links
 - [ ] Emails sent at key lifecycle events
 - [ ] Real-time notifications appear in browser
@@ -972,6 +1010,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - Prompt/input validation
 
 **Acceptance Criteria**:
+
 - [ ] All write operations logged to audit table
 - [ ] Admin can view audit logs
 - [ ] Rate limiting rejects excessive requests
@@ -988,7 +1027,8 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - Performance baseline (API latency, DB response, AI workflow time)
 
 **Acceptance Criteria**:
-- [ ] >80% code coverage on business logic
+
+- [ ] > 80% code coverage on business logic
 - [ ] E2E tests pass for main flows
 - [ ] API response times < 500ms (non-AI endpoints)
 - [ ] AI workflow completes within timeout
@@ -1003,6 +1043,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - GitHub Actions workflows (lint, test, build, deploy)
 
 **Acceptance Criteria**:
+
 - [ ] `docker-compose up` starts all services locally
 - [ ] Terraform provisions GCP resources
 - [ ] CI pipeline passes on push
@@ -1023,6 +1064,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 - ADRs for key decisions
 
 **Acceptance Criteria**:
+
 - [ ] New developer can set up project from README
 - [ ] All architecture decisions documented
 - [ ] Postman collection covers all endpoints
@@ -1032,15 +1074,15 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 
 ## Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Vertex AI rate limits during development | Blocked AI development | Use mocked responses for unit tests; cache API responses |
-| Clerk webhook reliability in dev | Users not synced | Implement manual sync endpoint for dev; ngrok for webhook testing |
-| EF Core + PostgreSQL UUID performance | Slow queries on large datasets | Use indexed columns; monitor query plans |
-| Multi-tenant data leaks | Security vulnerability | EF Core global query filters + integration tests verifying tenant isolation |
-| AI workflow timeout | Poor UX | Configurable timeouts per step; frontend shows progress indicator |
-| Google Calendar API quotas | Failed interview creation | Queue calendar creation; retry with backoff; fallback to email-only |
-| Resume parsing accuracy | Poor AI evaluations | Support PDF/DOCX; validate parsed output; allow manual correction |
+| Risk                                     | Impact                         | Mitigation                                                                  |
+| ---------------------------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| Vertex AI rate limits during development | Blocked AI development         | Use mocked responses for unit tests; cache API responses                    |
+| Clerk webhook reliability in dev         | Users not synced               | Implement manual sync endpoint for dev; ngrok for webhook testing           |
+| EF Core + PostgreSQL UUID performance    | Slow queries on large datasets | Use indexed columns; monitor query plans                                    |
+| Multi-tenant data leaks                  | Security vulnerability         | EF Core global query filters + integration tests verifying tenant isolation |
+| AI workflow timeout                      | Poor UX                        | Configurable timeouts per step; frontend shows progress indicator           |
+| Google Calendar API quotas               | Failed interview creation      | Queue calendar creation; retry with backoff; fallback to email-only         |
+| Resume parsing accuracy                  | Poor AI evaluations            | Support PDF/DOCX; validate parsed output; allow manual correction           |
 
 > [!IMPORTANT]
 > This plan covers the **complete** HireWise platform. Implementation will proceed phase by phase, with each phase verified before moving to the next. Shall I proceed with Phase 1+2 (Scaffolding + Authentication)?

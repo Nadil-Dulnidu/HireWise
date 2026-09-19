@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ShieldAlert,
   Search,
@@ -13,68 +13,75 @@ import {
   Layers,
   Database,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react'
-import { auditLogsApi, type AuditLogDto } from '@/lib/api/audit-logs-api'
+  ChevronRight,
+} from "lucide-react";
+import { auditLogsApi, type AuditLogDto } from "@/lib/api/audit-logs-api";
 
 export function AdminAuditLogsPage() {
-  const [search, setSearch] = useState('')
-  const [selectedAction, setSelectedAction] = useState('')
-  const [selectedEntityType, setSelectedEntityType] = useState('')
-  const [page, setPage] = useState(1)
-  const pageSize = 15
+  const [search, setSearch] = useState("");
+  const [selectedAction, setSelectedAction] = useState("");
+  const [selectedEntityType, setSelectedEntityType] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
-  const [inspectLog, setInspectLog] = useState<AuditLogDto | null>(null)
-  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [inspectLog, setInspectLog] = useState<AuditLogDto | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Query metadata for filter dropdowns
   const { data: metadata } = useQuery({
-    queryKey: ['audit-logs-metadata'],
-    queryFn: () => auditLogsApi.getMetadata()
-  })
+    queryKey: ["audit-logs-metadata"],
+    queryFn: () => auditLogsApi.getMetadata(),
+  });
 
   // Query audit logs with pagination and filters
   const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['audit-logs', page, pageSize, selectedAction, selectedEntityType, search],
+    queryKey: [
+      "audit-logs",
+      page,
+      pageSize,
+      selectedAction,
+      selectedEntityType,
+      search,
+    ],
     queryFn: () =>
       auditLogsApi.getAuditLogs({
         page,
         pageSize,
         action: selectedAction || undefined,
         entityType: selectedEntityType || undefined,
-        search: search || undefined
-      })
-  })
+        search: search || undefined,
+      }),
+  });
 
   const copyToClipboard = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(fieldName)
-    setTimeout(() => setCopiedField(null), 2000)
-  }
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const getActionBadge = (action: string) => {
     switch (action.toUpperCase()) {
-      case 'CREATE':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      case 'UPDATE':
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case 'SOFT_DELETE':
-        return 'bg-amber-50 text-amber-700 border-amber-200'
-      case 'HARD_DELETE':
-        return 'bg-rose-50 text-rose-700 border-rose-200'
+      case "CREATE":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "UPDATE":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "SOFT_DELETE":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case "HARD_DELETE":
+        return "bg-rose-50 text-rose-700 border-rose-200";
       default:
-        return 'bg-slate-100 text-slate-700 border-slate-200'
+        return "bg-slate-100 text-slate-700 border-slate-200";
     }
-  }
+  };
 
   const parseJson = (jsonString?: string) => {
-    if (!jsonString) return null
+    if (!jsonString) return null;
     try {
-      return JSON.parse(jsonString)
+      return JSON.parse(jsonString);
     } catch {
-      return jsonString
+      return jsonString;
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -86,7 +93,8 @@ export function AdminAuditLogsPage() {
             Security & Audit Trail
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Enterprise immutable record of all data modifications, administrative events, and security access.
+            Enterprise immutable record of all data modifications,
+            administrative events, and security access.
           </p>
         </div>
 
@@ -96,7 +104,9 @@ export function AdminAuditLogsPage() {
             disabled={isFetching}
             className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition shadow-sm cursor-pointer"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin text-amber-600' : ''}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-amber-600" : ""}`}
+            />
             Refresh
           </button>
         </div>
@@ -106,8 +116,12 @@ export function AdminAuditLogsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Total Audit Events</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">{data?.totalCount ?? '—'}</h3>
+            <p className="text-xs text-slate-500 font-medium">
+              Total Audit Events
+            </p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">
+              {data?.totalCount ?? "—"}
+            </h3>
           </div>
           <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200">
             <Layers className="h-5 w-5" />
@@ -116,8 +130,12 @@ export function AdminAuditLogsPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Logged Entities</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">{metadata?.entityTypes?.length ?? '—'}</h3>
+            <p className="text-xs text-slate-500 font-medium">
+              Logged Entities
+            </p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">
+              {metadata?.entityTypes?.length ?? "—"}
+            </h3>
           </div>
           <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
             <Database className="h-5 w-5" />
@@ -126,8 +144,12 @@ export function AdminAuditLogsPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Current Page Events</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">{data?.items?.length ?? 0}</h3>
+            <p className="text-xs text-slate-500 font-medium">
+              Current Page Events
+            </p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">
+              {data?.items?.length ?? 0}
+            </h3>
           </div>
           <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
             <Activity className="h-5 w-5" />
@@ -136,8 +158,12 @@ export function AdminAuditLogsPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium">Security Policy</p>
-            <h3 className="text-sm font-bold text-emerald-700 mt-1">Full Change Capture</h3>
+            <p className="text-xs text-slate-500 font-medium">
+              Security Policy
+            </p>
+            <h3 className="text-sm font-bold text-emerald-700 mt-1">
+              Full Change Capture
+            </h3>
           </div>
           <div className="p-3 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
             <ShieldAlert className="h-5 w-5" />
@@ -154,8 +180,8 @@ export function AdminAuditLogsPage() {
             placeholder="Search by action, entity, user, IP, or correlation ID..."
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
+              setSearch(e.target.value);
+              setPage(1);
             }}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500 transition"
           />
@@ -166,8 +192,8 @@ export function AdminAuditLogsPage() {
           <select
             value={selectedAction}
             onChange={(e) => {
-              setSelectedAction(e.target.value)
-              setPage(1)
+              setSelectedAction(e.target.value);
+              setPage(1);
             }}
             className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:bg-white focus:border-amber-500 transition cursor-pointer"
           >
@@ -182,8 +208,8 @@ export function AdminAuditLogsPage() {
           <select
             value={selectedEntityType}
             onChange={(e) => {
-              setSelectedEntityType(e.target.value)
-              setPage(1)
+              setSelectedEntityType(e.target.value);
+              setPage(1);
             }}
             className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:bg-white focus:border-amber-500 transition cursor-pointer"
           >
@@ -198,10 +224,10 @@ export function AdminAuditLogsPage() {
           {(search || selectedAction || selectedEntityType) && (
             <button
               onClick={() => {
-                setSearch('')
-                setSelectedAction('')
-                setSelectedEntityType('')
-                setPage(1)
+                setSearch("");
+                setSelectedAction("");
+                setSelectedEntityType("");
+                setPage(1);
               }}
               className="px-3 py-2 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
             >
@@ -248,14 +274,21 @@ export function AdminAuditLogsPage() {
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getActionBadge(log.action)}`}>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getActionBadge(log.action)}`}
+                      >
                         {log.action}
                       </span>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{log.entityType}</span>
-                        <span className="text-[10px] font-mono text-slate-400" title={log.entityId}>
+                        <span className="font-semibold text-slate-900">
+                          {log.entityType}
+                        </span>
+                        <span
+                          className="text-[10px] font-mono text-slate-400"
+                          title={log.entityId}
+                        >
                           ({log.entityId.substring(0, 8)}...)
                         </span>
                       </div>
@@ -263,7 +296,11 @@ export function AdminAuditLogsPage() {
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-slate-900 font-medium">
-                          {log.userName || log.userEmail || (log.userId ? log.userId.substring(0, 8) + '...' : 'System')}
+                          {log.userName ||
+                            log.userEmail ||
+                            (log.userId
+                              ? log.userId.substring(0, 8) + "..."
+                              : "System")}
                         </span>
                         {log.role && (
                           <span className="text-[10px] text-slate-400 font-mono">
@@ -273,10 +310,12 @@ export function AdminAuditLogsPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 font-mono text-slate-600 whitespace-nowrap">
-                      {log.ipAddress || '127.0.0.1'}
+                      {log.ipAddress || "127.0.0.1"}
                     </td>
                     <td className="py-3 px-4 font-mono text-slate-400 whitespace-nowrap">
-                      {log.correlationId ? `${log.correlationId.substring(0, 8)}...` : '—'}
+                      {log.correlationId
+                        ? `${log.correlationId.substring(0, 8)}...`
+                        : "—"}
                     </td>
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       <button
@@ -297,8 +336,13 @@ export function AdminAuditLogsPage() {
         {data && data.totalPages > 1 && (
           <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
             <p className="text-xs text-slate-600">
-              Showing page <span className="text-slate-900 font-semibold">{data.page}</span> of{' '}
-              <span className="text-slate-900 font-semibold">{data.totalPages}</span> ({data.totalCount} total events)
+              Showing page{" "}
+              <span className="text-slate-900 font-semibold">{data.page}</span>{" "}
+              of{" "}
+              <span className="text-slate-900 font-semibold">
+                {data.totalPages}
+              </span>{" "}
+              ({data.totalCount} total events)
             </p>
 
             <div className="flex items-center gap-2">
@@ -329,7 +373,9 @@ export function AdminAuditLogsPage() {
             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getActionBadge(inspectLog.action)}`}>
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getActionBadge(inspectLog.action)}`}
+                  >
                     {inspectLog.action}
                   </span>
                   <h2 className="text-lg font-bold text-slate-900">
@@ -337,7 +383,8 @@ export function AdminAuditLogsPage() {
                   </h2>
                 </div>
                 <p className="text-xs text-slate-500 font-mono">
-                  Event ID: {inspectLog.id} • {new Date(inspectLog.createdAt).toISOString()}
+                  Event ID: {inspectLog.id} •{" "}
+                  {new Date(inspectLog.createdAt).toISOString()}
                 </p>
               </div>
 
@@ -354,32 +401,55 @@ export function AdminAuditLogsPage() {
               {/* Context Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">Actor & Role</p>
-                  <p className="text-xs text-slate-900 font-medium mt-1">
-                    {inspectLog.userName || inspectLog.userEmail || 'System Actor'}
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase">
+                    Actor & Role
                   </p>
-                  <p className="text-[10px] text-amber-700 font-mono mt-0.5">{inspectLog.role || 'N/A'}</p>
+                  <p className="text-xs text-slate-900 font-medium mt-1">
+                    {inspectLog.userName ||
+                      inspectLog.userEmail ||
+                      "System Actor"}
+                  </p>
+                  <p className="text-[10px] text-amber-700 font-mono mt-0.5">
+                    {inspectLog.role || "N/A"}
+                  </p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-semibold uppercase">Network IP</p>
-                  <p className="text-xs text-slate-900 font-mono mt-1">{inspectLog.ipAddress || '127.0.0.1'}</p>
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase">
+                    Network IP
+                  </p>
+                  <p className="text-xs text-slate-900 font-mono mt-1">
+                    {inspectLog.ipAddress || "127.0.0.1"}
+                  </p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase">Correlation ID</p>
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">
+                      Correlation ID
+                    </p>
                     <p className="text-xs text-slate-700 font-mono mt-1">
-                      {inspectLog.correlationId ? `${inspectLog.correlationId.substring(0, 12)}...` : 'None'}
+                      {inspectLog.correlationId
+                        ? `${inspectLog.correlationId.substring(0, 12)}...`
+                        : "None"}
                     </p>
                   </div>
                   {inspectLog.correlationId && (
                     <button
-                      onClick={() => copyToClipboard(inspectLog.correlationId!, 'correlationId')}
+                      onClick={() =>
+                        copyToClipboard(
+                          inspectLog.correlationId!,
+                          "correlationId",
+                        )
+                      }
                       className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 shadow-sm transition cursor-pointer"
                       title="Copy full correlation ID"
                     >
-                      {copiedField === 'correlationId' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedField === "correlationId" ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   )}
                 </div>
@@ -388,7 +458,8 @@ export function AdminAuditLogsPage() {
               {/* State Changes Diff Section */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                  <Database className="h-4 w-4 text-blue-600" /> Entity Property State Diffs
+                  <Database className="h-4 w-4 text-blue-600" /> Entity Property
+                  State Diffs
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -396,21 +467,36 @@ export function AdminAuditLogsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-rose-500" /> Previous Values (Before)
+                        <span className="h-2 w-2 rounded-full bg-rose-500" />{" "}
+                        Previous Values (Before)
                       </span>
                       {inspectLog.oldValuesJson && (
                         <button
-                          onClick={() => copyToClipboard(inspectLog.oldValuesJson!, 'oldValues')}
+                          onClick={() =>
+                            copyToClipboard(
+                              inspectLog.oldValuesJson!,
+                              "oldValues",
+                            )
+                          }
                           className="text-[10px] text-slate-500 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
                         >
-                          {copiedField === 'oldValues' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} Copy JSON
+                          {copiedField === "oldValues" ? (
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}{" "}
+                          Copy JSON
                         </button>
                       )}
                     </div>
                     <pre className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-800 overflow-x-auto max-h-72">
                       {inspectLog.oldValuesJson
-                        ? JSON.stringify(parseJson(inspectLog.oldValuesJson), null, 2)
-                        : '// No prior state (Entity created)'}
+                        ? JSON.stringify(
+                            parseJson(inspectLog.oldValuesJson),
+                            null,
+                            2,
+                          )
+                        : "// No prior state (Entity created)"}
                     </pre>
                   </div>
 
@@ -418,21 +504,36 @@ export function AdminAuditLogsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" /> Current Values (After)
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />{" "}
+                        Current Values (After)
                       </span>
                       {inspectLog.newValuesJson && (
                         <button
-                          onClick={() => copyToClipboard(inspectLog.newValuesJson!, 'newValues')}
+                          onClick={() =>
+                            copyToClipboard(
+                              inspectLog.newValuesJson!,
+                              "newValues",
+                            )
+                          }
                           className="text-[10px] text-slate-500 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
                         >
-                          {copiedField === 'newValues' ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} Copy JSON
+                          {copiedField === "newValues" ? (
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}{" "}
+                          Copy JSON
                         </button>
                       )}
                     </div>
                     <pre className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-800 overflow-x-auto max-h-72">
                       {inspectLog.newValuesJson
-                        ? JSON.stringify(parseJson(inspectLog.newValuesJson), null, 2)
-                        : '// No resulting state (Entity deleted)'}
+                        ? JSON.stringify(
+                            parseJson(inspectLog.newValuesJson),
+                            null,
+                            2,
+                          )
+                        : "// No resulting state (Entity deleted)"}
                     </pre>
                   </div>
                 </div>
@@ -452,5 +553,5 @@ export function AdminAuditLogsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

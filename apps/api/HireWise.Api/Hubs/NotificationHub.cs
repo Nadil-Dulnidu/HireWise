@@ -17,7 +17,7 @@ public class NotificationHub : Hub
     {
         var userId = Context.UserIdentifier;
         _logger.LogInformation("Client connected to NotificationHub: {ConnectionId}, User: {UserId}", Context.ConnectionId, userId);
-        
+
         if (!string.IsNullOrEmpty(userId))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
