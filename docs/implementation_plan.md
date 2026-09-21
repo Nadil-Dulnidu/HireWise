@@ -1035,6 +1035,35 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 
 ---
 
+### Phase 13-B: Flutter Mobile Application (Candidate Only)
+
+A dedicated cross-platform mobile client built with Flutter for candidate users only.
+
+- **Candidate-Only Role Guard**: Strict authentication gate denying access to non-candidates and redirecting them to the web portal; zero exposure of interviewer rubrics, question banks, or confidential hiring notes.
+- **Clerk Authentication & Session Management**: Unified Clerk authentication sharing the same user directory as the web client; JWT Bearer injection via `AuthInterceptor` and SignalR query authentication.
+- **Candidate Dashboard & Quick Actions**: Overview metrics (`GET /api/users/me/dashboard`), upcoming interview cards, quick action links, and recent application updates.
+- **Job Discovery & Deep Filtering**: Full search with department, experience level, employment type, location, remote-only, and salary range filters.
+- **In-App Application & Resume Management**: One-tap application submission with cover letters; document upload (PDF, DOC, DOCX up to 10MB) and active resume replacement/deletion.
+- **Application Status Timeline**: Step-by-step progress tracking for submitted applications with color-coded status badges and withdrawal capability.
+- **Interview Scheduling & Remote Join**: Candidate-facing interview details (format, platform, preparation instructions) with external meeting launch (Google Meet / Zoom).
+- **Real-Time SignalR Notifications**: Live WebSocket notification stream (`/hubs/notifications`) with badge indicators and mark-as-read workflows.
+- **Profile & Onboarding**: First-time candidate profile completion (phone, headline, skills) and profile editing.
+- **Testing & Quality**: Unit tests for models, repositories, providers, interceptors, error handling, and shared widgets; static analysis with `flutter analyze` and GitHub Actions CI.
+
+**Acceptance Criteria**:
+
+- [x] Candidate authentication flow with Clerk works seamlessly with existing backend JWT validation
+- [x] Non-candidate roles are safely blocked with an unauthorized screen directing them to the web app
+- [x] Sensitive interviewer notes and questions are strictly omitted from mobile responses and UI
+- [x] Candidates can browse, search, and filter open jobs
+- [x] Candidates can upload/replace their resume and submit applications with cover letters
+- [x] Candidates can track application status on an interactive timeline
+- [x] Candidates can view upcoming interview details and launch external meeting links
+- [x] Candidates receive real-time notifications via SignalR
+- [x] Full test suite (36+ tests) passes with 0 analyzer errors
+
+---
+
 ### Phase 14: Docker, Terraform, GCP & CI/CD
 
 - Dockerfiles for all three services

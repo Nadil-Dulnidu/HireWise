@@ -2,6 +2,8 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using HireWise.Api.Data;
 using HireWise.Api.DTOs.Common;
+using HireWise.Api.DTOs.Interviews;
+using HireWise.Api.DTOs.Notifications;
 using HireWise.Api.DTOs.Users;
 using HireWise.Api.Models;
 using HireWise.Api.Models.Enums;
@@ -21,6 +23,7 @@ public interface IUserService
     Task<Result<bool>> BanUserAsync(Guid id, string? reason, CancellationToken ct = default);
     Task<Result<List<UserDto>>> GetInterviewersByCompanyAsync(Guid companyId, CancellationToken ct = default);
     Task<Result<List<TeamMemberDto>>> GetTeamMembersAsync(Guid companyId, CancellationToken ct = default);
+    Task<Result<CandidateDashboardDto>> GetCandidateDashboardAsync(string clerkUserId, CancellationToken ct = default);
 }
 
 public class UserService : IUserService
@@ -464,5 +467,59 @@ public class UserService : IUserService
             .ToListAsync(ct);
 
         return Result<List<TeamMemberDto>>.Success(members);
+    }
+
+    public async Task<Result<CandidateDashboardDto>> GetCandidateDashboardAsync(string clerkUserId, CancellationToken ct = default)
+    {
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId, ct);
+
+        if (user == null)
+        {
+            return Result<CandidateDashboardDto>.NotFound("User not found.");
+        }
+
+        var activeApplicationsCount = await _db.Applications
+            .CountAsync(a => a.CandidateId == user.Id &&
+                             a.Status != ApplicationStatus.REJECTED &&
+                             a.Status != ApplicationStatus.SELECTED, ct);
+
+        var now = DateTime.UtcNow;
+        var upcomingInterviewsEntities = await _db.Interviews
+            .Include(i => i.Job).ThenInclude(j => j.Company)
+            .Include(i => i.Candidate)
+            .Include(i => i.Interviewer)
+            .Where(i => i.CandidateId == user.Id &&
+                        i.ScheduledStartTime >= now &&
+                        i.Status == InterviewStatus.SCHEDULED)
+            .OrderBy(i => i.ScheduledStartTime)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var upcomingInterviews = _mapper.Map<List<InterviewDto>>(upcomingInterviewsEntities);
+
+        var recentNotificationsEntities = await _db.Notifications
+            .Where(n => n.UserId == user.Id)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var recentNotifications = _mapper.Map<List<NotificationDto>>(recentNotificationsEntities);
+
+        var openJobsCount = await _db.Jobs
+            .CountAsync(j => j.Status == JobStatus.OPEN && !j.IsDeleted, ct);
+
+        var dashboard = new CandidateDashboardDto
+        {
+            ActiveApplicationsCount = activeApplicationsCount,
+            UpcomingInterviews = upcomingInterviews,
+            RecentNotifications = recentNotifications,
+            OpenJobsCount = openJobsCount
+        };
+
+        return Result<CandidateDashboardDto>.Success(dashboard);
     }
 }
