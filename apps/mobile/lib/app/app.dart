@@ -30,54 +30,78 @@ class _ClerkAuthBridge extends ConsumerStatefulWidget {
 }
 
 class _ClerkAuthBridgeState extends ConsumerState<_ClerkAuthBridge> {
+  bool _initialized = false;
   String? _lastSessionId;
+  ClerkAuthState? _clerkAuth;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final auth = ClerkAuth.of(context, listen: false);
+    if (_clerkAuth != auth) {
+      _clerkAuth?.removeListener(_onClerkAuthChanged);
+      _clerkAuth = auth;
+      _clerkAuth?.addListener(_onClerkAuthChanged);
+    }
     _syncAuth();
   }
 
+  void _onClerkAuthChanged() {
+    _syncAuth();
+  }
+
+  @override
+  void dispose() {
+    _clerkAuth?.removeListener(_onClerkAuthChanged);
+    super.dispose();
+  }
+
   void _syncAuth() {
-    final clerkAuth = ClerkAuth.of(context);
+    final clerkAuth = _clerkAuth ?? ClerkAuth.of(context, listen: false);
     final session = clerkAuth.session;
     final currentSessionId = session?.id;
 
-    // Register token getter in Riverpod for API requests
-    ref.read(tokenGetterProvider.notifier).state = () async {
-      try {
-        final auth = ClerkAuth.of(context, listen: false);
-        final tokenObj = await auth.sessionToken();
-        return tokenObj.jwt;
-      } catch (_) {
-        return null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // Register token getter in Riverpod for API requests (set once)
+      if (ref.read(tokenGetterProvider) == null) {
+        ref.read(tokenGetterProvider.notifier).state = () async {
+          try {
+            if (!mounted) return null;
+            final auth = ClerkAuth.of(context, listen: false);
+            final tokenObj = await auth.sessionToken();
+            return tokenObj.jwt;
+          } catch (_) {
+            return null;
+          }
+        };
       }
-    };
 
-    if (currentSessionId != _lastSessionId) {
-      _lastSessionId = currentSessionId;
+      if (!_initialized || currentSessionId != _lastSessionId) {
+        _initialized = true;
+        _lastSessionId = currentSessionId;
 
-      if (session != null) {
-        // User is signed in via Clerk; sync backend candidate profile
-        Future.microtask(() async {
-          await ref.read(authStateProvider.notifier).syncWithBackend();
+        if (session != null) {
+          // User is signed in via Clerk; sync backend candidate profile
+          ref.read(authStateProvider.notifier).syncWithBackend();
 
           // Connect SignalR for real-time notifications
-          try {
-            final tokenObj = await clerkAuth.sessionToken();
-            if (tokenObj.jwt.isNotEmpty) {
-              ref.read(signalRServiceProvider).connect(tokenObj.jwt);
-            }
-          } catch (_) {}
-        });
-      } else {
-        // User is signed out
-        Future.microtask(() {
+          () async {
+            try {
+              final tokenObj = await clerkAuth.sessionToken();
+              if (tokenObj.jwt.isNotEmpty && mounted) {
+                ref.read(signalRServiceProvider).connect(tokenObj.jwt);
+              }
+            } catch (_) {}
+          }();
+        } else {
+          // User is signed out
           ref.read(authStateProvider.notifier).setUnauthenticated();
           ref.read(signalRServiceProvider).disconnect();
-        });
+        }
       }
-    }
+    });
   }
 
   @override

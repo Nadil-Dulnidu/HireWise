@@ -6,6 +6,8 @@ import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../auth/providers/auth_state_provider.dart';
 import '../../interviews/presentation/widgets/interview_card.dart';
+import '../../jobs/presentation/widgets/job_card.dart';
+import '../../jobs/providers/jobs_provider.dart';
 import '../../notifications/presentation/widgets/notification_tile.dart';
 import '../../notifications/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
@@ -18,25 +20,50 @@ class HomeScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final dashboardState = ref.watch(dashboardProvider);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final jobsState = ref.watch(jobsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.work_rounded,
-                size: 20,
-                color: Colors.white,
+            Image.asset(
+              'assets/images/main-logo.png',
+              height: 28,
+              width: 28,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.work_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
               ),
             ),
             const SizedBox(width: 10),
-            const Text('HireWise'),
+            RichText(
+              text: const TextSpan(
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Hire',
+                    style: TextStyle(color: AppColors.slate900),
+                  ),
+                  TextSpan(
+                    text: 'Wise',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -103,6 +130,7 @@ class HomeScreen extends ConsumerWidget {
               await Future.wait([
                 ref.read(dashboardProvider.notifier).loadDashboard(),
                 ref.read(notificationsProvider.notifier).loadNotifications(),
+                ref.read(jobsProvider.notifier).loadJobs(refresh: true),
               ]);
             },
             color: AppColors.primary,
@@ -196,6 +224,75 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                   ],
+
+                  // Recent Job Openings Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Job Openings',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.slate900,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/jobs'),
+                        child: const Text('View All'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (jobsState.isLoading && jobsState.jobs.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                    )
+                  else if (jobsState.jobs.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.slate200),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(
+                            Icons.work_outline_rounded,
+                            size: 36,
+                            color: AppColors.slate400,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'No active job postings right now',
+                            style: TextStyle(
+                              color: AppColors.slate600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Column(
+                      children: jobsState.jobs.take(3).map((job) {
+                        return JobCard(
+                          job: job,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          onTap: () => context.push('/jobs/${job.id}'),
+                        );
+                      }).toList(),
+                    ),
+                  const SizedBox(height: 24),
 
                   // Recent Notifications Section
                   if (data != null && data.recentNotifications.isNotEmpty) ...[

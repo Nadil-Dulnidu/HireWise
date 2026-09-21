@@ -22,6 +22,10 @@ DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ensure Kestrel binds to all network interfaces (0.0.0.0:5101) for mobile/LAN access
+var bindUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:5101";
+builder.WebHost.UseUrls(bindUrls);
+
 // 1. Serilog Setup
 Serilog.Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -308,6 +312,8 @@ app.MapGet("/api/health", async (ApplicationDbContext db) =>
     });
 });
 
+app.Urls.Clear();
+app.Urls.Add("http://0.0.0.0:5101");
 app.Run();
 
 // Helper method to parse PostgreSQL URIs or standard ADO.NET connection strings

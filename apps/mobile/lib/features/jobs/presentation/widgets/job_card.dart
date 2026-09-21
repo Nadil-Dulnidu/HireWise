@@ -9,18 +9,20 @@ import '../../data/models/job_summary_dto.dart';
 class JobCard extends StatelessWidget {
   final JobSummaryDto job;
   final VoidCallback onTap;
+  final EdgeInsetsGeometry? margin;
 
   const JobCard({
     super.key,
     required this.job,
     required this.onTap,
+    this.margin,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AppColors.slate200),
