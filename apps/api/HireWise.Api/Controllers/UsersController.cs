@@ -75,6 +75,24 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserDto>.Ok(result.Value!, "User role updated successfully"));
     }
 
+    [HttpGet("me/dashboard")]
+    public async Task<IActionResult> GetCandidateDashboard(CancellationToken ct)
+    {
+        var clerkUserId = _currentUserService.ClerkUserId;
+        if (string.IsNullOrEmpty(clerkUserId))
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Authenticated user identifier not found in claims."));
+        }
+
+        var result = await _userService.GetCandidateDashboardAsync(clerkUserId, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to fetch dashboard data."));
+        }
+
+        return Ok(ApiResponse<CandidateDashboardDto>.Ok(result.Value!));
+    }
+
     [HttpGet]
     [Authorize(Roles = "ADMIN,RECRUITER")]
     public async Task<IActionResult> GetUsers([FromQuery] UserFilterRequest request, CancellationToken ct)
