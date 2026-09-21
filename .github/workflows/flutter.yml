@@ -1,13 +1,8 @@
 name: Flutter CI
 
 on:
-  push:
-    branches: [main, master, develop]
-    paths:
-      - 'apps/mobile/**'
-      - '.github/workflows/flutter.yml'
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master]
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/flutter.yml'
