@@ -22,6 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { MobileAppPromoSection } from "@/components/landing/MobileAppPromoSection";
 
 export function LandingPage() {
   const { isSignedIn } = useCurrentUser();
@@ -522,6 +523,9 @@ export function LandingPage() {
           ))}
         </motion.div>
       </section>
+
+      {/* Candidate Mobile Companion - Android / Google Play Promotion Showcase */}
+      <MobileAppPromoSection />
 
       {/* High-Impact Enterprise Call-to-Action - Scroll Entrance & Ambient Pulsing Glow */}
       <motion.section

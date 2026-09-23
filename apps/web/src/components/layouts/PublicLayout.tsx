@@ -1,6 +1,6 @@
 import { Outlet, Link } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
-import { Briefcase, ArrowRight, ShieldCheck, Cpu } from "lucide-react";
+import { Briefcase, ArrowRight, ShieldCheck, Cpu, Smartphone } from "lucide-react";
 
 export function PublicLayout() {
   const { isSignedIn } = useUser();
@@ -41,6 +41,13 @@ export function PublicLayout() {
             >
               <Cpu className="h-4 w-4 text-slate-400" />
               AI Agents
+            </a>
+            <a
+              href="#mobile-app"
+              className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
+            >
+              <Smartphone className="h-4 w-4 text-slate-400" />
+              Mobile App
             </a>
           </nav>
 
@@ -128,6 +135,17 @@ export function PublicLayout() {
                     className="hover:text-blue-600 transition"
                   >
                     Autonomous AI Agents
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#mobile-app"
+                    className="hover:text-blue-600 transition flex items-center gap-1.5"
+                  >
+                    <span>Mobile App (Android)</span>
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700">
+                      New
+                    </span>
                   </a>
                 </li>
               </ul>
