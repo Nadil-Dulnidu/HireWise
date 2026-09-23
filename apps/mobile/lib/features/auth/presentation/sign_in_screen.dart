@@ -1,11 +1,144 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/env_config.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_state_provider.dart';
 
 class SignInScreen extends ConsumerWidget {
   const SignInScreen({super.key});
+
+  void _showServerConfigDialog(BuildContext context, WidgetRef ref) {
+    final currentUrl = ref.read(apiBaseUrlProvider);
+    final controller = TextEditingController(text: currentUrl);
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.dns_rounded, color: AppColors.primary, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'Server Settings',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter backend API URL or pick a preset:',
+                style: TextStyle(fontSize: 13, color: AppColors.slate600),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'API Base URL',
+                  hintText: 'http://10.216.20.214:5101',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Quick Presets:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.slate700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _presetChip(
+                    'Wi-Fi (Current)',
+                    'http://10.216.20.214:5101',
+                    controller,
+                  ),
+                  _presetChip(
+                    'USB (ADB Reverse)',
+                    'http://localhost:5101',
+                    controller,
+                  ),
+                  _presetChip(
+                    'Home Wi-Fi',
+                    'http://192.168.1.7:5101',
+                    controller,
+                  ),
+                  _presetChip(
+                    'Emulator',
+                    'http://10.0.2.2:5101',
+                    controller,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newUrl =
+                  controller.text.trim().replaceAll(RegExp(r'/+$'), '');
+              if (newUrl.isNotEmpty) {
+                EnvConfig.apiBaseUrl = newUrl;
+                ref.read(apiBaseUrlProvider.notifier).state = newUrl;
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Server updated to $newUrl'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+                ref.read(authStateProvider.notifier).syncWithBackend();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Save & Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _presetChip(
+    String label,
+    String url,
+    TextEditingController controller,
+  ) {
+    return ActionChip(
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      onPressed: () {
+        controller.text = url;
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -14,6 +147,7 @@ class SignInScreen extends ConsumerWidget {
     final clerkUser = ClerkAuth.userOf(context);
     final isLoading = authState.status == AuthStatus.loading;
     final errorMessage = authState.errorMessage;
+    final serverUrl = ref.watch(apiBaseUrlProvider);
 
     return Scaffold(
       backgroundColor: AppColors.slate50,
@@ -83,37 +217,92 @@ class SignInScreen extends ConsumerWidget {
                         color: AppColors.error.withOpacity(0.3),
                       ),
                     ),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.error_outline_rounded,
-                          color: AppColors.error,
-                          size: 20,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.error,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Cannot Connect to Server',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    errorMessage,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.slate700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Target: $serverUrl',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.slate600,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Sync Failed',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.error,
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () =>
+                                    _showServerConfigDialog(context, ref),
+                                icon: const Icon(
+                                  Icons.settings_outlined,
+                                  size: 15,
+                                ),
+                                label: const Text(
+                                  'Change Server IP',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  foregroundColor: AppColors.slate800,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                errorMessage,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.slate700,
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                ref
+                                    .read(authStateProvider.notifier)
+                                    .syncWithBackend();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
                                 ),
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
                               ),
-                            ],
-                          ),
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -245,6 +434,43 @@ class SignInScreen extends ConsumerWidget {
                   const ClerkErrorListener(
                     child: ClerkAuthentication(),
                   ),
+
+                const SizedBox(height: 24),
+                InkWell(
+                  onTap: () => _showServerConfigDialog(context, ref),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.dns_outlined,
+                          size: 13,
+                          color: AppColors.slate400,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Server: $serverUrl',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.slate500,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.edit_outlined,
+                          size: 11,
+                          color: AppColors.slate400,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
