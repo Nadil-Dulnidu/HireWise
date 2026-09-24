@@ -23,7 +23,7 @@ graph TB
     end
 
     subgraph DataStorage["Data & State Layer"]
-        PG[("PostgreSQL 16 (Cloud SQL / Supabase)")]
+        PG[("PostgreSQL 16 (Cloud SQL)")]
         Redis[("Redis 7 (Memorystore Cache)")]
         GCS[("Google Cloud Storage (Resumes)")]
     end
@@ -37,7 +37,7 @@ graph TB
     API -->|Cache| Redis
     API -->|Uploads| GCS
     AIService -->|Direct State Sync| PG
-    AIService -->|Gemini 1.5| Vertex["Vertex AI (Gemini)"]
+    AIService -->|Gemini 2.5| Vertex["Vertex AI (Gemini)"]
 ```
 
 | Component | Path | Technology | Primary Audience | Description |
