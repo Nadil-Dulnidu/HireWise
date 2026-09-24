@@ -40,7 +40,7 @@ module "vpc" {
   environment    = var.environment
   region         = var.region
   subnet_cidr    = "10.0.0.0/20"
-  connector_cidr = "10.8.0.0/28"
+  connector_cidr = "10.20.0.0/28"
 
   depends_on = [google_project_service.services]
 }

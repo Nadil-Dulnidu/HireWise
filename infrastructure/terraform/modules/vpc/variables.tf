@@ -29,7 +29,7 @@ variable "subnet_cidr" {
 variable "connector_cidr" {
   description = "Serverless VPC Connector IP CIDR (/28 required)"
   type        = string
-  default     = "10.8.0.0/28"
+  default     = "10.20.0.0/28"
 }
 
 variable "connector_min_instances" {

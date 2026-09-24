@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "resumes" {
-  name                        = "${lower(var.project_name)}-${lower(var.environment)}-resumes"
+  name                        = "${var.project_id}-${lower(var.environment)}-resumes"
   location                    = var.region
   project                     = var.project_id
   force_destroy               = false
@@ -19,7 +19,7 @@ resource "google_storage_bucket" "resumes" {
   lifecycle_rule {
     condition {
       num_newer_versions = 3
-      with_state        = "ARCHIVED"
+      with_state         = "ARCHIVED"
     }
     action {
       type = "Delete"
