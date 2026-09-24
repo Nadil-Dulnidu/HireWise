@@ -59,8 +59,13 @@ export function useSignalR() {
 
     const createAndStartConnection = async () => {
       try {
+        const rawBase = import.meta.env.VITE_API_BASE_URL;
+        const hubUrl = rawBase
+          ? `${rawBase.replace(/\/+$/, "")}/hubs/notifications`
+          : "/hubs/notifications";
+
         const connection = new HubConnectionBuilder()
-          .withUrl("/hubs/notifications", {
+          .withUrl(hubUrl, {
             accessTokenFactory: async () => {
               const token = await getToken();
               return token || "";

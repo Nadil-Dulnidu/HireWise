@@ -1,0 +1,92 @@
+name: Continuous Deployment (Cloud Run)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+  REGISTRY: ${{ secrets.GCP_REGION || 'us-central1' }}-docker.pkg.dev
+  REPOSITORY: hirewise-prod-repo
+  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+jobs:
+  deploy:
+    name: Build & Deploy to Google Cloud Run
+    runs-on: ubuntu-latest
+    if: github.repository == 'Nadil-Dulnidu/HireWise'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Google Workload Identity Federation (Keyless Auth)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      # Authenticate Docker with Google Artifact Registry
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      # Set image tags with commit SHA
+      - name: Set Image Names
+        run: |
+          echo "API_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/hirewise-api:${{ github.sha }}" >> $GITHUB_ENV
+          echo "AI_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/hirewise-ai-service:${{ github.sha }}" >> $GITHUB_ENV
+          echo "WEB_IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/hirewise-web:${{ github.sha }}" >> $GITHUB_ENV
+
+      # 1. Build and Push Backend API
+      - name: Build & Push API Image
+        run: |
+          docker build -t ${{ env.API_IMAGE }} -f docker/Dockerfile.api .
+          docker push ${{ env.API_IMAGE }}
+
+      # 2. Build and Push AI Service
+      - name: Build & Push AI Service Image
+        run: |
+          docker build -t ${{ env.AI_IMAGE }} -f docker/Dockerfile.ai-service .
+          docker push ${{ env.AI_IMAGE }}
+
+      # 3. Build and Push Web Client
+      - name: Build & Push Web Image
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
+            --build-arg VITE_CLERK_PUBLISHABLE_KEY="${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" \
+            -t ${{ env.WEB_IMAGE }} -f docker/Dockerfile.web .
+          docker push ${{ env.WEB_IMAGE }}
+
+      # Deploy Services to Cloud Run
+      - name: Deploy API Service to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: hirewise-prod-api
+          image: ${{ env.API_IMAGE }}
+          region: ${{ env.REGION }}
+
+      - name: Deploy AI Service to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: hirewise-prod-ai-service
+          image: ${{ env.AI_IMAGE }}
+          region: ${{ env.REGION }}
+
+      - name: Deploy Web Client to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: hirewise-prod-web
+          image: ${{ env.WEB_IMAGE }}
+          region: ${{ env.REGION }}

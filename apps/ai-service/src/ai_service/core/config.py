@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
@@ -15,9 +16,26 @@ class Settings(BaseSettings):
     DOTNET_API_INTERNAL_KEY: str = "hw_internal_callback_key"
 
     # Database (PostgreSQL)
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/hirewise_db"
+    DATABASE_URL: Optional[str] = None
+    POSTGRES_SERVER: Optional[str] = None
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: Optional[str] = None
+    POSTGRES_USER: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
     DB_POOL_MIN_SIZE: int = 1
     DB_POOL_MAX_SIZE: int = 10
+
+    @model_validator(mode="after")
+    def assemble_db_connection(self) -> "Settings":
+        if not self.DATABASE_URL:
+            if self.POSTGRES_SERVER:
+                user = self.POSTGRES_USER or "postgres"
+                pwd = self.POSTGRES_PASSWORD or "postgres"
+                db = self.POSTGRES_DB or "hirewise_db"
+                self.DATABASE_URL = f"postgresql://{user}:{pwd}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{db}"
+            else:
+                self.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/hirewise_db"
+        return self
 
     # Vertex AI / Google Gemini / GCP Agent Platform
     USE_VERTEX_AI: bool = False
