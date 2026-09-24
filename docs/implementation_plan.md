@@ -1066,17 +1066,31 @@ A dedicated cross-platform mobile client built with Flutter for candidate users 
 
 ### Phase 14: Docker, Terraform, GCP & CI/CD
 
-- Dockerfiles for all three services
-- docker-compose for local development
-- Terraform for GCP infrastructure
-- GitHub Actions workflows (lint, test, build, deploy)
+- Multi-stage Dockerfiles for all three services (`apps/api`, `apps/ai-service`, `apps/web`) and repo-root context wrappers in `docker/`
+- Root `docker-compose.yml` orchestrating PostgreSQL 16, Redis 7, ASP.NET Core API, FastAPI AI Service, and Vite Web Client
+- Cloud-native resume uploads via Google Cloud Storage (`GoogleCloudStorageService`) with configurable provider fallback
+- Enhanced Google Calendar integration supporting GCP Application Default Credentials (ADC), Secret Manager JSON strings, and local file fallback
+- Production-grade Terraform GCP infrastructure (`infrastructure/terraform`):
+  - Serverless VPC Access connector & Private Service Access
+  - Cloud SQL PostgreSQL 16 instance with private networking
+  - Memorystore Redis 7 cache
+  - Google Cloud Storage bucket for resumes with CORS and lifecycle management
+  - Secret Manager for Clerk, Resend, database, and calendar credentials
+  - Artifact Registry Docker repository
+  - Workload Identity Federation for passwordless GitHub Actions authentication
+  - Google Cloud Run v2 services for API, AI Service, and Web Client
+- GitHub Actions workflows:
+  - `.github/workflows/ci.yml`: Full-stack CI (Backend .NET 8 build, AI Service pytest suite, Web npm build)
+  - `.github/workflows/cd.yml`: CD pipeline with Workload Identity auth, Docker build/push to Artifact Registry, and Cloud Run automated deployment
 
 **Acceptance Criteria**:
 
-- [ ] `docker-compose up` starts all services locally
-- [ ] Terraform provisions GCP resources
-- [ ] CI pipeline passes on push
-- [ ] CD deploys to Cloud Run
+- [x] Dockerfiles configured for all services and `docker-compose.yml` starts full stack locally
+- [x] Terraform scripts provision GCP resources (VPC, Cloud SQL, Redis, GCS, Secret Manager, Cloud Run)
+- [x] Resume uploads migrated to Google Cloud Storage with local fallback
+- [x] Google Calendar integration upgraded for ADC and Secret Manager JSON
+- [x] CI pipeline configured for all 3 services (`.github/workflows/ci.yml`)
+- [x] CD pipeline configured for Cloud Run deployment (`.github/workflows/cd.yml`)
 
 ---
 

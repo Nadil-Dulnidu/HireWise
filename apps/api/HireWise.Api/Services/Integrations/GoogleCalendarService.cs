@@ -49,19 +49,43 @@ public class GoogleCalendarService : IGoogleCalendarService
     {
         try
         {
-            var keyPath = _config["GoogleCalendar:ServiceAccountKeyPath"]
-                ?? _config["GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_PATH"]
-                ?? "";
+            GoogleCredential credential;
 
-            if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
+            // 1. Check for raw Service Account JSON in config / environment / Secret Manager
+            var serviceAccountJson = _config["GoogleCalendar:ServiceAccountJson"]
+                ?? _config["GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON"]
+                ?? _config["GOOGLE_CALENDAR_CREDENTIALS_JSON"];
+
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(serviceAccountJson) && serviceAccountJson.Trim().StartsWith("{"))
             {
-                _logger.LogWarning("Google Calendar service account key file not found at '{KeyPath}'. Calendar integration will be disabled.", keyPath);
-                _enabled = false;
-                return;
+                _logger.LogInformation("Initializing Google Calendar service from direct Service Account JSON.");
+                credential = GoogleCredential.FromJson(serviceAccountJson)
+                    .CreateScoped(CalendarService.Scope.Calendar);
             }
+            else
+            {
+                // 2. Check for key file on disk
+                var keyPath = _config["GoogleCalendar:ServiceAccountKeyPath"]
+                    ?? _config["GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_PATH"]
+                    ?? _config["GOOGLE_APPLICATION_CREDENTIALS"]
+                    ?? "";
 
-            var credential = GoogleCredential.FromFile(keyPath)
-                .CreateScoped(CalendarService.Scope.Calendar);
+                if (!string.IsNullOrWhiteSpace(keyPath) && File.Exists(keyPath))
+                {
+                    _logger.LogInformation("Initializing Google Calendar service from key file: '{KeyPath}'.", keyPath);
+                    credential = GoogleCredential.FromFile(keyPath)
+                        .CreateScoped(CalendarService.Scope.Calendar);
+                }
+                else
+                {
+                    // 3. Fallback to Google Application Default Credentials (ADC) on GCP/Cloud Run
+                    _logger.LogInformation("Initializing Google Calendar service using Google Application Default Credentials (ADC).");
+                    credential = GoogleCredential.GetApplicationDefault()
+                        .CreateScoped(CalendarService.Scope.Calendar);
+                }
+            }
+#pragma warning restore CS0618
 
             _calendarService = new CalendarService(new BaseClientService.Initializer
             {

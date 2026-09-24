@@ -32,3 +32,11 @@ Desktop.ini
 # Logs
 logs/
 *.log
+
+# ── Terraform ────────────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl

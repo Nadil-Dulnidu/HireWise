@@ -119,7 +119,20 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IJobService, JobService>();
-builder.Services.AddScoped<HireWise.Api.Services.Storage.IStorageService, HireWise.Api.Services.Storage.LocalStorageService>();
+var storageProvider = builder.Configuration["Storage:Provider"]
+    ?? builder.Configuration["STORAGE_PROVIDER"]
+    ?? "LocalStorage";
+
+if (string.Equals(storageProvider, "GoogleCloudStorage", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(storageProvider, "Gcp", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(storageProvider, "Gcs", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<HireWise.Api.Services.Storage.IStorageService, HireWise.Api.Services.Storage.GoogleCloudStorageService>();
+}
+else
+{
+    builder.Services.AddScoped<HireWise.Api.Services.Storage.IStorageService, HireWise.Api.Services.Storage.LocalStorageService>();
+}
 builder.Services.AddScoped<IResumeService, ResumeService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddHttpClient<HireWise.Api.Services.Ai.IAiServiceClient, HireWise.Api.Services.Ai.AiServiceClient>();
