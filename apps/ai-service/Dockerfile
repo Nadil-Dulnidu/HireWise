@@ -12,12 +12,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv for fast dependency management
 RUN pip install --no-cache-dir uv
 
-# Copy project definition and install dependencies
+# Copy project definition, documentation, and source code needed for wheel build
 COPY pyproject.toml README.md ./
-RUN uv pip install --system --no-cache .
-
-# Copy application source code
 COPY src/ ./src/
+
+# Install dependencies and local package
+RUN uv pip install --system --no-cache .
 
 ENV PYTHONPATH=/app/src
 ENV PORT=8000

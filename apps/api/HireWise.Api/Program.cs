@@ -22,9 +22,12 @@ DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ensure Kestrel binds to all network interfaces (0.0.0.0:5101) for mobile/LAN access
-var bindUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:5101";
-builder.WebHost.UseUrls(bindUrls);
+// Ensure Kestrel binds to configured URLs/ports (Cloud Run port 8080, Docker, or fallback 5101)
+var configuredPort = Environment.GetEnvironmentVariable("PORT")
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS");
+var bindUrl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+    ?? (!string.IsNullOrWhiteSpace(configuredPort) ? $"http://0.0.0.0:{configuredPort}" : "http://0.0.0.0:5101");
+builder.WebHost.UseUrls(bindUrl);
 
 // 1. Serilog Setup
 Serilog.Log.Logger = new LoggerConfiguration()
@@ -326,7 +329,8 @@ app.MapGet("/api/health", async (ApplicationDbContext db) =>
 });
 
 app.Urls.Clear();
-app.Urls.Add("http://0.0.0.0:5101");
+app.Urls.Add(bindUrl);
+app.Logger.LogInformation("HireWise API started and listening on: {BindUrl}", bindUrl);
 app.Run();
 
 // Helper method to parse PostgreSQL URIs or standard ADO.NET connection strings
