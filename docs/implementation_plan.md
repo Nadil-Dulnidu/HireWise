@@ -1037,7 +1037,7 @@ Refactor the authentication, onboarding, and multi-tenancy models to use self-se
 
 ### Phase 13-B: Flutter Mobile Application (Candidate Only)
 
-A dedicated cross-platform mobile client built with Flutter for candidate users only.
+A dedicated cross-platform mobile client built with Flutter for candidate users only. Detailed implementation sprints and specifications are maintained in the dedicated plan: [docs/mobile/implementation_plan.md](mobile/implementation_plan.md).
 
 - **Candidate-Only Role Guard**: Strict authentication gate denying access to non-candidates and redirecting them to the web portal; zero exposure of interviewer rubrics, question banks, or confidential hiring notes.
 - **Clerk Authentication & Session Management**: Unified Clerk authentication sharing the same user directory as the web client; JWT Bearer injection via `AuthInterceptor` and SignalR query authentication.
@@ -1049,6 +1049,7 @@ A dedicated cross-platform mobile client built with Flutter for candidate users 
 - **Real-Time SignalR Notifications**: Live WebSocket notification stream (`/hubs/notifications`) with badge indicators and mark-as-read workflows.
 - **Profile & Onboarding**: First-time candidate profile completion (phone, headline, skills) and profile editing.
 - **Testing & Quality**: Unit tests for models, repositories, providers, interceptors, error handling, and shared widgets; static analysis with `flutter analyze` and GitHub Actions CI.
+- **Execution Plan**: Executed and tracked across 18 sub-phases in [docs/mobile/implementation_plan.md](mobile/implementation_plan.md).
 
 **Acceptance Criteria**:
 
@@ -1082,6 +1083,7 @@ A dedicated cross-platform mobile client built with Flutter for candidate users 
 - GitHub Actions workflows:
   - `.github/workflows/ci.yml`: Full-stack CI (Backend .NET 8 build, AI Service pytest suite, Web npm build)
   - `.github/workflows/cd.yml`: CD pipeline with Workload Identity auth, Docker build/push to Artifact Registry, and Cloud Run automated deployment
+  - `.github/workflows/flutter.yml`: Mobile CI (Flutter analyze, test suite)
 
 **Acceptance Criteria**:
 
@@ -1096,22 +1098,36 @@ A dedicated cross-platform mobile client built with Flutter for candidate users 
 
 ### Phase 15: Documentation & Demo Preparation
 
-- README with setup instructions
-- Architecture documentation
-- Database/ERD documentation
-- API documentation (Postman collection)
-- AI architecture documentation
-- Security documentation
-- Testing documentation
-- Deployment documentation
-- ADRs for key decisions
+- **Root & Service READMEs**:
+  - `README.md` (root): Complete setup guide, architecture overview, monorepo directory, and mobile integration.
+  - `apps/api/README.md`: Backend API architecture, EF Core configuration, testing, and Swagger guide.
+  - `apps/ai-service/README.md`: FastAPI, LangGraph StateGraph, Vertex AI Gemini configuration, and pytest guide.
+  - `apps/web/README.md`: React 18, Vite, Tailwind CSS, shadcn/ui, and Clerk setup.
+  - `apps/mobile/README.md`: Candidate mobile client setup, Riverpod architecture, and testing.
+- **Architecture Documentation** (`docs/architecture.md`): Multi-tier architecture, system sequence diagrams, and technology matrix.
+- **Database & ERD Documentation** (`docs/database.md`): Full Mermaid ERD, table dictionary, EF Core soft-delete, and tenant query filters.
+- **API Documentation & Postman Collection** (`docs/api.md`, `docs/postman_collection.json`): Comprehensive endpoint documentation covering all 16 controllers, standard envelopes, and a ready-to-import Postman collection.
+- **AI Architecture Documentation** (`docs/ai_architecture.md`): LangGraph state graph, 6 specialized agents, Pydantic schemas, and Human-in-the-Loop approval gates.
+- **Security & Tenant Isolation Documentation** (`docs/security.md`): Clerk RS256 JWKS verification, RBAC matrix, and Candidate Confidentiality Perimeter.
+- **Testing Documentation** (`docs/testing.md`): Test strategies across xUnit, pytest, Vitest, and Flutter test runner.
+- **Deployment Documentation** (`docs/deployment.md`): Local Docker Compose and production GCP Cloud Run / Cloud SQL Terraform deployment guide.
+- **Live Demo Script** (`docs/demo_script.md`): 9-scene interactive demonstration walkthrough across Web, Mobile, and AI services.
+- **Mobile Development Plan** (`docs/mobile/implementation_plan.md`): 18-phase implementation plan dedicated to Flutter mobile candidate app development.
+- **Architectural Decision Records (ADRs)** (`docs/adr/`):
+  - `docs/adr/0001-monorepo-structure.md`: Polyglot Monorepo Architecture.
+  - `docs/adr/0002-clerk-authentication-and-multitenancy.md`: Clerk Authentication & Hybrid Multi-Tenancy.
+  - `docs/adr/0003-flutter-mobile-candidate-portal.md`: Dedicated Flutter Mobile Candidate Application (referencing `docs/mobile/implementation_plan.md`).
+  - `docs/adr/0004-fastapi-langgraph-ai-service.md`: FastAPI & LangGraph StateGraph for AI Workflows.
+  - `docs/adr/0005-efcore-postgresql-soft-delete-multitenancy.md`: EF Core Global Query Filters for Soft-Delete & Tenant Isolation.
+  - `docs/adr/0006-gcp-terraform-cloudrun-deployment.md`: Serverless Google Cloud Run & Terraform IaC.
 
 **Acceptance Criteria**:
 
-- [ ] New developer can set up project from README
-- [ ] All architecture decisions documented
-- [ ] Postman collection covers all endpoints
-- [ ] End-to-end demo script prepared
+- [x] New developer can set up project from README
+- [x] All architecture decisions documented (ADR-0001 through ADR-0006)
+- [x] Postman collection covers all endpoints with environment variables
+- [x] End-to-end demo script prepared covering Web, Mobile, and AI services
+- [x] Dedicated mobile development plan documented and linked in `docs/mobile/implementation_plan.md`
 
 ---
 
@@ -1127,5 +1143,6 @@ A dedicated cross-platform mobile client built with Flutter for candidate users 
 | Google Calendar API quotas               | Failed interview creation      | Queue calendar creation; retry with backoff; fallback to email-only         |
 | Resume parsing accuracy                  | Poor AI evaluations            | Support PDF/DOCX; validate parsed output; allow manual correction           |
 
-> [!IMPORTANT]
-> This plan covers the **complete** HireWise platform. Implementation will proceed phase by phase, with each phase verified before moving to the next. Shall I proceed with Phase 1+2 (Scaffolding + Authentication)?
+> [!NOTE]
+> All core platform implementation phases (Phases 1 through 15) and candidate mobile implementation (Phase 13-B) are complete and documented.
+

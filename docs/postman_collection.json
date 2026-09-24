@@ -1,0 +1,513 @@
+{
+  "info": {
+    "name": "HireWise Platform API",
+    "_postman_id": "c7112001-f519-482c-a212-68a41cebf901",
+    "description": "Complete Postman collection for the HireWise AI-Powered Tech Recruitment Platform, covering all 16 controllers, candidate mobile endpoints, and AI workflow triggers.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5101",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "{{clerk_jwt_token}}",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "00000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "interviewId",
+      "value": "00000000-0000-0000-0000-000000000003",
+      "type": "string"
+    },
+    {
+      "key": "workflowId",
+      "value": "00000000-0000-0000-0000-000000000004",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+15551234567\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Set Self Role (Onboarding)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CANDIDATE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me", "role"]
+            }
+          }
+        },
+        {
+          "name": "Get Candidate Dashboard (Mobile & Web)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "List Users (Admin / Recruiter)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "Browse Jobs (Public & Authenticated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs?page=1&pageSize=20&search=Engineer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" },
+                { "key": "search", "value": "Engineer" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Job Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/{{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Job Vacancy (Recruiter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Distributed Systems Engineer\",\n  \"description\": \"Design high-throughput microservices using Go and .NET.\",\n  \"requirements\": \"5+ years experience with distributed systems and Kubernetes.\",\n  \"location\": \"San Francisco, CA (Hybrid)\",\n  \"employmentType\": \"FULL_TIME\",\n  \"experienceLevel\": \"SENIOR\",\n  \"salaryMin\": 160000,\n  \"salaryMax\": 210000,\n  \"salaryCurrency\": \"USD\",\n  \"status\": \"OPEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs"]
+            }
+          }
+        },
+        {
+          "name": "Update Job Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"OPEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/{{jobId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs", "{{jobId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "Submit Job Application (Candidate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coverLetter\": \"I have extensive experience in high-throughput cloud applications and would love to contribute to HireWise.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/{{jobId}}/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs", "{{jobId}}", "applications"]
+            }
+          }
+        },
+        {
+          "name": "Get My Applications (Candidate)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/me?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Application By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Application Status (Recruiter)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INTERVIEW_APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resumes",
+      "item": [
+        {
+          "name": "Upload Resume (Candidate)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/resumes/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resumes", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Resume",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resumes/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resumes", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interviews",
+      "item": [
+        {
+          "name": "Schedule Interview (Recruiter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\",\n  \"interviewerId\": \"00000000-0000-0000-0000-000000000005\",\n  \"scheduledStartTime\": \"2026-10-01T15:00:00Z\",\n  \"scheduledEndTime\": \"2026-10-01T16:00:00Z\",\n  \"meetingLink\": \"https://meet.google.com/xyz-abcd-uvw\",\n  \"notes\": \"Technical System Design Interview\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "interviews"]
+            }
+          }
+        },
+        {
+          "name": "Get My Interviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "interviews", "me"]
+            }
+          }
+        },
+        {
+          "name": "Submit Interview Feedback (Interviewer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicalSkillsRating\": 5,\n  \"problemSolvingRating\": 4,\n  \"communicationRating\": 5,\n  \"culturalFitRating\": 5,\n  \"overallRating\": 4.75,\n  \"recommendation\": \"STRONG_HIRE\",\n  \"notes\": \"Candidate showcased deep architectural knowledge.\",\n  \"strengths\": \"System design, distributed concurrency\",\n  \"weaknesses\": \"Minimal direct experience with GCP Spanner\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/{{interviewId}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "interviews", "{{interviewId}}", "feedback"]
+            }
+          }
+        },
+        {
+          "name": "Get Interview Questions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/{{interviewId}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "interviews", "{{interviewId}}", "questions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Workflows",
+      "item": [
+        {
+          "name": "Trigger AI Workflow (Manual)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/workflows/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "workflows", "start"]
+            }
+          }
+        },
+        {
+          "name": "Get Candidate Evaluations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/evaluations?jobId={{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "evaluations"]
+            }
+          }
+        },
+        {
+          "name": "Approve AI Evaluation (Human Gate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Approved candidate for tech round.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/workflows/{{workflowId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "workflows", "{{workflowId}}", "approve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "unread-count"]
+            }
+          }
+        },
+        {
+          "name": "Mark All As Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin & Settings",
+      "item": [
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditlogs?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditlogs"]
+            }
+          }
+        },
+        {
+          "name": "Get Agent Configs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent-configs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agent-configs"]
+            }
+          }
+        },
+        {
+          "name": "Get Analytics Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "dashboard"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

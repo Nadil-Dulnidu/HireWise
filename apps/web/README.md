@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# HireWise Web Portal (`apps/web`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **React 18 & Vite Client** — Modern management dashboard for Recruiters, Interviewers, and Platform Administrators on the HireWise AI recruitment platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🏛️ Architecture Overview
 
-## React Compiler
+The web portal is built with React 18, TypeScript, and Vite:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **UI & Design System**: Tailwind CSS with [shadcn/ui](https://ui.shadcn.com/) (accessible Radix UI primitives), Lucide React icons, and Dark/Light theme toggle.
+- **State & Caching**: TanStack Query (React Query v5) for server state management, optimistic updates, and cache invalidation. Redux Toolkit for local UI state.
+- **Routing**: React Router v7 with layout-based nested routes and declarative role guards (`ProtectedRoute`).
+- **Authentication**: `@clerk/clerk-react` with pre-built `<OrganizationSwitcher />`, `<CreateOrganization />`, and custom onboarding workflows.
+- **Charts & Metrics**: shadcn/ui Charts (Recharts wrapper) for recruitment funnel velocities and evaluation distributions.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+### Prerequisites
+- [Node.js 20+](https://nodejs.org/)
+- `npm` or `pnpm`
+- Running HireWise Backend API (`apps/api`) at `http://localhost:5101`
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Configuration
+Create `.env` based on `.env.example`:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+VITE_API_BASE_URL=http://localhost:5101
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### Installation & Local Execution
+```bash
+cd apps/web
+npm install
+npm run dev
 ```
+
+Application runs on `http://localhost:5173`.
+
+---
+
+## 🧪 Testing & Quality
+
+Run unit and component tests:
+```bash
+cd apps/web
+npm run test
+```
+
+Build production bundle:
+```bash
+npm run build
+```
+
+Run ESLint:
+```bash
+npm run lint
+```
+
+---
+
+## 📱 Role Boundaries
+- **Recruiters & Admins**: Create organizations, post jobs, review AI candidate rankings, approve workflows, and schedule interview rounds.
+- **Interviewers**: Access assigned interviews, view candidate resumes, utilize AI-suggested questions, and submit structured evaluation rubrics.
+- **Candidates**: Candidates utilize the dedicated Flutter Mobile Client (`apps/mobile`), while retaining access to the public job board on the web.
+
+---
+
+## 📚 Related Documentation
+- [System Architecture](../../docs/architecture.md)
+- [API Reference](../../docs/api.md)
+- [Live Demo Script](../../docs/demo_script.md)
+- [Candidate Mobile Implementation Plan](../../docs/mobile/implementation_plan.md)
