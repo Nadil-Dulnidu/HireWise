@@ -108,7 +108,7 @@ export function RecruiterDashboard() {
             icon: Bot,
             color: "text-purple-600",
             bg: "bg-purple-50 border border-purple-100",
-            link: "/recruiter/ai-evaluations",
+            link: "/recruiter/applications",
           },
           {
             label: "Pending Approvals",
@@ -116,7 +116,7 @@ export function RecruiterDashboard() {
             icon: Activity,
             color: "text-amber-600",
             bg: "bg-amber-50 border border-amber-100",
-            link: "/recruiter/scheduling",
+            link: "/recruiter/applications",
           },
         ].map((kpi, i) => (
           <Link
@@ -147,7 +147,7 @@ export function RecruiterDashboard() {
               Recommendations
             </h3>
             <Link
-              to="/recruiter/ai-evaluations"
+              to="/recruiter/applications"
               className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
               Review Queue <ArrowRight className="h-3 w-3" />

@@ -37,8 +37,6 @@ import { RecruiterApplicationsPage } from "@/pages/recruiter/RecruiterApplicatio
 import { RecruiterApplicationDetailPage } from "@/pages/recruiter/RecruiterApplicationDetailPage";
 import { RecruiterInterviewsPage } from "@/pages/recruiter/RecruiterInterviewsPage";
 import { RecruiterInterviewDetailPage } from "@/pages/recruiter/RecruiterInterviewDetailPage";
-import { RecruiterSchedulingPage } from "@/pages/recruiter/RecruiterSchedulingPage";
-import { RecruiterAiEvaluationsPage } from "@/pages/recruiter/RecruiterAiEvaluationsPage";
 import { RecruiterAiWorkflowsPage } from "@/pages/recruiter/RecruiterAiWorkflowsPage";
 
 // Interviewer & Admin Pages
@@ -144,9 +142,12 @@ export function App() {
             />
             <Route
               path="ai-evaluations"
-              element={<RecruiterAiEvaluationsPage />}
+              element={<Navigate to="/recruiter/applications" replace />}
             />
-            <Route path="scheduling" element={<RecruiterSchedulingPage />} />
+            <Route
+              path="scheduling"
+              element={<Navigate to="/recruiter/applications" replace />}
+            />
             <Route path="interviews" element={<RecruiterInterviewsPage />} />
             <Route
               path="interviews/:id"

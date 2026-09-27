@@ -137,7 +137,11 @@ export function NotificationDropdown({
 
     // Determine target route based on notification type and user role
     if (notification.type === "AI_EVALUATION_COMPLETE") {
-      navigate("/recruiter/ai-evaluations");
+      if (notification.referenceId) {
+        navigate(`/recruiter/applications/${notification.referenceId}`);
+      } else {
+        navigate("/recruiter/applications");
+      }
     } else if (notification.type === "INTERVIEW_SCHEDULED") {
       if (notification.referenceId) {
         navigate(

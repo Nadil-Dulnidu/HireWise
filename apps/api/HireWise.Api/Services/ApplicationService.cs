@@ -21,6 +21,7 @@ public interface IApplicationService
     Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(Guid id, ApplicationStatus newStatus, Guid recruiterCompanyId, CancellationToken ct = default);
     Task<Result<ApplicationDto>> ApproveForInterviewAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
     Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
+    Task<Result<SchedulingReadinessDto>> GetSchedulingReadinessAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
 }
 
 public class ApplicationService : IApplicationService
@@ -376,7 +377,12 @@ public class ApplicationService : IApplicationService
 
     public async Task<Result<ApplicationDto>> ApproveForInterviewAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
-        var application = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
+        var application = await _db.Applications
+            .Include(a => a.Job)
+                .ThenInclude(j => j.Company)
+            .Include(a => a.Candidate)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
         if (application == null)
         {
             return Result<ApplicationDto>.NotFound("Application not found.");
@@ -386,6 +392,82 @@ public class ApplicationService : IApplicationService
             application.Status == ApplicationStatus.INTERVIEW_COMPLETED)
         {
             return Result<ApplicationDto>.Conflict("Cannot approve: an interview is already scheduled or completed for this applicant.");
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // 1. Check if organization has interviewers
+        var companyInterviewers = await _db.Users
+            .Where(u => u.CompanyId == recruiterCompanyId && u.Role == UserRole.INTERVIEWER && !u.IsDeleted)
+            .ToListAsync(ct);
+
+        if (companyInterviewers.Count == 0)
+        {
+            return Result<ApplicationDto>.Failure(
+                "Your organization does not have any interviewers assigned. Please add interviewers in Team & Interviewers before approving candidates for interviews.",
+                400);
+        }
+
+        // 2. Check if organization interviewers have availability slots
+        var interviewerIds = companyInterviewers.Select(u => u.Id).ToList();
+        var hasInterviewerSlots = await _db.AvailabilitySlots
+            .AnyAsync(s => interviewerIds.Contains(s.UserId) && !s.IsDeleted && (s.SpecificDate == null || s.SpecificDate >= today), ct);
+
+        if (!hasInterviewerSlots)
+        {
+            return Result<ApplicationDto>.Failure(
+                "Your organization's interviewers have not added any availability slots yet. Please ensure your interviewers publish their available time slots before approving candidates.",
+                400);
+        }
+
+        // 3. Check if candidate has availability slots
+        var hasCandidateSlots = await _db.AvailabilitySlots
+            .AnyAsync(s => s.UserId == application.CandidateId && !s.IsDeleted && (s.SpecificDate == null || s.SpecificDate >= today), ct);
+
+        if (!hasCandidateSlots)
+        {
+            var candidateEmail = application.Candidate?.Email;
+            var candidateName = application.Candidate != null
+                ? $"{application.Candidate.FirstName} {application.Candidate.LastName}".Trim()
+                : "Candidate";
+            var jobTitle = application.Job?.Title ?? "the position";
+            var companyName = application.Job?.Company?.Name ?? "the hiring organization";
+
+            if (!string.IsNullOrWhiteSpace(candidateEmail))
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendAvailabilitySlotRequestEmailAsync(
+                            candidateEmail, candidateName, jobTitle, companyName, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send availability slot request email to {Email}", candidateEmail);
+                    }
+                });
+            }
+
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    application.CandidateId,
+                    "Action Required: Add Interview Availability",
+                    $"You are shortlisted for {jobTitle} at {companyName}! Please add your availability slots in your candidate dashboard so our team can schedule your interview.",
+                    NotificationType.APPLICATION_UPDATE,
+                    "Application",
+                    application.Id,
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not create notification for candidate {CandidateId}", application.CandidateId);
+            }
+
+            return Result<ApplicationDto>.Failure(
+                "The candidate has not provided any availability slots yet. An email notification has been sent requesting them to add their available time slots before interview approval can proceed.",
+                400);
         }
 
         var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct);
@@ -415,6 +497,60 @@ public class ApplicationService : IApplicationService
         }
 
         return updateResult;
+    }
+
+    public async Task<Result<SchedulingReadinessDto>> GetSchedulingReadinessAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
+    {
+        var application = await _db.Applications
+            .Include(a => a.Candidate)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
+        if (application == null)
+        {
+            return Result<SchedulingReadinessDto>.NotFound("Application not found.");
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var companyInterviewers = await _db.Users
+            .Where(u => u.CompanyId == recruiterCompanyId && u.Role == UserRole.INTERVIEWER && !u.IsDeleted)
+            .ToListAsync(ct);
+
+        var interviewerCount = companyInterviewers.Count;
+        var interviewerIds = companyInterviewers.Select(u => u.Id).ToList();
+
+        var interviewerSlotCount = await _db.AvailabilitySlots
+            .CountAsync(s => interviewerIds.Contains(s.UserId) && !s.IsDeleted && (s.SpecificDate == null || s.SpecificDate >= today), ct);
+
+        var candidateSlotCount = await _db.AvailabilitySlots
+            .CountAsync(s => s.UserId == application.CandidateId && !s.IsDeleted && (s.SpecificDate == null || s.SpecificDate >= today), ct);
+
+        var hasInterviewers = interviewerCount > 0;
+        var hasInterviewerSlots = interviewerSlotCount > 0;
+        var hasCandidateSlots = candidateSlotCount > 0;
+        var canApprove = hasInterviewers && hasInterviewerSlots && hasCandidateSlots;
+
+        string? message = null;
+        if (!hasInterviewers)
+            message = "No interviewers found in your organization. Please add interviewers in Team & Interviewers.";
+        else if (!hasInterviewerSlots)
+            message = "Interviewers have not published any availability slots yet.";
+        else if (!hasCandidateSlots)
+            message = "Candidate has not provided availability slots yet. Approving will notify them via email.";
+
+        var dto = new SchedulingReadinessDto
+        {
+            HasInterviewers = hasInterviewers,
+            InterviewerCount = interviewerCount,
+            HasInterviewerSlots = hasInterviewerSlots,
+            InterviewerSlotCount = interviewerSlotCount,
+            HasCandidateSlots = hasCandidateSlots,
+            CandidateSlotCount = candidateSlotCount,
+            CanApprove = canApprove,
+            Message = message
+        };
+
+        return Result<SchedulingReadinessDto>.Success(dto);
     }
 
     public async Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)

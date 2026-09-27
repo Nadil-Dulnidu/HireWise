@@ -8,6 +8,21 @@ import type {
   ApplicationFilterRequest,
 } from "@/types/applications";
 
+export interface SchedulingReadiness {
+  applicationId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  hasInterviewers: boolean;
+  interviewerCount: number;
+  hasInterviewerSlots: boolean;
+  interviewerSlotCount: number;
+  hasCandidateSlots: boolean;
+  candidateSlotCount: number;
+  canApprove: boolean;
+  message?: string;
+}
+
 export const applicationsApi = {
   applyToJob: async (jobId: string, data: ApplyJobRequest) => {
     const response = await apiClient.post<ApiResponse<Application>>(
@@ -32,6 +47,13 @@ export const applicationsApi = {
   getApplicationById: async (id: string) => {
     const response = await apiClient.get<ApiResponse<ApplicationDetail>>(
       `/applications/${id}`,
+    );
+    return response.data.data;
+  },
+
+  getSchedulingReadiness: async (id: string) => {
+    const response = await apiClient.get<ApiResponse<SchedulingReadiness>>(
+      `/applications/${id}/scheduling-readiness`,
     );
     return response.data.data;
   },
@@ -80,3 +102,4 @@ export const applicationsApi = {
     return response.data.data;
   },
 };
+

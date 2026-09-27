@@ -11,6 +11,7 @@ public interface IEmailService
     Task SendInterviewCancelledEmailAsync(string toEmail, string recipientName, string jobTitle, string? reason, CancellationToken ct = default);
     Task SendAiEvaluationCompleteEmailAsync(string toEmail, string recruiterName, string candidateName, string jobTitle, CancellationToken ct = default);
     Task SendInterviewFeedbackSubmittedEmailAsync(string toEmail, string recruiterName, string interviewerName, string candidateName, string jobTitle, CancellationToken ct = default);
+    Task SendAvailabilitySlotRequestEmailAsync(string toEmail, string candidateName, string jobTitle, string companyName, CancellationToken ct = default);
 }
 
 public class EmailService : IEmailService
@@ -124,4 +125,11 @@ public class EmailService : IEmailService
         var html = EmailTemplates.FeedbackSubmitted(recruiterName, interviewerName, candidateName, jobTitle);
         await SendEmailAsync(toEmail, $"Interview Feedback Submitted — {candidateName} for {jobTitle}", html, ct);
     }
+
+    public async Task SendAvailabilitySlotRequestEmailAsync(string toEmail, string candidateName, string jobTitle, string companyName, CancellationToken ct = default)
+    {
+        var html = EmailTemplates.AvailabilitySlotRequest(candidateName, jobTitle, companyName);
+        await SendEmailAsync(toEmail, $"Action Required: Add Your Interview Availability — {jobTitle} at {companyName}", html, ct);
+    }
 }
+

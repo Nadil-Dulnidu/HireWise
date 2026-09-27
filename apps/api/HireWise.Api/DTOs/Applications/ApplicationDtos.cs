@@ -55,3 +55,16 @@ public class ApplicationFilterRequest : PagedRequest
     public Guid? CompanyId { get; set; }
     public ApplicationStatus? Status { get; set; }
 }
+
+public class SchedulingReadinessDto
+{
+    public bool HasInterviewers { get; set; }
+    public int InterviewerCount { get; set; }
+    public bool HasInterviewerSlots { get; set; }
+    public int InterviewerSlotCount { get; set; }
+    public bool HasCandidateSlots { get; set; }
+    public int CandidateSlotCount { get; set; }
+    public bool CanApprove { get; set; }
+    public string? Message { get; set; }
+}
+

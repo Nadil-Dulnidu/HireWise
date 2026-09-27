@@ -100,7 +100,9 @@ export function useToastNotifications() {
         title: payload.title || "AI Evaluation Ready ⚡",
         message: payload.message,
         type: "ai",
-        link: "/recruiter/ai-evaluations",
+        link: payload.referenceId
+          ? `/recruiter/applications/${payload.referenceId}`
+          : "/recruiter/applications",
         duration: 8000,
       });
     };

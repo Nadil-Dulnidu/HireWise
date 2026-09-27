@@ -6,8 +6,6 @@ import {
   Users,
   UserCheck,
   FileSpreadsheet,
-  Bot,
-  Calendar,
   Activity,
 } from "lucide-react";
 
@@ -20,12 +18,6 @@ const recruiterNav: NavItem[] = [
     label: "Applications",
     href: "/recruiter/applications",
     icon: FileSpreadsheet,
-  },
-  { label: "AI Evaluations", href: "/recruiter/ai-evaluations", icon: Bot },
-  {
-    label: "Interview Scheduling",
-    href: "/recruiter/scheduling",
-    icon: Calendar,
   },
   { label: "Interviews", href: "/recruiter/interviews", icon: Users },
   {

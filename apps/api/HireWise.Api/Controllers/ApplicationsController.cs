@@ -134,6 +134,25 @@ public class ApplicationsController : ControllerBase
         return Ok(ApiResponse<ApplicationDto>.Ok(result.Value!, "Application approved for interview scheduling"));
     }
 
+    [HttpGet("api/applications/{id:guid}/scheduling-readiness")]
+    [Authorize(Roles = "ADMIN,RECRUITER")]
+    public async Task<IActionResult> GetSchedulingReadiness(Guid id, CancellationToken ct)
+    {
+        var user = await GetCurrentDbUserAsync(ct);
+        if (user == null || !user.CompanyId.HasValue)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Recruiter must be assigned to a company."));
+        }
+
+        var result = await _applicationService.GetSchedulingReadinessAsync(id, user.CompanyId.Value, ct);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to check scheduling readiness"));
+        }
+
+        return Ok(ApiResponse<SchedulingReadinessDto>.Ok(result.Value!));
+    }
+
     [HttpPut("api/applications/{id:guid}/reject")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
     public async Task<IActionResult> RejectApplication(Guid id, CancellationToken ct)

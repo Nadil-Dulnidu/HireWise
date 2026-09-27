@@ -13,8 +13,11 @@ import {
   XCircle,
   ChevronRight,
   Loader2,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
-import type { ApplicationStatus } from "@/types/applications";
+import { ScheduleInterviewDialog } from "@/components/recruiter/ScheduleInterviewDialog";
+import type { ApplicationStatus, Application } from "@/types/applications";
 import type { Job } from "@/types/jobs";
 
 const statusOptions: { value: ApplicationStatus | ""; label: string }[] = [
@@ -39,6 +42,10 @@ export function RecruiterApplicationsPage() {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+
+  const [schedulingApp, setSchedulingApp] = useState<Application | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: jobsData } = useQuery({
     queryKey: ["recruiterJobsList"],
@@ -66,19 +73,57 @@ export function RecruiterApplicationsPage() {
   const approveMutation = useMutation({
     mutationFn: (id: string) => applicationsApi.approveForInterview(id),
     onSuccess: () => {
+      setActionError(null);
+      setActionSuccess("Candidate approved for interview scheduling!");
       queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+    onError: (err: any) => {
+      setActionSuccess(null);
+      const errMsg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to approve candidate for interview.";
+      setActionError(errMsg);
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => applicationsApi.rejectApplication(id),
     onSuccess: () => {
+      setActionError(null);
+      setActionSuccess("Application rejected.");
       queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+    onError: (err: any) => {
+      setActionSuccess(null);
+      setActionError(
+        err?.response?.data?.error || err.message || "Failed to reject application"
+      );
     },
   });
 
   return (
     <div className="space-y-8">
+      {/* Action Messages */}
+      {actionSuccess && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center gap-3 shadow-xs">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span className="font-medium leading-relaxed">{actionSuccess}</span>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-800 flex items-start gap-3 shadow-xs">
+          <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold block">Approval Blocked</span>
+            <p className="text-slate-700 leading-relaxed">{actionError}</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -228,12 +273,14 @@ export function RecruiterApplicationsPage() {
                 )}
 
                 {app.status === "INTERVIEW_APPROVED" && (
-                  <Link
-                    to="/recruiter/scheduling"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3 py-2 text-xs font-semibold transition"
+                  <button
+                    type="button"
+                    onClick={() => setSchedulingApp(app)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
                   >
+                    <Calendar className="h-3.5 w-3.5 text-indigo-600" />
                     Schedule Interview
-                  </Link>
+                  </button>
                 )}
 
                 {app.status === "INTERVIEW_SCHEDULED" && (
@@ -249,7 +296,7 @@ export function RecruiterApplicationsPage() {
                   <button
                     onClick={() => rejectMutation.mutate(app.id)}
                     disabled={rejectMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 px-3 py-2 text-xs font-semibold transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
                   >
                     <XCircle className="h-3.5 w-3.5" /> Reject
                   </button>
@@ -277,6 +324,21 @@ export function RecruiterApplicationsPage() {
           </div>
         )}
       </div>
+
+      {/* Schedule Interview Dialog */}
+      <ScheduleInterviewDialog
+        isOpen={!!schedulingApp}
+        onClose={() => setSchedulingApp(null)}
+        applicationId={schedulingApp?.id}
+        candidateName={schedulingApp?.candidateName}
+        jobTitle={schedulingApp?.jobTitle}
+        candidateId={schedulingApp?.candidateId}
+        onSuccess={() => {
+          setActionSuccess("Technical interview scheduled successfully!");
+          queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+          setTimeout(() => setActionSuccess(null), 4000);
+        }}
+      />
     </div>
   );
 }

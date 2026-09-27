@@ -293,4 +293,39 @@ public static class EmailTemplates
 
         return WrapInLayout("Interview Feedback Ready — HireWise", body);
     }
+
+    public static string AvailabilitySlotRequest(string candidateName, string jobTitle, string companyName)
+    {
+        var body = $"""
+        <h2 style="margin:0 0 8px;color:{TextPrimary};font-size:22px;font-weight:700;">Action Required: Add Your Interview Availability 📅</h2>
+        <p style="margin:0 0 20px;color:{TextSecondary};font-size:15px;line-height:1.6;">
+            Hi <strong>{candidateName}</strong>,
+        </p>
+        <p style="margin:0 0 20px;color:{TextPrimary};font-size:15px;line-height:1.6;">
+            Great news! Your application for <strong>{jobTitle}</strong> at <strong>{companyName}</strong> has been shortlisted for an interview round.
+        </p>
+
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:{BackgroundLight};border-radius:12px;padding:24px;margin-bottom:24px;">
+            {InfoRow("Position", $"<strong>{jobTitle}</strong>")}
+            {InfoRow("Company", companyName)}
+            {InfoRow("Next Step", StatusBadge("AVAILABILITY NEEDED", "#f59e0b"))}
+        </table>
+
+        <p style="margin:0 0 24px;color:{TextSecondary};font-size:14px;line-height:1.7;">
+            Before the hiring team can finalize your interview schedule, please sign in to your HireWise Candidate Portal and submit your available weekly time slots or specific dates.
+        </p>
+
+        <div style="text-align:center;margin:32px 0;">
+            <a href="https://hirewise.dev/candidate/availability" style="display:inline-block;background:{BrandColor};color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;box-shadow:0 4px 6px -1px rgba(99, 102, 241, 0.2);">
+                Add Availability Slots &rarr;
+            </a>
+        </div>
+
+        <p style="margin:0;color:{TextSecondary};font-size:13px;line-height:1.6;">
+            Once your slots are saved, your recruiters and interviewers will be able to confirm a time that fits your schedule.
+        </p>
+        """;
+
+        return WrapInLayout($"Interview Availability Needed — {jobTitle}", body);
+    }
 }

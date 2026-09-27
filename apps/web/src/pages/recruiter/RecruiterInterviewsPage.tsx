@@ -16,6 +16,7 @@ import {
   Star,
   AlertTriangle,
 } from "lucide-react";
+import { ScheduleInterviewDialog } from "@/components/recruiter/ScheduleInterviewDialog";
 import type { InterviewStatus } from "@/types/interviews";
 
 const getStatusBadge = (status: InterviewStatus) => {
@@ -65,6 +66,7 @@ export function RecruiterInterviewsPage() {
   const [page] = useState(1);
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["recruiterInterviews", page, statusFilter, searchTerm],
@@ -105,12 +107,13 @@ export function RecruiterInterviewsPage() {
             your company.
           </p>
         </div>
-        <Link
-          to="/recruiter/scheduling"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm"
+        <button
+          type="button"
+          onClick={() => setIsScheduleModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Schedule New Interview
-        </Link>
+        </button>
       </div>
 
       {/* Filter & Search */}
@@ -159,12 +162,13 @@ export function RecruiterInterviewsPage() {
             Get started by scheduling an interview for an approved candidate
             application.
           </p>
-          <Link
-            to="/recruiter/scheduling"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm"
+          <button
+            type="button"
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Schedule Interview
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -343,6 +347,16 @@ export function RecruiterInterviewsPage() {
           </div>
         </div>
       )}
+
+      {/* Schedule Interview Dialog */}
+      <ScheduleInterviewDialog
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["recruiterInterviews"] });
+          queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+        }}
+      />
     </div>
   );
 }
