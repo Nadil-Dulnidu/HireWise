@@ -373,6 +373,12 @@ async def evaluation_approval_gate_node(state: EvaluationState) -> EvaluationSta
         "resume_analysis": state.get("resume_analysis"),
         "candidate_evaluation": state.get("candidate_evaluation"),
         "validation_result": state.get("validation_result"),
+        "candidate_id": state.get("candidate_id"),
+        "interviewer_id": state.get("interviewer_id"),
+        "candidate_slots": state.get("candidate_slots"),
+        "interviewer_slots": state.get("interviewer_slots"),
+        "timezone": state.get("timezone"),
+        "duration_minutes": state.get("duration_minutes"),
     }
 
     await repo.update_workflow_status(
@@ -514,6 +520,23 @@ async def scheduling_recommendation_node(state: EvaluationState) -> EvaluationSt
     candidate_slots_raw = state.get("candidate_slots") or []
     interviewer_slots_raw = state.get("interviewer_slots") or []
 
+    # Self-heal availability slots from PostgreSQL if missing or empty
+    if not candidate_slots_raw or not interviewer_slots_raw:
+        try:
+            cand_id, inv_id, c_db, i_db = await repo.get_availability_slots_for_application(app_id)
+            if not candidate_slots_raw and c_db:
+                candidate_slots_raw = c_db
+                state["candidate_slots"] = c_db
+            if not interviewer_slots_raw and i_db:
+                interviewer_slots_raw = i_db
+                state["interviewer_slots"] = i_db
+            if not state.get("candidate_id") and cand_id:
+                state["candidate_id"] = cand_id
+            if not state.get("interviewer_id") and inv_id:
+                state["interviewer_id"] = inv_id
+        except Exception as db_err:
+            logger.warning(f"[{workflow_id}] Failed to load availability slots from DB fallback: {db_err}")
+
     c_slots = [
         AvailabilitySlotInput(**s) if isinstance(s, dict) else s
         for s in candidate_slots_raw
@@ -609,6 +632,10 @@ async def schedule_approval_gate_node(state: EvaluationState) -> EvaluationState
     )
 
     schedule_artifact = {
+        "job_analysis": state.get("job_analysis"),
+        "resume_analysis": state.get("resume_analysis"),
+        "candidate_evaluation": state.get("candidate_evaluation"),
+        "validation_result": state.get("validation_result"),
         "interview_questions": state.get("interview_questions"),
         "scheduling_recommendation": state.get("scheduling_recommendation"),
     }
@@ -660,6 +687,18 @@ async def interview_creation_node(state: EvaluationState) -> EvaluationState:
     logger.info(
         f"[{workflow_id}] Completing entire recruitment workflow and finalizing interview {interview_id_str}..."
     )
+
+    step_id = (
+        uuid.UUID(state["step_ids"]["INTERVIEW_CREATION"])
+        if "step_ids" in state and "INTERVIEW_CREATION" in state["step_ids"]
+        else None
+    )
+    if step_id:
+        await repo.update_step(
+            step_id,
+            status="COMPLETED",
+            output_data={"interview_id": interview_id_str, "status": "FINALIZED", "selected_slot": state.get("selected_slot")},
+        )
 
     await repo.update_workflow_status(
         workflow_id=workflow_id,

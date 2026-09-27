@@ -125,11 +125,18 @@ class EvaluationApprovalRequest(BaseModel):
     decision: str = "APPROVED"  # "APPROVED" or "REJECTED"
     approved_by_user_id: Optional[uuid.UUID] = None
     notes: Optional[str] = None
+    candidate_id: Optional[str] = None
+    interviewer_id: Optional[str] = None
+    candidate_slots: Optional[List[AvailabilitySlotInput]] = None
+    interviewer_slots: Optional[List[AvailabilitySlotInput]] = None
+    duration_minutes: Optional[int] = None
+    timezone: Optional[str] = None
 
 
 class ScheduleConfirmationRequest(BaseModel):
     selected_slot: RecommendedSlot
     approved_by_user_id: Optional[uuid.UUID] = None
+    interview_id: Optional[str] = None
     notes: Optional[str] = None
 
 

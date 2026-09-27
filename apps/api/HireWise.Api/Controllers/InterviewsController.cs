@@ -37,7 +37,7 @@ public class InterviewsController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("Recruiter must be assigned to a company."));
         }
 
-        var result = await _interviewService.CreateInterviewAsync(request, user.CompanyId.Value, ct);
+        var result = await _interviewService.CreateInterviewAsync(request, user.CompanyId.Value, user.Id, ct);
         if (!result.IsSuccess)
         {
             return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to create interview"));

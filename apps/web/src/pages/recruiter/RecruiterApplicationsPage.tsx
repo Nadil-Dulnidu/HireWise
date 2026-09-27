@@ -333,6 +333,7 @@ export function RecruiterApplicationsPage() {
         candidateName={schedulingApp?.candidateName}
         jobTitle={schedulingApp?.jobTitle}
         candidateId={schedulingApp?.candidateId}
+        aiWorkflowId={schedulingApp?.aiWorkflowId}
         onSuccess={() => {
           setActionSuccess("Technical interview scheduled successfully!");
           queryClient.invalidateQueries({ queryKey: ["companyApplications"] });

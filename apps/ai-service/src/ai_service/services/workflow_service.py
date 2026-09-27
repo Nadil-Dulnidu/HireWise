@@ -95,6 +95,23 @@ class WorkflowService:
             else []
         )
 
+        cand_id_val = request.candidate_id
+        inv_id_val = request.interviewer_id
+
+        if not c_slots_dump or not i_slots_dump:
+            try:
+                cand_db, inv_db, c_db, i_db = await self.repo.get_availability_slots_for_application(app_id)
+                if not c_slots_dump and c_db:
+                    c_slots_dump = c_db
+                if not i_slots_dump and i_db:
+                    i_slots_dump = i_db
+                if not cand_id_val and cand_db:
+                    cand_id_val = cand_db
+                if not inv_id_val and inv_db:
+                    inv_id_val = inv_db
+            except Exception as e:
+                logger.warning(f"[{workflow_id}] Error resolving availability slots from DB: {e}")
+
         # 3. Assemble initial LangGraph state
         initial_state: EvaluationState = {
             "workflow_id": str(workflow_id),
@@ -104,8 +121,8 @@ class WorkflowService:
             "job_description": request.job_description,
             "job_requirements": request.job_requirements,
             "candidate_resume_url": request.candidate_resume_url,
-            "candidate_id": request.candidate_id or str(app_id),
-            "interviewer_id": request.interviewer_id,
+            "candidate_id": cand_id_val or str(app_id),
+            "interviewer_id": inv_id_val,
             "candidate_slots": c_slots_dump,
             "interviewer_slots": i_slots_dump,
             "current_step": "JOB_ANALYSIS",
@@ -182,6 +199,34 @@ class WorkflowService:
                 created_at=wf["CreatedAt"],
             )
 
+        # Extract candidate slots and interviewer slots
+        c_slots_req = (
+            [s.model_dump(mode="json") if hasattr(s, "model_dump") else s for s in request.candidate_slots]
+            if request.candidate_slots
+            else final_result.get("candidate_slots") or []
+        )
+        i_slots_req = (
+            [s.model_dump(mode="json") if hasattr(s, "model_dump") else s for s in request.interviewer_slots]
+            if request.interviewer_slots
+            else final_result.get("interviewer_slots") or []
+        )
+        cand_id_resolved = request.candidate_id or final_result.get("candidate_id")
+        inv_id_resolved = request.interviewer_id or final_result.get("interviewer_id")
+
+        if not c_slots_req or not i_slots_req:
+            try:
+                cand_db, inv_db, c_db, i_db = await self.repo.get_availability_slots_for_application(app_id)
+                if not c_slots_req and c_db:
+                    c_slots_req = c_db
+                if not i_slots_req and i_db:
+                    i_slots_req = i_db
+                if not cand_id_resolved and cand_db:
+                    cand_id_resolved = cand_db
+                if not inv_id_resolved and inv_db:
+                    inv_id_resolved = inv_db
+            except Exception as e:
+                logger.warning(f"[{workflow_id}] Error resolving availability slots from DB in submit_evaluation_approval: {e}")
+
         # Build resume state to proceed to Stage 2 (Question Generation)
         resume_state: EvaluationState = {
             "workflow_id": str(workflow_id),
@@ -191,6 +236,12 @@ class WorkflowService:
             "resume_analysis": final_result.get("resume_analysis"),
             "candidate_evaluation": final_result.get("candidate_evaluation"),
             "validation_result": final_result.get("validation_result"),
+            "candidate_id": cand_id_resolved,
+            "interviewer_id": inv_id_resolved,
+            "candidate_slots": c_slots_req,
+            "interviewer_slots": i_slots_req,
+            "duration_minutes": request.duration_minutes or final_result.get("duration_minutes") or 45,
+            "timezone": request.timezone or final_result.get("timezone") or "UTC",
             "evaluation_approved": True,
             "evaluation_approval_notes": request.notes,
             "evaluation_approved_by": str(request.approved_by_user_id)
@@ -264,6 +315,7 @@ class WorkflowService:
             "interview_questions": final_result.get("interview_questions"),
             "scheduling_recommendation": final_result.get("scheduling_recommendation"),
             "selected_slot": request.selected_slot.model_dump(mode="json"),
+            "interview_id": request.interview_id or str(uuid.uuid4()),
             "schedule_approved": True,
             "schedule_approval_notes": request.notes,
             "schedule_approved_by": str(request.approved_by_user_id)

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api/applications-api";
 import { interviewsApi } from "@/lib/api/interviews-api";
 import { availabilityApi } from "@/lib/api/availability-api";
+import { aiApi } from "@/lib/api/ai-api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getInterviewers } from "@/lib/api/users-api";
 import { apiClient } from "@/lib/api-client";
@@ -13,6 +14,7 @@ import {
   Loader2,
   X,
   Sparkles,
+  Bot,
   CheckCircle2,
   CalendarCheck,
   UserCheck,
@@ -34,7 +36,86 @@ interface ScheduleInterviewDialogProps {
   candidateName?: string;
   jobTitle?: string;
   candidateId?: string;
+  aiWorkflowId?: string;
   onSuccess?: () => void;
+}
+
+function extractAiSchedulingRecommendation(workflowResponse: any): {
+  recommended_slots: Array<{
+    start_time: string;
+    end_time: string;
+    score?: number;
+    interviewer_id?: string;
+    candidate_id?: string;
+    conflict_detected?: boolean;
+  }>;
+  reasoning?: string;
+  conflicts?: string[];
+} {
+  if (!workflowResponse) return { recommended_slots: [] };
+  const wf = workflowResponse.workflow || workflowResponse;
+
+  // 1. Try from final_result / finalResult / FinalResultJson
+  let finalResult = wf.final_result || wf.finalResult || wf.FinalResultJson;
+  if (typeof finalResult === "string") {
+    try {
+      finalResult = JSON.parse(finalResult);
+    } catch {}
+  }
+
+  let sched =
+    finalResult?.scheduling_recommendation ||
+    finalResult?.schedulingRecommendation ||
+    finalResult?.scheduling ||
+    finalResult?.SchedulingRecommendation;
+
+  // 2. Fallback to steps array (Step 7: SCHEDULING)
+  if (!sched || !sched.recommended_slots || sched.recommended_slots.length === 0) {
+    const steps: any[] = wf.steps || wf.Steps || [];
+    const schedStep = steps.find((s) => {
+      const sName = (s.step_name || s.stepName || "").toUpperCase();
+      const aName = (s.agent_name || s.agentName || "").toLowerCase();
+      return (
+        sName === "SCHEDULING" ||
+        sName.includes("SCHEDUL") ||
+        aName.includes("scheduling")
+      );
+    });
+
+    if (schedStep) {
+      let outputData = schedStep.output_data ?? schedStep.outputData ?? schedStep.OutputJson;
+      if (typeof outputData === "string") {
+        try {
+          outputData = JSON.parse(outputData);
+        } catch {}
+      }
+      if (outputData && (outputData.recommended_slots || outputData.reasoning)) {
+        sched = outputData;
+      }
+    }
+  }
+
+  if (typeof sched === "string") {
+    try {
+      sched = JSON.parse(sched);
+    } catch {}
+  }
+
+  if (sched && typeof sched === "object") {
+    const slots = Array.isArray(sched.recommended_slots)
+      ? sched.recommended_slots
+      : Array.isArray(sched.recommendedSlots)
+      ? sched.recommendedSlots
+      : [];
+
+    return {
+      recommended_slots: slots,
+      reasoning: sched.reasoning || sched.Reasoning || "",
+      conflicts: Array.isArray(sched.conflicts) ? sched.conflicts : [],
+    };
+  }
+
+  return { recommended_slots: [] };
 }
 
 export function ScheduleInterviewDialog({
@@ -44,6 +125,7 @@ export function ScheduleInterviewDialog({
   candidateName,
   jobTitle,
   candidateId,
+  aiWorkflowId,
   onSuccess,
 }: ScheduleInterviewDialogProps) {
   const queryClient = useQueryClient();
@@ -80,12 +162,14 @@ export function ScheduleInterviewDialog({
         candidateName: candidateName || "Candidate",
         jobTitle: jobTitle || "Position",
         candidateId: candidateId || "",
+        aiWorkflowId: aiWorkflowId,
       };
     }
     return applications.find((a) => a.id === selectedAppId);
-  }, [applicationId, candidateName, jobTitle, candidateId, applications, selectedAppId]);
+  }, [applicationId, candidateName, jobTitle, candidateId, aiWorkflowId, applications, selectedAppId]);
 
   const activeCandidateId = currentApp?.candidateId || candidateId;
+  const activeWorkflowId = aiWorkflowId || (currentApp as any)?.aiWorkflowId;
 
   // Fetch company interviewers
   const { data: interviewers = [], isLoading: interviewersLoading } = useQuery({
@@ -131,6 +215,36 @@ export function ScheduleInterviewDialog({
     queryFn: () => availabilityApi.getInterviewerAvailability(selectedInterviewerId),
     enabled: isOpen && !!selectedInterviewerId,
   });
+
+  // Fetch AI Workflow for the selected application to extract AI Agent Recommended Slots
+  const { data: appWorkflowData } = useQuery({
+    queryKey: ["appAiWorkflowForScheduling", selectedAppId],
+    queryFn: () => aiApi.getApplicationWorkflow(selectedAppId),
+    enabled: isOpen && !!selectedAppId,
+    retry: 1,
+  });
+
+  // Direct workflow fallback query if application workflow query fails or lacks workflow
+  const effectiveWfId = activeWorkflowId || appWorkflowData?.workflow?.workflow_id;
+  const { data: directWorkflow } = useQuery({
+    queryKey: ["workflowDetailDirectScheduling", effectiveWfId],
+    queryFn: () => aiApi.getWorkflowDetails(effectiveWfId!),
+    enabled: isOpen && !!effectiveWfId && (!appWorkflowData || !appWorkflowData.workflow),
+    retry: 1,
+  });
+
+  const effectiveWorkflow = appWorkflowData?.workflow
+    ? appWorkflowData
+    : directWorkflow
+      ? { workflow: directWorkflow }
+      : appWorkflowData;
+
+  const {
+    recommended_slots: aiRecommendedSlots,
+    reasoning: aiReasoning,
+  } = useMemo(() => {
+    return extractAiSchedulingRecommendation(effectiveWorkflow);
+  }, [effectiveWorkflow]);
 
   // Mutual slot overlap computation
   const mutualSlots = useMemo(() => {
@@ -273,6 +387,30 @@ export function ScheduleInterviewDialog({
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysToAdd)
       );
       setStartDate(nextDate.toISOString().split("T")[0]);
+    }
+  };
+
+  const handleApplyAiSlot = (slot: any) => {
+    const sDate = new Date(slot.start_time);
+    const eDate = new Date(slot.end_time);
+
+    // Format YYYY-MM-DD (in UTC)
+    const yyyy = sDate.getUTCFullYear();
+    const mm = String(sDate.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(sDate.getUTCDate()).padStart(2, "0");
+    setStartDate(`${yyyy}-${mm}-${dd}`);
+
+    // Format HH:mm (in UTC)
+    const sH = String(sDate.getUTCHours()).padStart(2, "0");
+    const sM = String(sDate.getUTCMinutes()).padStart(2, "0");
+    const eH = String(eDate.getUTCHours()).padStart(2, "0");
+    const eM = String(eDate.getUTCMinutes()).padStart(2, "0");
+
+    setStartTime(`${sH}:${sM}`);
+    setEndTime(`${eH}:${eM}`);
+
+    if (slot.interviewer_id) {
+      setSelectedInterviewerId(slot.interviewer_id);
     }
   };
 
@@ -434,33 +572,89 @@ export function ScheduleInterviewDialog({
           </select>
         </div>
 
-        {/* Mutual Slot Suggestion / Quick Pickers */}
-        {mutualSlots.length > 0 && (
-          <div className="space-y-2 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
-              <span>Recommended Mutual Slots ({mutualSlots.length} overlap found)</span>
+        {/* AI Recommended Slots (from Interview Scheduling Agent 6) */}
+        {aiRecommendedSlots.length > 0 ? (
+          <div className="space-y-2.5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+              <span className="flex items-center gap-1.5">
+                <Bot className="h-4 w-4 text-indigo-600" />
+                <span>AI Recommended Slots ({aiRecommendedSlots.length} options)</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold">
+                AI Scheduling Agent
+              </span>
             </div>
-            <p className="text-[11px] text-emerald-700">
-              Click a mutual slot to instantly populate the date and time:
+            {aiReasoning && (
+              <p className="text-[11px] text-indigo-700 leading-relaxed">
+                {aiReasoning}
+              </p>
+            )}
+            <p className="text-[11px] text-indigo-800 font-medium">
+              Click an AI optimized slot to autofill date, time, and interviewer:
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              {mutualSlots.slice(0, 4).map((slot) => (
-                <button
-                  key={slot.id}
-                  type="button"
-                  onClick={() => handleApplySlot(slot)}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-xs font-medium text-emerald-800 hover:bg-emerald-100/60 shadow-sm transition flex items-center gap-1.5"
-                >
-                  <CalendarCheck className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>
-                    {slot.specificDate || getDayLabel(slot.dayOfWeek)}:{" "}
-                    {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
-                  </span>
-                </button>
-              ))}
+              {aiRecommendedSlots.slice(0, 6).map((slot: any, idx: number) => {
+                const sDate = new Date(slot.start_time);
+                const eDate = new Date(slot.end_time);
+                const dateLabel = sDate.toLocaleDateString(undefined, {
+                  timeZone: "UTC",
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                });
+                const sH = String(sDate.getUTCHours()).padStart(2, "0");
+                const sM = String(sDate.getUTCMinutes()).padStart(2, "0");
+                const eH = String(eDate.getUTCHours()).padStart(2, "0");
+                const eM = String(eDate.getUTCMinutes()).padStart(2, "0");
+                const timeLabel = `${sH}:${sM} - ${eH}:${eM} UTC`;
+                const matchPct = Math.round((slot.score || 1.0) * 100);
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleApplyAiSlot(slot)}
+                    className="px-3 py-2 rounded-xl bg-white border border-indigo-300 text-xs font-medium text-indigo-950 hover:bg-indigo-100/80 shadow-sm transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <CalendarCheck className="h-4 w-4 text-indigo-600 shrink-0" />
+                    <div className="text-left">
+                      <div className="font-semibold">{dateLabel}: {timeLabel}</div>
+                      <div className="text-[10px] text-emerald-600 font-medium">Score: {matchPct}% match</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
+        ) : (
+          /* Mutual Slot Suggestion / Quick Pickers (Fallback) */
+          mutualSlots.length > 0 && (
+            <div className="space-y-2 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                <Sparkles className="h-4 w-4 text-emerald-600" />
+                <span>Mutual Availability Slots ({mutualSlots.length} overlap found)</span>
+              </div>
+              <p className="text-[11px] text-emerald-700">
+                Click a mutual slot to instantly populate the date and time:
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {mutualSlots.slice(0, 4).map((slot) => (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => handleApplySlot(slot)}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-xs font-medium text-emerald-800 hover:bg-emerald-100/60 shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <CalendarCheck className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>
+                      {slot.specificDate || getDayLabel(slot.dayOfWeek)}:{" "}
+                      {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
         )}
 
         {/* Candidate Available Slots pill list */}

@@ -78,14 +78,23 @@ export interface WorkflowDetail {
     job_analysis?: JobAnalysis;
     resume_analysis?: ResumeAnalysis;
     evaluation?: CandidateEvaluation;
+    candidate_evaluation?: CandidateEvaluation;
     validation?: {
       is_valid: boolean;
       validation_errors: string[];
       warnings: string[];
       confidence_score: number;
     };
-    questions?: { questions: GeneratedQuestion[] };
+    validation_result?: {
+      is_valid: boolean;
+      validation_errors: string[];
+      warnings: string[];
+      confidence_score: number;
+    };
+    questions?: { questions: GeneratedQuestion[] } | GeneratedQuestion[];
+    interview_questions?: { questions: GeneratedQuestion[] } | GeneratedQuestion[];
     scheduling?: Record<string, any>;
+    scheduling_recommendation?: Record<string, any>;
     [key: string]: any;
   };
   steps: StepResponse[];

@@ -69,9 +69,12 @@ class InterviewSchedulingAgent:
                     if overlap_end - overlap_start >= slot_duration:
                         # Generate candidate slot(s) within the overlap
                         curr_start = overlap_start
+                        day_slots = 0
+                        max_per_window = 2 if len(candidate_slots) > 1 else 5
                         while (
                             curr_start + slot_duration <= overlap_end
-                            and len(recommended_slots) < 5
+                            and day_slots < max_per_window
+                            and len(recommended_slots) < 8
                         ):
                             curr_end = curr_start + slot_duration
 
@@ -89,8 +92,9 @@ class InterviewSchedulingAgent:
                                     score=score,
                                 )
                             )
-                            # Advance by 30-minute increments for multiple options
-                            curr_start += timedelta(minutes=30)
+                            day_slots += 1
+                            # Advance by 60 minutes to offer distinct windows throughout the day
+                            curr_start += timedelta(minutes=60)
 
         # Generate reasoning summary
         if recommended_slots:

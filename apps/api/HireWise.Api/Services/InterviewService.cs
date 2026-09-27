@@ -5,6 +5,7 @@ using HireWise.Api.DTOs.Common;
 using HireWise.Api.DTOs.Interviews;
 using HireWise.Api.Models;
 using HireWise.Api.Models.Enums;
+using HireWise.Api.Services.Ai;
 using HireWise.Api.Services.Integrations;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ namespace HireWise.Api.Services;
 
 public interface IInterviewService
 {
-    Task<Result<InterviewDto>> CreateInterviewAsync(CreateInterviewRequest request, Guid recruiterCompanyId, CancellationToken ct = default);
+    Task<Result<InterviewDto>> CreateInterviewAsync(CreateInterviewRequest request, Guid recruiterCompanyId, Guid recruiterUserId, CancellationToken ct = default);
     Task<Result<InterviewDetailDto>> GetInterviewByIdAsync(Guid id, Guid currentUserId, string role, Guid? companyId, CancellationToken ct = default);
     Task<PagedResult<InterviewDto>> GetInterviewsAsync(InterviewFilterRequest request, Guid currentUserId, string role, Guid? companyId, CancellationToken ct = default);
     Task<PagedResult<InterviewDto>> GetMyInterviewsAsync(Guid userId, string role, PagedRequest request, CancellationToken ct = default);
@@ -28,6 +29,7 @@ public class InterviewService : IInterviewService
     private readonly INotificationService _notificationService;
     private readonly IGoogleCalendarService _calendarService;
     private readonly IEmailService _emailService;
+    private readonly IAiServiceClient _aiServiceClient;
     private readonly ILogger<InterviewService> _logger;
 
     public InterviewService(
@@ -36,6 +38,7 @@ public class InterviewService : IInterviewService
         INotificationService notificationService,
         IGoogleCalendarService calendarService,
         IEmailService emailService,
+        IAiServiceClient aiServiceClient,
         ILogger<InterviewService> logger)
     {
         _db = db;
@@ -43,10 +46,11 @@ public class InterviewService : IInterviewService
         _notificationService = notificationService;
         _calendarService = calendarService;
         _emailService = emailService;
+        _aiServiceClient = aiServiceClient;
         _logger = logger;
     }
 
-    public async Task<Result<InterviewDto>> CreateInterviewAsync(CreateInterviewRequest request, Guid recruiterCompanyId, CancellationToken ct = default)
+    public async Task<Result<InterviewDto>> CreateInterviewAsync(CreateInterviewRequest request, Guid recruiterCompanyId, Guid recruiterUserId, CancellationToken ct = default)
     {
         // 1. Check Application
         var application = await _db.Applications
@@ -224,6 +228,38 @@ public class InterviewService : IInterviewService
                 _logger.LogError(ex, "Failed to send interview scheduled emails for Interview {InterviewId}", interview.Id);
             }
         });
+
+        // 7. Notify AI Service to complete Stage 3 (Step 8: Schedule Approval Gate & Step 9: Interview Finalization)
+        if (application.AiWorkflowId.HasValue)
+        {
+            var wfId = application.AiWorkflowId.Value;
+            var cId = application.CandidateId;
+            var iId = interviewer.Id;
+            var intId = interview.Id;
+            var sTime = startTimeUtc;
+            var eTime = endTimeUtc;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _aiServiceClient.ConfirmScheduleSlotAsync(
+                        wfId,
+                        sTime,
+                        eTime,
+                        cId,
+                        iId,
+                        approvedByUserId: recruiterUserId,
+                        interviewId: intId,
+                        notes: "Interview schedule confirmed and booked by recruiter",
+                        ct: CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to notify AI Service of schedule confirmation for Workflow {WorkflowId}", wfId);
+                }
+            });
+        }
 
         var created = await _db.Interviews
             .Include(i => i.Job).ThenInclude(j => j.Company)

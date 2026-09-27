@@ -156,6 +156,42 @@ public class ApplicationService : IApplicationService
         application.Status = ApplicationStatus.AI_REVIEW;
         await _db.SaveChangesAsync(ct);
 
+        // Fetch availability slots to initialize AI scheduling context
+        var firstInterviewer = await _db.Users
+            .Where(u => u.CompanyId == job.CompanyId && u.Role == UserRole.INTERVIEWER && !u.IsDeleted)
+            .FirstOrDefaultAsync(ct);
+
+        var candidateSlots = await _db.AvailabilitySlots
+            .Where(s => s.UserId == application.CandidateId && !s.IsDeleted)
+            .Select(s => new
+            {
+                id = s.Id.ToString(),
+                user_id = s.UserId.ToString(),
+                role = "CANDIDATE",
+                start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                timezone = s.Timezone
+            })
+            .ToListAsync(ct);
+
+        var interviewerSlots = firstInterviewer != null
+            ? await _db.AvailabilitySlots
+                .Where(s => s.UserId == firstInterviewer.Id && !s.IsDeleted)
+                .Select(s => new
+                {
+                    id = s.Id.ToString(),
+                    user_id = s.UserId.ToString(),
+                    role = "INTERVIEWER",
+                    start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                    end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                    timezone = s.Timezone
+                })
+                .ToListAsync(ct)
+            : new();
+
+        var candIdVal = application.CandidateId.ToString();
+        var invIdVal = firstInterviewer?.Id.ToString();
+
         _ = Task.Run(async () =>
         {
             try
@@ -166,7 +202,10 @@ public class ApplicationService : IApplicationService
                     job.Description,
                     job.Requirements,
                     activeResume.FileUrl,
-                    candidateId: application.CandidateId.ToString(),
+                    candidateId: candIdVal,
+                    interviewerId: invIdVal,
+                    candidateSlots: candidateSlots,
+                    interviewerSlots: interviewerSlots,
                     ct: CancellationToken.None);
             }
             catch (Exception ex)
@@ -476,22 +515,63 @@ public class ApplicationService : IApplicationService
             return updateResult;
         }
 
+        // Prepare availability slots for AI scheduling before launching background task
+        var interviewerUser = await _db.Users
+            .Where(u => u.CompanyId == recruiterCompanyId && u.Role == UserRole.INTERVIEWER && !u.IsDeleted)
+            .FirstOrDefaultAsync(ct);
+
+        var candSlots = await _db.AvailabilitySlots
+            .Where(s => s.UserId == application.CandidateId && !s.IsDeleted)
+            .Select(s => new
+            {
+                id = s.Id.ToString(),
+                user_id = s.UserId.ToString(),
+                role = "CANDIDATE",
+                start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                timezone = s.Timezone
+            })
+            .ToListAsync(ct);
+
+        var invSlots = interviewerUser != null
+            ? await _db.AvailabilitySlots
+                .Where(s => s.UserId == interviewerUser.Id && !s.IsDeleted)
+                .Select(s => new
+                {
+                    id = s.Id.ToString(),
+                    user_id = s.UserId.ToString(),
+                    role = "INTERVIEWER",
+                    start_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.StartTime),
+                    end_time = DateTime.UtcNow.Date.AddDays(((int)s.DayOfWeek - (int)DateTime.UtcNow.DayOfWeek + 7) % 7).Add(s.EndTime),
+                    timezone = s.Timezone
+                })
+                .ToListAsync(ct)
+            : new();
+
+        var candIdStr = application.CandidateId.ToString();
+        var invIdStr = interviewerUser?.Id.ToString();
+
         // Notify AI service to resume LangGraph Stage 2 (Interview Questions & Scheduling)
         if (application.AiWorkflowId.HasValue)
         {
+            var wfId = application.AiWorkflowId.Value;
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await _aiServiceClient.ApproveCandidateEvaluationAsync(
-                        application.AiWorkflowId.Value,
+                        wfId,
                         "APPROVED",
                         notes: "Candidate approved for technical interview scheduling",
+                        candidateId: candIdStr,
+                        interviewerId: invIdStr,
+                        candidateSlots: candSlots,
+                        interviewerSlots: invSlots,
                         ct: CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to notify AI Service of interview approval for Workflow {WorkflowId}", application.AiWorkflowId.Value);
+                    _logger.LogError(ex, "Failed to notify AI Service of interview approval for Workflow {WorkflowId}", wfId);
                 }
             });
         }

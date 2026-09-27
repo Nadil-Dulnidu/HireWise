@@ -6,6 +6,10 @@ import {
   aiApi,
   type ApplicationWorkflowResponse,
   type GeneratedQuestion,
+  type CandidateEvaluation,
+  type ResumeAnalysis,
+  type QuestionCategory,
+  type DifficultyLevel,
 } from "@/lib/api/ai-api";
 import { ScheduleInterviewDialog } from "@/components/recruiter/ScheduleInterviewDialog";
 import {
@@ -25,6 +29,7 @@ import {
   Sparkles,
   AlertTriangle,
   Send,
+  HelpCircle,
 } from "lucide-react";
 import type { ApplicationStatus } from "@/types/applications";
 
@@ -40,6 +45,230 @@ const allStatuses: { value: ApplicationStatus; label: string }[] = [
   { value: "SELECTED", label: "Selected / Offer" },
   { value: "REJECTED", label: "Rejected" },
 ];
+
+function normalizeQuestions(arr: any[]): GeneratedQuestion[] {
+  return arr
+    .map((q) => {
+      if (typeof q === "string") {
+        try {
+          q = JSON.parse(q);
+        } catch {
+          return {
+            category: "TECHNICAL" as QuestionCategory,
+            question: q,
+            rationale: "",
+            expected_answer_rubric: "",
+            difficulty: "MEDIUM" as DifficultyLevel,
+          };
+        }
+      }
+      return {
+        category: (q?.category || q?.Category || "TECHNICAL") as QuestionCategory,
+        question: q?.question || q?.Question || q?.text || "",
+        rationale: q?.rationale || q?.Rationale || "",
+        expected_answer_rubric:
+          q?.expected_answer_rubric ||
+          q?.expectedAnswerRubric ||
+          q?.rubric ||
+          q?.Rubric ||
+          "",
+        difficulty: (q?.difficulty || q?.Difficulty || "MEDIUM") as DifficultyLevel,
+      };
+    })
+    .filter((q) => q.question.trim().length > 0);
+}
+
+function extractQuestions(workflowResponse: any): GeneratedQuestion[] {
+  if (!workflowResponse) return [];
+  const wf = workflowResponse.workflow || workflowResponse;
+  const candidates: any[] = [];
+
+  // 1. Check final_result and variants
+  const finalResult = wf.final_result || wf.finalResult || wf.FinalResult;
+  if (finalResult) {
+    if (finalResult.interview_questions) candidates.push(finalResult.interview_questions);
+    if (finalResult.interviewQuestions) candidates.push(finalResult.interviewQuestions);
+    if (finalResult.questions) candidates.push(finalResult.questions);
+    if (finalResult.tailored_questions) candidates.push(finalResult.tailored_questions);
+  }
+
+  // 2. Check steps array
+  const steps: any[] = wf.steps || wf.Steps || [];
+  for (const step of steps) {
+    const sName = (step.step_name || step.stepName || step.StepName || "").toUpperCase();
+    const aName = (step.agent_name || step.agentName || step.AgentName || "").toLowerCase();
+
+    if (
+      sName === "QUESTION_GENERATION" ||
+      sName.includes("QUESTION") ||
+      aName.includes("question")
+    ) {
+      const output = step.output_data ?? step.outputData ?? step.OutputJson ?? step.output_json;
+      if (output) {
+        candidates.push(output);
+      }
+    }
+  }
+
+  // 3. Extract and parse array from candidate containers
+  for (let item of candidates) {
+    if (!item) continue;
+
+    // Handle stringified JSON
+    if (typeof item === "string") {
+      try {
+        item = JSON.parse(item);
+      } catch {
+        continue;
+      }
+    }
+
+    // Direct array of questions
+    if (Array.isArray(item) && item.length > 0) {
+      const parsed = normalizeQuestions(item);
+      if (parsed.length > 0) return parsed;
+    }
+
+    // Object container
+    if (item && typeof item === "object") {
+      const qList =
+        item.questions ||
+        item.Questions ||
+        item.interview_questions ||
+        item.interviewQuestions;
+
+      if (Array.isArray(qList) && qList.length > 0) {
+        const parsed = normalizeQuestions(qList);
+        if (parsed.length > 0) return parsed;
+      }
+
+      if (typeof qList === "string") {
+        try {
+          const parsedStr = JSON.parse(qList);
+          if (Array.isArray(parsedStr) && parsedStr.length > 0) {
+            const parsed = normalizeQuestions(parsedStr);
+            if (parsed.length > 0) return parsed;
+          }
+        } catch {}
+      }
+
+      // Check double-nested: item.interview_questions.questions
+      if (item.interview_questions && typeof item.interview_questions === "object") {
+        const nested = item.interview_questions.questions;
+        if (Array.isArray(nested) && nested.length > 0) {
+          const parsed = normalizeQuestions(nested);
+          if (parsed.length > 0) return parsed;
+        }
+      }
+    }
+  }
+
+  return [];
+}
+
+function extractEvaluation(workflowResponse: any): CandidateEvaluation | undefined {
+  if (!workflowResponse) return undefined;
+  const wf = workflowResponse.workflow || workflowResponse;
+
+  const finalResult = wf.final_result || wf.finalResult;
+  let candidate =
+    finalResult?.candidate_evaluation ||
+    finalResult?.candidateEvaluation ||
+    finalResult?.evaluation ||
+    finalResult?.Evaluation;
+
+  if (!candidate) {
+    const steps: any[] = wf.steps || wf.Steps || [];
+    const evalStep = steps.find((s) => {
+      const sName = (s.step_name || s.stepName || "").toUpperCase();
+      const aName = (s.agent_name || s.agentName || "").toLowerCase();
+      return (
+        sName === "CANDIDATE_EVALUATION" ||
+        sName.includes("EVALUATION") ||
+        aName.includes("evaluat")
+      );
+    });
+    if (evalStep) {
+      candidate = evalStep.output_data ?? evalStep.outputData ?? evalStep.OutputJson;
+    }
+  }
+
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate);
+    } catch {}
+  }
+
+  if (candidate && typeof candidate === "object") {
+    return {
+      overall_match_score: candidate.overall_match_score ?? candidate.overallMatchScore ?? 0,
+      skill_match_percentage: candidate.skill_match_percentage ?? candidate.skillMatchPercentage ?? 0,
+      experience_match_percentage: candidate.experience_match_percentage ?? candidate.experienceMatchPercentage ?? 0,
+      strengths: Array.isArray(candidate.strengths) ? candidate.strengths : [],
+      identified_gaps: Array.isArray(candidate.identified_gaps ?? candidate.identifiedGaps)
+        ? candidate.identified_gaps ?? candidate.identifiedGaps
+        : [],
+      recommendation: candidate.recommendation || "HIRE",
+      recommendation_reasoning:
+        candidate.recommendation_reasoning || candidate.recommendationReasoning || "",
+    };
+  }
+
+  return undefined;
+}
+
+function extractResumeAnalysis(workflowResponse: any): ResumeAnalysis | undefined {
+  if (!workflowResponse) return undefined;
+  const wf = workflowResponse.workflow || workflowResponse;
+
+  const finalResult = wf.final_result || wf.finalResult;
+  let resume =
+    finalResult?.resume_analysis ||
+    finalResult?.resumeAnalysis ||
+    finalResult?.resume;
+
+  if (!resume) {
+    const steps: any[] = wf.steps || wf.Steps || [];
+    const resumeStep = steps.find((s) => {
+      const sName = (s.step_name || s.stepName || "").toUpperCase();
+      const aName = (s.agent_name || s.agentName || "").toLowerCase();
+      return (
+        sName === "RESUME_ANALYSIS" ||
+        sName.includes("RESUME") ||
+        aName.includes("resume")
+      );
+    });
+    if (resumeStep) {
+      resume = resumeStep.output_data ?? resumeStep.outputData ?? resumeStep.OutputJson;
+    }
+  }
+
+  if (typeof resume === "string") {
+    try {
+      resume = JSON.parse(resume);
+    } catch {}
+  }
+
+  if (resume && typeof resume === "object") {
+    return {
+      candidate_name: resume.candidate_name || resume.candidateName,
+      extracted_skills: Array.isArray(resume.extracted_skills ?? resume.extractedSkills)
+        ? resume.extracted_skills ?? resume.extractedSkills
+        : [],
+      years_of_experience: resume.years_of_experience ?? resume.yearsOfExperience ?? 0,
+      education_history: Array.isArray(resume.education_history ?? resume.educationHistory)
+        ? resume.education_history ?? resume.educationHistory
+        : [],
+      project_highlights: Array.isArray(resume.project_highlights ?? resume.projectHighlights)
+        ? resume.project_highlights ?? resume.projectHighlights
+        : [],
+      certifications: Array.isArray(resume.certifications) ? resume.certifications : [],
+      executive_summary: resume.executive_summary || resume.executiveSummary || "",
+    };
+  }
+
+  return undefined;
+}
 
 export function RecruiterApplicationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,12 +295,30 @@ export function RecruiterApplicationDetailPage() {
   // 2. Fetch AI Workflow Evaluation Intelligence
   const {
     data: appWorkflow,
-    isLoading: isWorkflowLoading,
+    isLoading: isAppWorkflowLoading,
   } = useQuery<ApplicationWorkflowResponse>({
     queryKey: ["applicationWorkflow", id],
     queryFn: () => aiApi.getApplicationWorkflow(id!),
     enabled: !!id,
   });
+
+  // Direct workflow fallback query if application workflow is missing
+  const {
+    data: directWorkflow,
+    isLoading: isDirectWorkflowLoading,
+  } = useQuery({
+    queryKey: ["workflowDetailDirect", application?.aiWorkflowId],
+    queryFn: () => aiApi.getWorkflowDetails(application!.aiWorkflowId!),
+    enabled: !!application?.aiWorkflowId && (!appWorkflow || !appWorkflow.workflow),
+  });
+
+  const effectiveWorkflow = appWorkflow?.workflow
+    ? appWorkflow
+    : directWorkflow
+      ? { workflow: directWorkflow }
+      : undefined;
+
+  const isWorkflowLoading = isAppWorkflowLoading || (isDirectWorkflowLoading && !effectiveWorkflow);
 
   // 3. Fetch Scheduling Readiness (Interviewers, Interviewer Slots, Candidate Slots)
   const {
@@ -91,6 +338,9 @@ export function RecruiterApplicationDetailPage() {
       setActionSuccess("AI evaluation workflow initiated! Analysis will update automatically.");
       queryClient.invalidateQueries({ queryKey: ["applicationWorkflow", id] });
       queryClient.invalidateQueries({ queryKey: ["recruiterApplicationDetail", id] });
+      if (application?.aiWorkflowId) {
+        queryClient.invalidateQueries({ queryKey: ["workflowDetailDirect", application.aiWorkflowId] });
+      }
       setTimeout(() => setActionSuccess(null), 4000);
     },
     onError: (err: any) => {
@@ -202,10 +452,10 @@ export function RecruiterApplicationDetailPage() {
     );
   }
 
-  const evalData = appWorkflow?.workflow?.final_result?.evaluation;
-  const resumeData = appWorkflow?.workflow?.final_result?.resume_analysis;
-  const questionsData: GeneratedQuestion[] =
-    appWorkflow?.workflow?.final_result?.questions?.questions || [];
+  // Extract evaluation intelligence with multi-layer fallback & normalization
+  const evalData: CandidateEvaluation | undefined = extractEvaluation(effectiveWorkflow);
+  const resumeData: ResumeAnalysis | undefined = extractResumeAnalysis(effectiveWorkflow);
+  const questionsData: GeneratedQuestion[] = extractQuestions(effectiveWorkflow);
 
   return (
     <div className="space-y-8">
@@ -460,7 +710,7 @@ export function RecruiterApplicationDetailPage() {
                     Loading AI evaluation intelligence...
                   </p>
                 </div>
-              ) : !appWorkflow || !appWorkflow.workflow ? (
+              ) : !effectiveWorkflow || !effectiveWorkflow.workflow ? (
                 <div className="py-8 text-center space-y-3">
                   <Bot className="h-10 w-10 text-indigo-400 mx-auto" />
                   <h3 className="text-sm font-bold text-slate-900">
@@ -526,91 +776,113 @@ export function RecruiterApplicationDetailPage() {
                   </div>
 
                   {/* Tab 1: Overview */}
-                  {aiActiveTab === "overview" && evalData && (
-                    <div className="space-y-6">
-                      {/* Rationale Quote */}
-                      <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
-                        <h4 className="text-xs font-semibold text-indigo-900 flex items-center gap-1.5">
-                          <Bot className="h-4 w-4 text-indigo-600" />
-                          <span>AI Recommendation Rationale</span>
-                        </h4>
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          {evalData.recommendation_reasoning}
-                        </p>
+                  {aiActiveTab === "overview" && (
+                    evalData ? (
+                      <div className="space-y-6">
+                        {/* Rationale Quote */}
+                        {evalData.recommendation_reasoning && (
+                          <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
+                            <h4 className="text-xs font-semibold text-indigo-900 flex items-center gap-1.5">
+                              <Bot className="h-4 w-4 text-indigo-600" />
+                              <span>AI Recommendation Rationale</span>
+                            </h4>
+                            <p className="text-xs text-slate-700 leading-relaxed">
+                              {evalData.recommendation_reasoning}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Match Percentages Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-slate-700">Technical Skill Match</span>
+                              <span className="text-blue-600">
+                                {evalData.skill_match_percentage ?? 0}%
+                              </span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                                style={{ width: `${evalData.skill_match_percentage ?? 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-slate-700">Experience Alignment</span>
+                              <span className="text-indigo-600">
+                                {evalData.experience_match_percentage ?? 0}%
+                              </span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                                style={{ width: `${evalData.experience_match_percentage ?? 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Strengths & Gaps */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                              <span>Key Candidate Strengths</span>
+                            </h4>
+                            {evalData.strengths && evalData.strengths.length > 0 ? (
+                              <ul className="space-y-2">
+                                {evalData.strengths.map((str, i) => (
+                                  <li
+                                    key={i}
+                                    className="text-xs text-slate-700 bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-200 flex items-start gap-2"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
+                                    <span>{str}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                No specific strengths highlighted in rubric.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                              <AlertCircle className="h-4 w-4 text-amber-600" />
+                              <span>Identified Competency Gaps</span>
+                            </h4>
+                            {evalData.identified_gaps && evalData.identified_gaps.length > 0 ? (
+                              <ul className="space-y-2">
+                                {evalData.identified_gaps.map((gap, i) => (
+                                  <li
+                                    key={i}
+                                    className="text-xs text-slate-700 bg-amber-50/40 p-2.5 rounded-xl border border-amber-200 flex items-start gap-2"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
+                                    <span>{gap}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                No major skill gaps identified against job requirements.
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-
-                      {/* Match Percentages Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-700">Technical Skill Match</span>
-                            <span className="text-blue-600">
-                              {evalData.skill_match_percentage}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                              style={{ width: `${evalData.skill_match_percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-700">Experience Alignment</span>
-                            <span className="text-indigo-600">
-                              {evalData.experience_match_percentage}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                              style={{ width: `${evalData.experience_match_percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                    ) : (
+                      <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                        <Bot className="h-6 w-6 text-slate-400 mx-auto" />
+                        <p className="font-semibold text-slate-700">Evaluation details pending</p>
+                        <p className="text-[11px] text-slate-400">Click "Re-evaluate" to run or refresh the LangGraph evaluation pipeline.</p>
                       </div>
-
-                      {/* Strengths & Gaps */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                            <span>Key Candidate Strengths</span>
-                          </h4>
-                          <ul className="space-y-2">
-                            {evalData.strengths.map((str, i) => (
-                              <li
-                                key={i}
-                                className="text-xs text-slate-700 bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-200 flex items-start gap-2"
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
-                                <span>{str}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                            <AlertCircle className="h-4 w-4 text-amber-600" />
-                            <span>Identified Competency Gaps</span>
-                          </h4>
-                          <ul className="space-y-2">
-                            {evalData.identified_gaps.map((gap, i) => (
-                              <li
-                                key={i}
-                                className="text-xs text-slate-700 bg-amber-50/40 p-2.5 rounded-xl border border-amber-200 flex items-start gap-2"
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
-                                <span>{gap}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
+                    )
                   )}
 
                   {/* Tab 2: Skills & Resume Extraction */}
@@ -674,8 +946,14 @@ export function RecruiterApplicationDetailPage() {
                         Tailored interview questions dynamically generated based on this candidate's resume gaps and job requirements:
                       </p>
                       {questionsData.length === 0 ? (
-                        <div className="p-8 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
-                          No tailored interview questions generated yet.
+                        <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                          <HelpCircle className="h-6 w-6 text-slate-400 mx-auto" />
+                          <p className="font-semibold text-slate-700">No tailored interview questions generated yet</p>
+                          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                            {application.status === "AI_RECOMMENDED" || application.status === "RECRUITER_REVIEW" || application.status === "APPLIED" || application.status === "AI_REVIEW"
+                              ? "Interview questions will be dynamically generated by the Question Generator Agent once the candidate is approved for technical interview."
+                              : "No interview questions found in the workflow telemetry."}
+                          </p>
                         </div>
                       ) : (
                         questionsData.map((q, i) => (
@@ -691,14 +969,20 @@ export function RecruiterApplicationDetailPage() {
                                 Question {i + 1}
                               </span>
                             </div>
-                            <h4 className="text-sm font-bold text-slate-900">
+                            <h4 className="text-sm font-bold text-slate-900 leading-snug">
                               {q.question}
                             </h4>
+                            {q.rationale && (
+                              <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-start gap-1.5">
+                                <span className="font-semibold text-indigo-700 shrink-0">Rationale:</span>
+                                <span>{q.rationale}</span>
+                              </div>
+                            )}
                             <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
                               <span className="text-[11px] font-semibold text-slate-500 block">
                                 Expected Rubric / Evaluation Criteria:
                               </span>
-                              <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed font-mono text-[11px]">
+                              <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed font-mono text-[11px] whitespace-pre-line">
                                 {q.expected_answer_rubric}
                               </p>
                             </div>
@@ -855,6 +1139,7 @@ export function RecruiterApplicationDetailPage() {
         candidateName={application.candidateName}
         jobTitle={application.jobTitle}
         candidateId={application.candidateId}
+        aiWorkflowId={application.aiWorkflowId}
         onSuccess={() => {
           setActionSuccess("Technical interview successfully scheduled!");
           queryClient.invalidateQueries({ queryKey: ["recruiterApplicationDetail", id] });

@@ -5,8 +5,8 @@ Directly interfaces with EF Core managed 'AiWorkflows' and 'AiWorkflowSteps' tab
 
 import json
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone, timedelta
+from typing import Optional, List, Dict, Any, Tuple
 from psycopg.rows import dict_row
 from ai_service.db.connection import get_db_pool
 from ai_service.core.logging import logger
@@ -327,9 +327,29 @@ class WorkflowRepository:
     ):
         """
         Updates step human approval status, approver user ID, and notes.
+        Validates that approved_by_user_id exists in Users table to prevent foreign key violations.
         """
         pool = await get_db_pool()
         now = datetime.now(timezone.utc)
+
+        valid_user_id = None
+        if approved_by_user_id:
+            try:
+                async with pool.connection() as check_conn:
+                    async with check_conn.cursor() as check_cur:
+                        await check_cur.execute(
+                            'SELECT 1 FROM "Users" WHERE "Id" = %s AND "IsDeleted" = FALSE LIMIT 1;',
+                            (str(approved_by_user_id),),
+                        )
+                        row = await check_cur.fetchone()
+                        if row:
+                            valid_user_id = str(approved_by_user_id)
+                        else:
+                            logger.warning(
+                                f"ApprovedByUserId {approved_by_user_id} does not exist in Users table. Setting ApprovedByUserId to NULL to prevent FK violation."
+                            )
+            except Exception as e:
+                logger.warning(f"Error checking user validity for ApprovedByUserId: {e}")
 
         query = """
         UPDATE "AiWorkflowSteps"
@@ -348,7 +368,7 @@ class WorkflowRepository:
                     query,
                     (
                         approval_status,
-                        str(approved_by_user_id) if approved_by_user_id else None,
+                        valid_user_id,
                         now,
                         approval_notes,
                         now,
@@ -401,3 +421,130 @@ class WorkflowRepository:
                 await cur.execute(query, (str(workflow_id),))
                 rows = await cur.fetchall()
                 return [dict(r) for r in rows]
+
+    async def get_availability_slots_for_application(
+        self, application_id: uuid.UUID, days_ahead: int = 14
+    ) -> Tuple[Optional[str], Optional[str], List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """
+        Retrieves candidate and company interviewer availability slots for an application,
+        expanding recurring weekly slots into upcoming concrete ISO datetime windows.
+        Returns: (candidate_id, first_interviewer_id, candidate_slots, interviewer_slots)
+        """
+        pool = await get_db_pool()
+        now = datetime.now(timezone.utc)
+        today = now.date()
+
+        async with pool.connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                # 1. Lookup CandidateId and CompanyId for this application
+                await cur.execute(
+                    """
+                    SELECT a."CandidateId", j."CompanyId"
+                    FROM "Applications" a
+                    JOIN "Jobs" j ON a."JobId" = j."Id"
+                    WHERE a."Id" = %s AND a."IsDeleted" = FALSE;
+                    """,
+                    (str(application_id),),
+                )
+                app_row = await cur.fetchone()
+                if not app_row:
+                    return None, None, [], []
+
+                candidate_id = str(app_row["CandidateId"])
+                company_id = str(app_row["CompanyId"])
+
+                # 2. Lookup interviewers for this company
+                await cur.execute(
+                    """
+                    SELECT "Id"
+                    FROM "Users"
+                    WHERE "CompanyId" = %s AND "Role" = 'INTERVIEWER' AND "IsDeleted" = FALSE;
+                    """,
+                    (company_id,),
+                )
+                inv_rows = await cur.fetchall()
+                interviewer_ids = [str(r["Id"]) for r in inv_rows]
+                first_interviewer_id = interviewer_ids[0] if interviewer_ids else None
+
+                # 3. Fetch candidate availability slot definitions
+                await cur.execute(
+                    """
+                    SELECT "Id", "UserId", "DayOfWeek", "StartTime", "EndTime", "IsRecurring", "SpecificDate", "Timezone"
+                    FROM "AvailabilitySlots"
+                    WHERE "UserId" = %s AND "IsDeleted" = FALSE;
+                    """,
+                    (candidate_id,),
+                )
+                c_slot_rows = await cur.fetchall()
+
+                # 4. Fetch interviewer availability slot definitions
+                i_slot_rows = []
+                if interviewer_ids:
+                    await cur.execute(
+                        """
+                        SELECT "Id", "UserId", "DayOfWeek", "StartTime", "EndTime", "IsRecurring", "SpecificDate", "Timezone"
+                        FROM "AvailabilitySlots"
+                        WHERE "UserId" = ANY(%s) AND "IsDeleted" = FALSE;
+                        """,
+                        (interviewer_ids,),
+                    )
+                    i_slot_rows = await cur.fetchall()
+
+        def _to_timedelta(val) -> timedelta:
+            if isinstance(val, timedelta):
+                return val
+            if isinstance(val, str):
+                parts = val.split(":")
+                h = int(parts[0])
+                m = int(parts[1]) if len(parts) > 1 else 0
+                s = int(float(parts[2])) if len(parts) > 2 else 0
+                return timedelta(hours=h, minutes=m, seconds=s)
+            if hasattr(val, "hour") and hasattr(val, "minute"):
+                return timedelta(hours=val.hour, minutes=val.minute, seconds=getattr(val, "second", 0))
+            return timedelta(0)
+
+        def _expand_slots(rows: List[Dict[str, Any]], role_name: str) -> List[Dict[str, Any]]:
+            concrete: List[Dict[str, Any]] = []
+            for day_offset in range(days_ahead):
+                target_date = today + timedelta(days=day_offset)
+                # .NET DayOfWeek enum: Sunday=0, Monday=1, ..., Saturday=6
+                net_dow = (target_date.weekday() + 1) % 7
+
+                for r in rows:
+                    is_rec = r.get("IsRecurring")
+                    r_dow = r.get("DayOfWeek")
+                    spec_date = r.get("SpecificDate")
+
+                    matches = False
+                    if is_rec and r_dow == net_dow:
+                        matches = True
+                    elif not is_rec and spec_date == target_date:
+                        matches = True
+
+                    if matches:
+                        s_td = _to_timedelta(r.get("StartTime"))
+                        e_td = _to_timedelta(r.get("EndTime"))
+                        start_dt = datetime.combine(target_date, datetime.min.time(), tzinfo=timezone.utc) + s_td
+                        end_dt = datetime.combine(target_date, datetime.min.time(), tzinfo=timezone.utc) + e_td
+
+                        # Ignore slots in the past (allow at least 1 hour in the future)
+                        if end_dt > now + timedelta(hours=1):
+                            concrete.append({
+                                "id": str(r["Id"]),
+                                "user_id": str(r["UserId"]),
+                                "role": role_name,
+                                "start_time": start_dt.isoformat(),
+                                "end_time": end_dt.isoformat(),
+                                "timezone": r.get("Timezone") or "UTC",
+                            })
+            return concrete
+
+        candidate_slots = _expand_slots(c_slot_rows, "CANDIDATE")
+        interviewer_slots = _expand_slots(i_slot_rows, "INTERVIEWER")
+
+        logger.info(
+            f"[AvailabilitySlots] Application {application_id}: loaded {len(candidate_slots)} candidate slots and {len(interviewer_slots)} interviewer slots."
+        )
+
+        return candidate_id, first_interviewer_id, candidate_slots, interviewer_slots
+

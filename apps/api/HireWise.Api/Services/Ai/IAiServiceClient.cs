@@ -20,7 +20,26 @@ public interface IAiServiceClient
     Task<JsonElement?> GetWorkflowDetailsAsync(Guid workflowId, CancellationToken ct = default);
     Task<JsonElement?> GetWorkflowStepsAsync(Guid workflowId, CancellationToken ct = default);
     Task<JsonElement?> GetWorkflowStatusAsync(Guid workflowId, CancellationToken ct = default);
-    Task<bool> ApproveCandidateEvaluationAsync(Guid workflowId, string decision, Guid? approvedByUserId = null, string? notes = null, CancellationToken ct = default);
+    Task<bool> ApproveCandidateEvaluationAsync(
+        Guid workflowId,
+        string decision,
+        Guid? approvedByUserId = null,
+        string? notes = null,
+        string? candidateId = null,
+        string? interviewerId = null,
+        object? candidateSlots = null,
+        object? interviewerSlots = null,
+        CancellationToken ct = default);
+    Task<bool> ConfirmScheduleSlotAsync(
+        Guid workflowId,
+        DateTime startTime,
+        DateTime endTime,
+        Guid candidateId,
+        Guid interviewerId,
+        Guid? approvedByUserId = null,
+        Guid? interviewId = null,
+        string? notes = null,
+        CancellationToken ct = default);
 }
 
 public class AiServiceClient : IAiServiceClient
@@ -167,7 +186,16 @@ public class AiServiceClient : IAiServiceClient
         }
     }
 
-    public async Task<bool> ApproveCandidateEvaluationAsync(Guid workflowId, string decision, Guid? approvedByUserId = null, string? notes = null, CancellationToken ct = default)
+    public async Task<bool> ApproveCandidateEvaluationAsync(
+        Guid workflowId,
+        string decision,
+        Guid? approvedByUserId = null,
+        string? notes = null,
+        string? candidateId = null,
+        string? interviewerId = null,
+        object? candidateSlots = null,
+        object? interviewerSlots = null,
+        CancellationToken ct = default)
     {
         try
         {
@@ -175,7 +203,11 @@ public class AiServiceClient : IAiServiceClient
             {
                 decision = decision,
                 approved_by_user_id = approvedByUserId,
-                notes = notes
+                notes = notes,
+                candidate_id = candidateId,
+                interviewer_id = interviewerId,
+                candidate_slots = candidateSlots,
+                interviewer_slots = interviewerSlots
             };
 
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -197,6 +229,58 @@ public class AiServiceClient : IAiServiceClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to submit evaluation approval to AI Service for Workflow {WorkflowId}", workflowId);
+            return false;
+        }
+    }
+
+    public async Task<bool> ConfirmScheduleSlotAsync(
+        Guid workflowId,
+        DateTime startTime,
+        DateTime endTime,
+        Guid candidateId,
+        Guid interviewerId,
+        Guid? approvedByUserId = null,
+        Guid? interviewId = null,
+        string? notes = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var payload = new
+            {
+                selected_slot = new
+                {
+                    start_time = startTime.ToUniversalTime(),
+                    end_time = endTime.ToUniversalTime(),
+                    candidate_id = candidateId.ToString(),
+                    interviewer_id = interviewerId.ToString(),
+                    conflict_detected = false,
+                    score = 1.0
+                },
+                approved_by_user_id = approvedByUserId,
+                interview_id = interviewId?.ToString(),
+                notes = notes
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            _logger.LogInformation("Calling AI Service to confirm schedule slot for Workflow {WorkflowId}...", workflowId);
+
+            var response = await _httpClient.PostAsync($"/api/v1/workflows/{workflowId}/confirm-schedule", content, ct);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Successfully confirmed schedule slot with AI Service for Workflow {WorkflowId}", workflowId);
+                return true;
+            }
+
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("AI Service returned non-success status code {StatusCode} for Schedule confirmation {WorkflowId}: {Error}",
+                response.StatusCode, workflowId, errorBody);
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to submit schedule confirmation to AI Service for Workflow {WorkflowId}", workflowId);
             return false;
         }
     }
