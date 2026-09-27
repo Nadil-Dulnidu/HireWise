@@ -82,6 +82,11 @@ services:
       DATABASE_URL: "postgresql://hirewise_user:hirewise_secure_password_dev@postgres:5432/hirewise_db"
       DOTNET_API_BASE_URL: "http://api:8080"
       AI_SERVICE_API_KEY: "hw_ai_service_secret_key"
+      USE_VERTEX_AI: "true"
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-hirewise-509609}
+      VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-hirewise-509609}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      GOOGLE_APPLICATION_CREDENTIALS_JSON: ${GOOGLE_APPLICATION_CREDENTIALS_JSON:-}
     depends_on:
       postgres:
         condition: service_healthy

@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     VERTEX_PROJECT_ID: Optional[str] = None
     VERTEX_LOCATION: str = "us-central1"
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+    GOOGLE_APPLICATION_CREDENTIALS_JSON: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_EMBEDDING_MODEL: str = "text-embedding-004"
 

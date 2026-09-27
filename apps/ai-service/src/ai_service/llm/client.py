@@ -26,8 +26,15 @@ def is_vertex_configured() -> bool:
         return True
     if settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT:
         return True
+    if settings.GOOGLE_APPLICATION_CREDENTIALS_JSON or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
+        return True
     cred_file = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    if cred_file and os.path.exists(cred_file):
+    if cred_file:
+        if cred_file.strip().startswith("{") or os.path.exists(cred_file):
+            return True
+    # Standard ADC paths (Linux container / Unix)
+    default_adc = os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
+    if os.path.exists(default_adc):
         return True
     return False
 
@@ -61,21 +68,45 @@ def get_llm(
     if is_vertex_configured() and (settings.USE_VERTEX_AI or not settings.GOOGLE_API_KEY):
         try:
             from langchain_google_vertexai import ChatVertexAI
-            from google.oauth2 import service_account
+            import google.auth
+            import json
 
             project = settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT or os.environ.get("GOOGLE_CLOUD_PROJECT")
             location = settings.VERTEX_LOCATION or "us-central1"
+            raw_json = settings.GOOGLE_APPLICATION_CREDENTIALS_JSON or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
             cred_file = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 
+            # Check if GOOGLE_APPLICATION_CREDENTIALS was passed directly as a raw JSON string
+            if not raw_json and cred_file and cred_file.strip().startswith("{"):
+                raw_json = cred_file
+                cred_file = None
+
             credentials = None
-            if cred_file and os.path.exists(cred_file):
+            if raw_json:
                 try:
-                    credentials = service_account.Credentials.from_service_account_file(cred_file)
-                    if not project and hasattr(credentials, "project_id"):
-                        project = credentials.project_id
-                    logger.info(f"Loaded Google Service Account credentials from: {cred_file}")
+                    data = json.loads(raw_json)
+                    credentials, auth_proj = google.auth.load_credentials_from_dict(data)
+                    if not project and auth_proj:
+                        project = auth_proj
+                    logger.info("Loaded Google credentials from JSON string")
                 except Exception as ex:
-                    logger.warning(f"Failed to load service account credentials from {cred_file}: {ex}")
+                    logger.warning(f"Failed to load credentials from JSON string: {ex}")
+            elif cred_file and os.path.exists(cred_file):
+                try:
+                    credentials, auth_proj = google.auth.load_credentials_from_file(cred_file)
+                    if not project and auth_proj:
+                        project = auth_proj
+                    logger.info(f"Loaded Google credentials from: {cred_file}")
+                except Exception as ex:
+                    logger.warning(f"Failed to load credentials from {cred_file}: {ex}")
+            else:
+                try:
+                    credentials, auth_proj = google.auth.default()
+                    if not project and auth_proj:
+                        project = auth_proj
+                    logger.info(f"Discovered Application Default Credentials (project: {project})")
+                except Exception as ex:
+                    logger.debug(f"Default ADC auto-detection returned: {ex}")
 
             kwargs: dict[str, Any] = {
                 "model_name": target_model,
