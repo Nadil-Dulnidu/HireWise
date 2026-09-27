@@ -19,6 +19,7 @@ resource "google_sql_database_instance" "postgres" {
     tier              = var.tier
     edition           = "ENTERPRISE"
     availability_type = var.availability_type
+    activation_policy = var.activation_policy
     disk_type         = "PD_SSD"
     disk_size         = var.disk_size
     disk_autoresize   = true
@@ -33,19 +34,19 @@ resource "google_sql_database_instance" "postgres" {
       enabled                        = true
       start_time                     = "03:00"
       location                       = var.region
-      point_in_time_recovery_enabled = var.environment == "production" ? true : false
-      transaction_log_retention_days = 7
+      point_in_time_recovery_enabled = false
+      transaction_log_retention_days = 1
     }
 
     insights_config {
-      query_insights_enabled  = true
+      query_insights_enabled  = false
       query_string_length     = 1024
-      record_application_tags = true
+      record_application_tags = false
     }
 
     database_flags {
       name  = "max_connections"
-      value = "200"
+      value = "50"
     }
   }
 

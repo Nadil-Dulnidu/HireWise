@@ -56,6 +56,7 @@ module "cloud_sql" {
   psa_connection      = module.vpc.psa_connection
   tier                = var.db_tier
   availability_type   = "ZONAL"
+  activation_policy   = var.db_activation_policy
   disk_size           = 20
   deletion_protection = var.deletion_protection
 

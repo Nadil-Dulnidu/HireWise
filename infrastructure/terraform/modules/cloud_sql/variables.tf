@@ -33,7 +33,7 @@ variable "psa_connection" {
 variable "tier" {
   description = "Cloud SQL machine tier"
   type        = string
-  default     = "db-custom-2-7680"
+  default     = "db-f1-micro"
 }
 
 variable "availability_type" {
@@ -69,5 +69,11 @@ variable "db_user" {
 variable "deletion_protection" {
   description = "Prevent accidental destruction of DB instance"
   type        = bool
-  default     = true
+  default     = false
+}
+
+variable "activation_policy" {
+  description = "The activation policy for the instance (ALWAYS, NEVER, ON_DEMAND)"
+  type        = string
+  default     = "ALWAYS"
 }

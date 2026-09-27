@@ -97,7 +97,7 @@ variable "api_min_instances" {
 variable "api_max_instances" {
   description = "Max API instances"
   type        = number
-  default     = 10
+  default     = 3
 }
 
 variable "ai_min_instances" {
@@ -109,7 +109,7 @@ variable "ai_min_instances" {
 variable "ai_max_instances" {
   description = "Max AI Service instances"
   type        = number
-  default     = 5
+  default     = 2
 }
 
 variable "web_min_instances" {
@@ -121,5 +121,5 @@ variable "web_min_instances" {
 variable "web_max_instances" {
   description = "Max Web Client instances"
   type        = number
-  default     = 5
+  default     = 2
 }

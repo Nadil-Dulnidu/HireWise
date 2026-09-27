@@ -32,8 +32,8 @@ resource "google_cloud_run_v2_service" "ai_service" {
 
       resources {
         limits = {
-          cpu    = "2"
-          memory = "2Gi"
+          cpu    = "1"
+          memory = "1Gi"
         }
       }
 
@@ -119,8 +119,8 @@ resource "google_cloud_run_v2_service" "api" {
 
       resources {
         limits = {
-          cpu    = "2"
-          memory = "2Gi"
+          cpu    = "1"
+          memory = "1Gi"
         }
       }
 
@@ -237,7 +237,7 @@ resource "google_cloud_run_v2_service" "web" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "1Gi"
+          memory = "512Mi"
         }
       }
 

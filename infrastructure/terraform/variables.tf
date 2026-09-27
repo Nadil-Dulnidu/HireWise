@@ -69,9 +69,15 @@ variable "google_calendar_credentials_json" {
 }
 
 variable "db_tier" {
-  description = "Cloud SQL machine tier (e.g. db-custom-2-7680 or db-f1-micro)"
+  description = "Cloud SQL machine tier (e.g. db-f1-micro for low-cost demo, db-custom-2-7680 for production)"
   type        = string
-  default     = "db-custom-2-7680"
+  default     = "db-f1-micro"
+}
+
+variable "db_activation_policy" {
+  description = "Cloud SQL activation policy (ALWAYS to run, NEVER to stop instance and save 100% compute credits)"
+  type        = string
+  default     = "ALWAYS"
 }
 
 variable "deletion_protection" {

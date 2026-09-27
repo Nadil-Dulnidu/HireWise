@@ -50,7 +50,7 @@ module "vpc" {
   connector_max_instances = 5
 }
 
-# 2. Cloud SQL PostgreSQL 16 (HA Regional Cluster)
+# 2. Cloud SQL PostgreSQL 16 (Low-cost demo configuration)
 module "cloud_sql" {
   source              = "../../modules/cloud_sql"
   project_id          = var.project_id
@@ -59,13 +59,13 @@ module "cloud_sql" {
   region              = var.region
   network_id          = module.vpc.network_id
   psa_connection      = module.vpc.network_id
-  tier                = "db-custom-4-15360" # 4 vCPU, 15GB RAM
-  availability_type   = "REGIONAL"          # Multi-zone High Availability
-  disk_size           = 50
-  deletion_protection = true
+  tier                = "db-f1-micro"
+  availability_type   = "ZONAL"
+  disk_size           = 20
+  deletion_protection = false
 }
 
-# 3. Memorystore Redis 7 (High Availability)
+# 3. Memorystore Redis 7 (Basic tier)
 module "memorystore" {
   source         = "../../modules/memorystore"
   project_id     = var.project_id
@@ -74,8 +74,8 @@ module "memorystore" {
   region         = var.region
   network_id     = module.vpc.network_id
   psa_connection = module.vpc.network_id
-  tier           = "STANDARD_HA"
-  memory_size_gb = 4
+  tier           = "BASIC"
+  memory_size_gb = 1
 }
 
 # 4. Artifact Registry
@@ -128,10 +128,10 @@ module "cloud_run" {
   github_app_id         = var.github_app_id
   clerk_publishable_key = var.clerk_publishable_key
   secret_names          = module.secret_manager.secret_names
-  api_min_instances     = 2  # Zero cold-start for API
-  api_max_instances     = 20
-  worker_min_instances  = 2  # Constant concurrency for review workers
-  worker_max_instances  = 10
-  client_min_instances  = 1
-  client_max_instances  = 10
+  api_min_instances     = 0  # Scale to zero when idle
+  api_max_instances     = 3
+  worker_min_instances  = 0
+  worker_max_instances  = 2
+  client_min_instances  = 0
+  client_max_instances  = 2
 }
