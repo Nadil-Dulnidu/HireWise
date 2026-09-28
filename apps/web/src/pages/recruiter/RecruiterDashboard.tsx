@@ -90,8 +90,8 @@ export function RecruiterDashboard() {
             label: "Active Job Openings",
             value: isJobsLoading ? "..." : activeJobsCount.toString(),
             icon: Briefcase,
-            color: "text-indigo-600",
-            bg: "bg-indigo-50 border border-indigo-100",
+            color: "text-blue-600",
+            bg: "bg-blue-50 border border-blue-100",
             link: "/recruiter/jobs",
           },
           {
@@ -106,8 +106,8 @@ export function RecruiterDashboard() {
             label: "AI Evaluations Ready",
             value: isAppsLoading ? "..." : evaluationsReadyCount.toString(),
             icon: Bot,
-            color: "text-purple-600",
-            bg: "bg-purple-50 border border-purple-100",
+            color: "text-blue-600",
+            bg: "bg-blue-50 border border-blue-100",
             link: "/recruiter/applications",
           },
           {
@@ -143,7 +143,7 @@ export function RecruiterDashboard() {
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Bot className="h-4 w-4 text-purple-600" /> Pending AI Hiring
+              <Bot className="h-4 w-4 text-blue-600" /> Pending AI Hiring
               Recommendations
             </h3>
             <Link
@@ -207,7 +207,7 @@ export function RecruiterDashboard() {
         {/* Right: Quick Links & Monitoring */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Activity className="h-4 w-4 text-indigo-600" /> AI Workflow Monitor
+            <Activity className="h-4 w-4 text-blue-600" /> AI Workflow Monitor
           </h3>
           <p className="text-xs text-slate-600">
             Real-time telemetry of LangGraph agents executing resume parsing,
@@ -233,7 +233,7 @@ export function RecruiterDashboard() {
             </div>
             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
               <div
-                className={`h-full ${activeWorkflowsCount > 0 ? "bg-gradient-to-r from-blue-600 to-indigo-600 w-2/3 animate-pulse" : "bg-slate-300 w-full"}`}
+                className={`h-full ${activeWorkflowsCount > 0 ? "bg-blue-600 w-2/3 animate-pulse" : "bg-slate-300 w-full"}`}
               ></div>
             </div>
             <span className="text-[10px] text-slate-500 block">

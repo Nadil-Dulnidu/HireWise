@@ -91,9 +91,8 @@ export function InterviewerInterviewsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <CalendarCheck className="h-7 w-7 text-emerald-600" /> Assigned
-            Technical Interviews
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Assigned Technical Interviews
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Conduct candidate assessments, review AI question prompts, and
@@ -111,7 +110,7 @@ export function InterviewerInterviewsPage() {
             placeholder="Search candidate or role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-emerald-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600"
           />
         </div>
 
@@ -120,7 +119,7 @@ export function InterviewerInterviewsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:bg-white focus:border-emerald-500 w-full sm:w-auto cursor-pointer"
+            className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:bg-white focus:border-blue-600 w-full sm:w-auto cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="SCHEDULED">Scheduled</option>
@@ -188,7 +187,7 @@ export function InterviewerInterviewsPage() {
                           href={interview.meetingLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition shadow-sm"
                         >
                           <Video className="h-3.5 w-3.5" /> Join Meet
                         </a>
@@ -205,10 +204,10 @@ export function InterviewerInterviewsPage() {
                         })}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-xs font-semibold transition shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition shadow-sm"
                         title="Add to Google Calendar"
                       >
-                        <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" /> Add to Calendar
+                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" /> Add to Calendar
                       </a>
                     )}
 

@@ -26,7 +26,6 @@ import {
   Bot,
   Calendar,
   RefreshCw,
-  Sparkles,
   AlertTriangle,
   Send,
   HelpCircle,
@@ -444,7 +443,7 @@ export function RecruiterApplicationDetailPage() {
         </p>
         <Link
           to="/recruiter/applications"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 shadow-sm"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Candidate Pipeline
         </Link>
@@ -583,7 +582,7 @@ export function RecruiterApplicationDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsScheduleModalOpen(true)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
               >
                 <Calendar className="h-4 w-4" /> Schedule Interview
               </button>
@@ -606,7 +605,7 @@ export function RecruiterApplicationDetailPage() {
                 type="button"
                 onClick={() => approveMutation.mutate()}
                 disabled={approveMutation.isPending}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
               >
                 {approveMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -724,9 +723,9 @@ export function RecruiterApplicationDetailPage() {
                       type="button"
                       onClick={() => triggerEvalMutation.mutate(application.id)}
                       disabled={triggerEvalMutation.isPending}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition"
                     >
-                      <Sparkles className="h-3.5 w-3.5" /> Run AI Evaluation
+                      <Bot className="h-3.5 w-3.5" /> Run AI Evaluation
                     </button>
                     <Link
                       to="/recruiter/ai-workflows"
@@ -745,7 +744,7 @@ export function RecruiterApplicationDetailPage() {
                       onClick={() => setAiActiveTab("overview")}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
                         aiActiveTab === "overview"
-                          ? "bg-indigo-600 text-white shadow-xs"
+                          ? "bg-blue-600 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                       }`}
                     >
@@ -756,7 +755,7 @@ export function RecruiterApplicationDetailPage() {
                       onClick={() => setAiActiveTab("skills")}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
                         aiActiveTab === "skills"
-                          ? "bg-indigo-600 text-white shadow-xs"
+                          ? "bg-blue-600 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                       }`}
                     >
@@ -767,7 +766,7 @@ export function RecruiterApplicationDetailPage() {
                       onClick={() => setAiActiveTab("questions")}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
                         aiActiveTab === "questions"
-                          ? "bg-indigo-600 text-white shadow-xs"
+                          ? "bg-blue-600 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                       }`}
                     >
@@ -812,13 +811,13 @@ export function RecruiterApplicationDetailPage() {
                           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                             <div className="flex justify-between text-xs font-semibold">
                               <span className="text-slate-700">Experience Alignment</span>
-                              <span className="text-indigo-600">
+                              <span className="text-blue-600">
                                 {evalData.experience_match_percentage ?? 0}%
                               </span>
                             </div>
                             <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                                className="h-full bg-blue-600 rounded-full transition-all duration-500"
                                 style={{ width: `${evalData.experience_match_percentage ?? 0}%` }}
                               ></div>
                             </div>
@@ -1049,7 +1048,7 @@ export function RecruiterApplicationDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsScheduleModalOpen(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition"
                 >
                   <Calendar className="h-4 w-4" /> Schedule Interview Now
                 </button>
@@ -1080,7 +1079,7 @@ export function RecruiterApplicationDetailPage() {
                   onChange={(e) =>
                     setSelectedStatus(e.target.value as ApplicationStatus)
                   }
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500 cursor-pointer"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-600 cursor-pointer"
                 >
                   {allStatuses.map((s) => (
                     <option
@@ -1103,7 +1102,7 @@ export function RecruiterApplicationDetailPage() {
                   value={statusNotes}
                   onChange={(e) => setStatusNotes(e.target.value)}
                   placeholder="Reason for status change..."
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600"
                 />
               </div>
 
@@ -1119,7 +1118,7 @@ export function RecruiterApplicationDetailPage() {
                   !selectedStatus ||
                   selectedStatus === application.status
                 }
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
               >
                 {updateStatusMutation.isPending && (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />

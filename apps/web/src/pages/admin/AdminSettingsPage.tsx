@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Settings,
   Bot,
   Sliders,
   RefreshCw,
@@ -197,8 +196,7 @@ export function AdminSettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            <Settings className="h-7 w-7 text-indigo-600" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             System & Agent Settings
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -528,7 +526,7 @@ export function AdminSettingsPage() {
                         disabled={updateAgentMutation.isPending}
                         className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50 ${
                           isDirty
-                            ? "bg-indigo-600 hover:bg-indigo-700 text-white ring-2 ring-indigo-300"
+                            ? "bg-blue-600 hover:bg-blue-700 text-white ring-2 ring-blue-300"
                             : "bg-slate-800 hover:bg-slate-900 text-white"
                         }`}
                       >
@@ -704,7 +702,7 @@ export function AdminSettingsPage() {
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
@@ -712,7 +710,7 @@ export function AdminSettingsPage() {
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <div className="space-y-0.5">
                     <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      <Cpu className="h-3.5 w-3.5 text-purple-600" />
+                      <Cpu className="h-3.5 w-3.5 text-blue-600" />
                       Enforce AI Validation Guardrails
                     </span>
                     <p className="text-[11px] text-slate-500">
@@ -736,7 +734,7 @@ export function AdminSettingsPage() {
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
@@ -745,7 +743,7 @@ export function AdminSettingsPage() {
                   <button
                     type="submit"
                     disabled={updateSettingsMutation.isPending}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
                   >
                     <Save className="h-4 w-4" />
                     {updateSettingsMutation.isPending

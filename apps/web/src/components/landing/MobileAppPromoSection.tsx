@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import {
   BellRing,
   CalendarCheck,
-  Sparkles,
+  Bot,
   Smartphone,
   QrCode,
 } from "lucide-react";
@@ -41,7 +41,7 @@ export function MobileAppPromoSection() {
       bg: "bg-indigo-500/10 border-indigo-500/20",
     },
     {
-      icon: Sparkles,
+      icon: Bot,
       title: "AI-Curated Opportunity Stream",
       description:
         "Deterministic skill matching surfaces high-alignment tech roles tailored to your verified competency graph.",

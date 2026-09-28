@@ -265,9 +265,9 @@ export function RecruiterApplicationsPage() {
                   <button
                     onClick={() => approveMutation.mutate(app.id)}
                     disabled={approveMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-3 py-2 text-xs font-semibold transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />{" "}
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />{" "}
                     Approve Interview
                   </button>
                 )}
@@ -276,9 +276,9 @@ export function RecruiterApplicationsPage() {
                   <button
                     type="button"
                     onClick={() => setSchedulingApp(app)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
                   >
-                    <Calendar className="h-3.5 w-3.5 text-indigo-600" />
+                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
                     Schedule Interview
                   </button>
                 )}
@@ -304,7 +304,7 @@ export function RecruiterApplicationsPage() {
 
                 <Link
                   to={`/recruiter/applications/${app.id}`}
-                  className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 text-xs font-semibold transition shadow-sm"
+                  className="inline-flex items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 text-xs font-semibold transition shadow-sm"
                 >
                   Review Candidate <ChevronRight className="h-3.5 w-3.5" />
                 </Link>

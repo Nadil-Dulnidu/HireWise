@@ -10,7 +10,6 @@ import {
   User,
   ArrowRight,
   Loader2,
-  CalendarCheck,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
 import { getGoogleCalendarUrl } from "@/lib/utils";
@@ -77,8 +76,8 @@ export function CandidateInterviewsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <CalendarCheck className="h-7 w-7 text-emerald-600" /> My Interviews
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            My Interviews
           </h1>
           <p className="text-sm text-slate-600 mt-1">
             Track your scheduled interview sessions and prepare for technical
@@ -89,19 +88,19 @@ export function CandidateInterviewsPage() {
           to="/candidate/availability"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 border border-slate-200 transition"
         >
-          <Clock className="h-4 w-4 text-emerald-600" /> Manage My Availability
+          <Clock className="h-4 w-4 text-slate-500" /> Manage My Availability
         </Link>
       </div>
 
       {/* Interviews List */}
       {isLoading ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
           <p className="text-sm text-slate-500">Loading your interviews...</p>
         </div>
       ) : interviews.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
             <Calendar className="h-7 w-7" />
           </div>
           <h3 className="text-lg font-bold text-slate-900">
@@ -113,7 +112,7 @@ export function CandidateInterviewsPage() {
           </p>
           <Link
             to="/candidate/applications"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition shadow-sm"
           >
             Check Application Status <ArrowRight className="h-4 w-4" />
           </Link>
@@ -154,7 +153,7 @@ export function CandidateInterviewsPage() {
                           href={interview.meetingLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition shadow-sm"
                         >
                           <Video className="h-3.5 w-3.5" /> Join Meeting
                         </a>
@@ -170,10 +169,10 @@ export function CandidateInterviewsPage() {
                         })}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-xs font-semibold transition shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition shadow-sm"
                         title="Add to Google Calendar"
                       >
-                        <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" /> Add to Calendar
+                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" /> Add to Calendar
                       </a>
                     )}
                     <Link

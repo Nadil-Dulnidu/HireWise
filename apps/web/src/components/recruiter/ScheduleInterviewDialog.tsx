@@ -13,7 +13,6 @@ import {
   AlertCircle,
   Loader2,
   X,
-  Sparkles,
   Bot,
   CheckCircle2,
   CalendarCheck,
@@ -574,22 +573,22 @@ export function ScheduleInterviewDialog({
 
         {/* AI Recommended Slots (from Interview Scheduling Agent 6) */}
         {aiRecommendedSlots.length > 0 ? (
-          <div className="space-y-2.5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+          <div className="space-y-2.5 p-4 rounded-2xl bg-blue-50/80 border border-blue-200">
+            <div className="flex items-center justify-between text-xs font-bold text-blue-900">
               <span className="flex items-center gap-1.5">
-                <Bot className="h-4 w-4 text-indigo-600" />
+                <Bot className="h-4 w-4 text-blue-600" />
                 <span>AI Recommended Slots ({aiRecommendedSlots.length} options)</span>
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold">
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">
                 AI Scheduling Agent
               </span>
             </div>
             {aiReasoning && (
-              <p className="text-[11px] text-indigo-700 leading-relaxed">
+              <p className="text-[11px] text-blue-700 leading-relaxed">
                 {aiReasoning}
               </p>
             )}
-            <p className="text-[11px] text-indigo-800 font-medium">
+            <p className="text-[11px] text-blue-800 font-medium">
               Click an AI optimized slot to autofill date, time, and interviewer:
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -614,12 +613,12 @@ export function ScheduleInterviewDialog({
                     key={idx}
                     type="button"
                     onClick={() => handleApplyAiSlot(slot)}
-                    className="px-3 py-2 rounded-xl bg-white border border-indigo-300 text-xs font-medium text-indigo-950 hover:bg-indigo-100/80 shadow-sm transition flex items-center gap-2 cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-white border border-blue-200 text-xs font-medium text-slate-800 hover:bg-blue-100/70 shadow-sm transition flex items-center gap-2 cursor-pointer"
                   >
-                    <CalendarCheck className="h-4 w-4 text-indigo-600 shrink-0" />
+                    <CalendarCheck className="h-4 w-4 text-blue-600 shrink-0" />
                     <div className="text-left">
                       <div className="font-semibold">{dateLabel}: {timeLabel}</div>
-                      <div className="text-[10px] text-emerald-600 font-medium">Score: {matchPct}% match</div>
+                      <div className="text-[10px] text-blue-600 font-medium">Score: {matchPct}% match</div>
                     </div>
                   </button>
                 );
@@ -629,12 +628,12 @@ export function ScheduleInterviewDialog({
         ) : (
           /* Mutual Slot Suggestion / Quick Pickers (Fallback) */
           mutualSlots.length > 0 && (
-            <div className="space-y-2 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
-                <Sparkles className="h-4 w-4 text-emerald-600" />
+            <div className="space-y-2 p-4 rounded-2xl bg-blue-50/70 border border-blue-200">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800">
+                <CalendarCheck className="h-4 w-4 text-blue-600" />
                 <span>Mutual Availability Slots ({mutualSlots.length} overlap found)</span>
               </div>
-              <p className="text-[11px] text-emerald-700">
+              <p className="text-[11px] text-blue-700">
                 Click a mutual slot to instantly populate the date and time:
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -643,9 +642,9 @@ export function ScheduleInterviewDialog({
                     key={slot.id}
                     type="button"
                     onClick={() => handleApplySlot(slot)}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-xs font-medium text-emerald-800 hover:bg-emerald-100/60 shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-white border border-blue-200 text-xs font-medium text-slate-800 hover:bg-blue-100/60 shadow-sm transition flex items-center gap-1.5 cursor-pointer"
                   >
-                    <CalendarCheck className="h-3.5 w-3.5 text-emerald-600" />
+                    <CalendarCheck className="h-3.5 w-3.5 text-blue-600" />
                     <span>
                       {slot.specificDate || getDayLabel(slot.dayOfWeek)}:{" "}
                       {formatTimeDisplay(slot.startTime)} - {formatTimeDisplay(slot.endTime)}

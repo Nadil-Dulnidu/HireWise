@@ -105,7 +105,7 @@ export function RecruiterAiWorkflowsPage() {
               refetchList();
               if (activeAppId) refetchWorkflow();
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white transition shadow-sm cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Refresh Telemetry
           </button>
@@ -121,7 +121,7 @@ export function RecruiterAiWorkflowsPage() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Evaluation Pipelines ({filteredEvaluations.length})
               </h3>
-              <span className="text-[10px] text-indigo-700 font-medium bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+              <span className="text-[10px] text-blue-700 font-medium bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                 Live
               </span>
             </div>

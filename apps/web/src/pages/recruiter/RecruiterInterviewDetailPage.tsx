@@ -170,15 +170,15 @@ export function RecruiterInterviewDetailPage() {
                 })}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-indigo-50/70 text-xs font-semibold text-indigo-700 border border-indigo-200 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 transition shadow-sm"
                 title="Add to Google Calendar"
               >
-                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
+                <CalendarPlus className="h-4 w-4 text-blue-600" /> Add to Calendar
               </a>
             )}
             <Link
               to={`/recruiter/applications/${interview.applicationId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold text-white transition shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition shadow-sm"
             >
               <FileText className="h-4 w-4" /> View Full Application{" "}
               <ChevronRight className="h-3 w-3" />
@@ -263,7 +263,7 @@ export function RecruiterInterviewDetailPage() {
                 <button
                   onClick={() => updateStatusMutation.mutate("SELECTED")}
                   disabled={updateStatusMutation.isPending}
-                  className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                  className="py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" /> Make Offer
                 </button>

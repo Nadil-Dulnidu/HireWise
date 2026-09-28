@@ -101,8 +101,8 @@ export function RecruiterInterviewsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Users className="h-7 w-7 text-indigo-600" /> Company Interviews
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Company Interviews
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Oversee all scheduled, active, and completed technical rounds across
@@ -112,7 +112,7 @@ export function RecruiterInterviewsPage() {
         <button
           type="button"
           onClick={() => setIsScheduleModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Schedule New Interview
         </button>
@@ -127,7 +127,7 @@ export function RecruiterInterviewsPage() {
             placeholder="Search candidate, role, or interviewer..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600"
           />
         </div>
 
@@ -136,7 +136,7 @@ export function RecruiterInterviewsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 w-full sm:w-auto"
+            className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:bg-white focus:border-blue-600 w-full sm:w-auto"
           >
             <option value="ALL">All Statuses</option>
             <option value="SCHEDULED">Scheduled</option>
@@ -149,7 +149,7 @@ export function RecruiterInterviewsPage() {
       {/* Interviews List */}
       {isLoading ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
           <p className="text-sm text-slate-500">
             Loading company interviews...
           </p>
@@ -167,7 +167,7 @@ export function RecruiterInterviewsPage() {
           <button
             type="button"
             onClick={() => setIsScheduleModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Schedule Interview
           </button>
@@ -231,10 +231,10 @@ export function RecruiterInterviewsPage() {
                         })}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50/70 text-xs font-semibold text-indigo-700 border border-indigo-200 transition shadow-sm"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 transition shadow-sm"
                         title="Add to Google Calendar"
                       >
-                        <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" /> Calendar
+                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" /> Calendar
                       </a>
                     )}
 
@@ -249,7 +249,7 @@ export function RecruiterInterviewsPage() {
 
                     <Link
                       to={`/recruiter/interviews/${interview.id}`}
-                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-medium transition"
+                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-medium transition"
                     >
                       {interview.hasFeedback ? "Review Feedback" : "Details"}{" "}
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -259,7 +259,7 @@ export function RecruiterInterviewsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-indigo-600" />
+                    <Clock className="h-4 w-4 text-blue-600" />
                     <span>
                       {startDate.toLocaleDateString(undefined, {
                         weekday: "short",

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  BarChart3,
   TrendingUp,
   Users,
   Briefcase,
@@ -84,8 +83,7 @@ export function AdminAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            <BarChart3 className="h-7 w-7 text-indigo-600" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Platform Analytics & Intelligence
           </h1>
           <p className="text-sm text-slate-500 mt-1">

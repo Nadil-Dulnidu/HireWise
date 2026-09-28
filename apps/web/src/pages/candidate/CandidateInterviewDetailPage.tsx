@@ -138,7 +138,7 @@ export function CandidateInterviewDetailPage() {
                 href={interview.meetingLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition shadow-sm"
               >
                 <Video className="h-4 w-4" /> Join Video Meeting
               </a>
@@ -154,10 +154,10 @@ export function CandidateInterviewDetailPage() {
                 })}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-sm font-semibold transition shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-sm font-semibold transition shadow-sm"
                 title="Add to Google Calendar"
               >
-                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
+                <CalendarPlus className="h-4 w-4 text-blue-600" /> Add to Calendar
               </a>
             )}
           </div>
@@ -169,12 +169,12 @@ export function CandidateInterviewDetailPage() {
         {/* Timing & Logistics */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-emerald-600" /> Date & Time
+            <Clock className="h-4 w-4 text-blue-600" /> Date & Time
           </h3>
 
           <div className="space-y-3 text-sm">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-indigo-600 shrink-0" />
+              <Calendar className="h-5 w-5 text-blue-600 shrink-0" />
               <div>
                 <p className="text-xs text-slate-500">Date</p>
                 <p className="font-semibold text-slate-900">

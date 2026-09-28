@@ -25,7 +25,7 @@ export function CandidateDashboard() {
 
   const { data: interviewsData, isLoading: isInterviewsLoading } = useQuery({
     queryKey: ["candidate-dashboard-interviews"],
-    queryFn: () => interviewsApi.getInterviews({ page: 1, pageSize: 50 }),
+    queryFn: () => interviewsApi.getMyInterviews({ page: 1, pageSize: 50 }),
   });
 
   const { data: resumeData } = useQuery({
@@ -96,8 +96,8 @@ export function CandidateDashboard() {
             label: "AI Reviews In Progress",
             value: isAppsLoading ? "..." : aiReviewsCount.toString(),
             icon: Bot,
-            color: "text-indigo-600",
-            bg: "bg-indigo-50 border border-indigo-100",
+            color: "text-blue-600",
+            bg: "bg-blue-50 border border-blue-100",
           },
           {
             label: "Interviews Scheduled",
@@ -105,8 +105,8 @@ export function CandidateDashboard() {
               ? "..."
               : scheduledInterviewsCount.toString(),
             icon: Calendar,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50 border border-emerald-100",
+            color: "text-blue-600",
+            bg: "bg-blue-50 border border-blue-100",
           },
           {
             label: "Profile Completeness",
@@ -202,7 +202,7 @@ export function CandidateDashboard() {
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-indigo-600" /> Availability Sync
+            <Clock className="h-4 w-4 text-blue-600" /> Availability Sync
           </h3>
           <p className="text-xs text-slate-600 leading-relaxed">
             Set your weekly free hours to allow the AI Scheduling Agent to

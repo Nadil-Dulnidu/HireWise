@@ -111,8 +111,8 @@ export function CandidateAvailabilityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Clock className="h-7 w-7 text-emerald-600" /> My Availability
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            My Availability
           </h1>
           <p className="text-sm text-slate-600 mt-1">
             Define your recurring weekly open slots so recruiters can coordinate
@@ -122,9 +122,9 @@ export function CandidateAvailabilityPage() {
         <button
           onClick={handleAddStandardSchedule}
           disabled={bulkCreateMutation.isPending}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-semibold transition disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-sm font-semibold transition disabled:opacity-50 cursor-pointer"
         >
-          <Clock className="h-4 w-4 text-indigo-600" /> Mon–Fri 9am–5pm Preset
+          <Clock className="h-4 w-4 text-slate-500" /> Mon–Fri 9am–5pm Preset
         </button>
       </div>
 
@@ -146,7 +146,7 @@ export function CandidateAvailabilityPage() {
         {/* Left: Add Slot Form */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 lg:col-span-1 h-fit">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Plus className="h-4 w-4 text-emerald-600" /> Add Available Slot
+            <Plus className="h-4 w-4 text-blue-600" /> Add Available Slot
           </h3>
 
           <form onSubmit={handleAddSlot} className="space-y-4">
@@ -157,7 +157,7 @@ export function CandidateAvailabilityPage() {
               <select
                 value={selectedDay}
                 onChange={(e) => setSelectedDay(Number(e.target.value))}
-                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               >
                 {DAYS.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -176,7 +176,7 @@ export function CandidateAvailabilityPage() {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                   required
                 />
               </div>
@@ -188,7 +188,7 @@ export function CandidateAvailabilityPage() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                   required
                 />
               </div>
@@ -202,7 +202,7 @@ export function CandidateAvailabilityPage() {
                 type="text"
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 placeholder="e.g. UTC, America/New_York"
                 required
               />
@@ -211,7 +211,7 @@ export function CandidateAvailabilityPage() {
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
             >
               {createMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -226,13 +226,13 @@ export function CandidateAvailabilityPage() {
         {/* Right: Weekly Overview */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-indigo-600" /> Weekly Schedule
+            <Calendar className="h-4 w-4 text-blue-600" /> Weekly Schedule
             Overview
           </h3>
 
           {isLoading ? (
             <div className="p-12 text-center">
-              <Loader2 className="h-6 w-6 text-emerald-600 animate-spin mx-auto" />
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin mx-auto" />
             </div>
           ) : slots.length === 0 ? (
             <div className="p-12 text-center space-y-2">
@@ -271,7 +271,7 @@ export function CandidateAvailabilityPage() {
                             key={slot.id}
                             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 shadow-xs"
                           >
-                            <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                            <Clock className="h-3.5 w-3.5 text-blue-600" />
                             <span className="font-medium">
                               {formatTimeDisplay(slot.startTime)} –{" "}
                               {formatTimeDisplay(slot.endTime)}

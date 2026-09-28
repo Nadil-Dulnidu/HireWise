@@ -175,7 +175,7 @@ export function InterviewerInterviewDetailPage() {
                 href={interview.meetingLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition shadow-sm"
               >
                 <Video className="h-4 w-4" /> Join Google Meet
               </a>
@@ -191,10 +191,10 @@ export function InterviewerInterviewDetailPage() {
                 })}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-sm font-semibold transition shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-sm font-semibold transition shadow-sm"
                 title="Add to Google Calendar"
               >
-                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
+                <CalendarPlus className="h-4 w-4 text-blue-600" /> Add to Calendar
               </a>
             )}
             {interview.resumeSnapshotUrl && (
@@ -521,7 +521,7 @@ export function InterviewerInterviewDetailPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Overall solid candidate, recommended to proceed with offer..."
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-emerald-500"
+                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600"
                   />
                 </div>
 
@@ -532,7 +532,7 @@ export function InterviewerInterviewDetailPage() {
                       submitFeedbackMutation.isPending ||
                       updateFeedbackMutation.isPending
                     }
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
                   >
                     {submitFeedbackMutation.isPending ||
                     updateFeedbackMutation.isPending ? (

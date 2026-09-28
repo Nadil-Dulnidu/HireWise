@@ -162,8 +162,7 @@ export function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            <Users className="h-7 w-7 text-indigo-600" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             User Management
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -587,7 +586,7 @@ export function AdminUsersPage() {
               <button
                 onClick={confirmRoleChange}
                 disabled={roleMutation.isPending}
-                className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold text-white shadow-sm transition disabled:opacity-50"
+                className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {roleMutation.isPending
                   ? "Syncing with Clerk..."

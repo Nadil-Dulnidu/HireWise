@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api/interviews-api";
 import { Link } from "react-router-dom";
 import {
-  History,
   CheckCircle2,
   Clock,
   Star,
@@ -33,8 +32,8 @@ export function InterviewerHistoryPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-          <History className="h-7 w-7 text-blue-600" /> Evaluation History
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Evaluation History
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           Review your completed technical interview rubrics and candidate
