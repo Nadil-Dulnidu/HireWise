@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api/interviews-api";
 import {
   Calendar,
+  CalendarPlus,
   Clock,
   Video,
   User,
@@ -13,6 +14,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
+import { getGoogleCalendarUrl } from "@/lib/utils";
 
 const getStatusBadge = (status: InterviewStatus) => {
   switch (status) {
@@ -130,16 +132,35 @@ export function CandidateInterviewDetailPage() {
             </p>
           </div>
 
-          {interview.meetingLink && interview.status === "SCHEDULED" && (
-            <a
-              href={interview.meetingLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
-            >
-              <Video className="h-4 w-4" /> Join Video Meeting
-            </a>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {interview.meetingLink && interview.status === "SCHEDULED" && (
+              <a
+                href={interview.meetingLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
+              >
+                <Video className="h-4 w-4" /> Join Video Meeting
+              </a>
+            )}
+            {interview.status === "SCHEDULED" && (
+              <a
+                href={getGoogleCalendarUrl({
+                  title: `Technical Interview: ${interview.jobTitle} at ${interview.companyName}`,
+                  startTime: interview.scheduledStartTime,
+                  endTime: interview.scheduledEndTime,
+                  description: `HireWise Technical Interview\nPosition: ${interview.jobTitle}\nCompany: ${interview.companyName}\nInterviewer: ${interview.interviewerName || "Hiring Team"}\nMeeting Link: ${interview.meetingLink || "N/A"}\nNotes: ${interview.notes || "None"}`,
+                  location: interview.meetingLink,
+                })}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-sm font-semibold transition shadow-sm"
+                title="Add to Google Calendar"
+              >
+                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
+              </a>
+            )}
+          </div>
         </div>
       </div>
 

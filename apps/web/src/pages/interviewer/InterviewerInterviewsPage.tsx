@@ -4,6 +4,7 @@ import { interviewsApi } from "@/lib/api/interviews-api";
 import { Link } from "react-router-dom";
 import {
   CalendarCheck,
+  CalendarPlus,
   Clock,
   Video,
   ArrowRight,
@@ -14,6 +15,7 @@ import {
   Filter,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
+import { getGoogleCalendarUrl } from "@/lib/utils";
 
 const getStatusBadge = (status: InterviewStatus) => {
   switch (status) {
@@ -191,6 +193,24 @@ export function InterviewerInterviewsPage() {
                           <Video className="h-3.5 w-3.5" /> Join Meet
                         </a>
                       )}
+
+                    {interview.status === "SCHEDULED" && (
+                      <a
+                        href={getGoogleCalendarUrl({
+                          title: `Technical Interview: ${interview.jobTitle} — ${interview.candidateName || interview.candidateEmail}`,
+                          startTime: interview.scheduledStartTime,
+                          endTime: interview.scheduledEndTime,
+                          description: `HireWise Technical Interview\nPosition: ${interview.jobTitle}\nCandidate: ${interview.candidateName || ""} (${interview.candidateEmail})\nInterviewer: ${interview.interviewerName || ""}\nMeeting Link: ${interview.meetingLink || "N/A"}\nNotes: ${interview.notes || "None"}`,
+                          location: interview.meetingLink,
+                        })}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-xs font-semibold transition shadow-sm"
+                        title="Add to Google Calendar"
+                      >
+                        <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" /> Add to Calendar
+                      </a>
+                    )}
 
                     {interview.status === "SCHEDULED" && (
                       <button

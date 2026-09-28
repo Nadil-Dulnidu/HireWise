@@ -160,6 +160,13 @@ public static class EmailTemplates
         var dateStr = startTime.ToString("dddd, MMMM d, yyyy");
         var timeStr = $"{startTime:h:mm tt} — {endTime:h:mm tt} UTC";
 
+        var startIso = startTime.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        var endIso = endTime.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+        var title = Uri.EscapeDataString($"HireWise Interview: {jobTitle}");
+        var details = Uri.EscapeDataString($"Interview for {jobTitle} on HireWise." + (string.IsNullOrWhiteSpace(meetingLink) ? "" : $"\nJoin Meeting: {meetingLink}"));
+        var location = Uri.EscapeDataString(meetingLink ?? "HireWise Platform");
+        var calUrl = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={title}&dates={startIso}/{endIso}&details={details}&location={location}";
+
         var meetingSection = string.IsNullOrWhiteSpace(meetingLink) ? "" : $"""
         {InfoRow("Meeting Link", $"<a href=\"{meetingLink}\" style=\"color:{BrandColor};text-decoration:none;font-weight:500;\">{meetingLink}</a>")}
         """;
@@ -177,6 +184,12 @@ public static class EmailTemplates
             {meetingSection}
             {InfoRow("Status", StatusBadge("CONFIRMED", "#10b981"))}
         </table>
+
+        <div style="text-align:center;margin:28px 0;">
+            <a href="{calUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:{BrandColor};color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 6px -1px rgba(99, 102, 241, 0.2);">
+                📅 Add to Google Calendar
+            </a>
+        </div>
 
         <p style="margin:0;color:{TextSecondary};font-size:14px;line-height:1.7;">
             Please make sure you're available at the scheduled time. If you need to reschedule, contact the recruiter through the HireWise platform.

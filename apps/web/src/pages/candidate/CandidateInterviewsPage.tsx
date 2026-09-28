@@ -4,6 +4,7 @@ import { interviewsApi } from "@/lib/api/interviews-api";
 import { Link } from "react-router-dom";
 import {
   Calendar,
+  CalendarPlus,
   Clock,
   Video,
   User,
@@ -12,6 +13,7 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
+import { getGoogleCalendarUrl } from "@/lib/utils";
 
 const getStatusBadge = (status: InterviewStatus) => {
   switch (status) {
@@ -157,6 +159,23 @@ export function CandidateInterviewsPage() {
                           <Video className="h-3.5 w-3.5" /> Join Meeting
                         </a>
                       )}
+                    {interview.status === "SCHEDULED" && (
+                      <a
+                        href={getGoogleCalendarUrl({
+                          title: `Technical Interview: ${interview.jobTitle} at ${interview.companyName}`,
+                          startTime: interview.scheduledStartTime,
+                          endTime: interview.scheduledEndTime,
+                          description: `HireWise Technical Interview\nPosition: ${interview.jobTitle}\nCompany: ${interview.companyName}\nInterviewer: ${interview.interviewerName || "Hiring Team"}\nMeeting Link: ${interview.meetingLink || "N/A"}\nNotes: ${interview.notes || "None"}`,
+                          location: interview.meetingLink,
+                        })}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-xs font-semibold transition shadow-sm"
+                        title="Add to Google Calendar"
+                      >
+                        <CalendarPlus className="h-3.5 w-3.5 text-indigo-600" /> Add to Calendar
+                      </a>
+                    )}
                     <Link
                       to={`/candidate/interviews/${interview.id}`}
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 border border-slate-200 transition"

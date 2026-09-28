@@ -150,7 +150,7 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IAgentConfigService, AgentConfigService>();
 builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 
-// Integrations (Google Calendar & Resend)
+// Integrations (Email - Resend)
 var resendApiKey = builder.Configuration["RESEND_API_KEY"]
     ?? builder.Configuration["Resend:ApiKey"]
     ?? "re_placeholder_key";
@@ -161,7 +161,6 @@ builder.Services.AddOptions<ResendClientOptions>().Configure(options =>
 });
 builder.Services.AddHttpClient<IResend, ResendClient>();
 
-builder.Services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // AutoMapper & FluentValidation

@@ -27,7 +27,6 @@ public class InterviewService : IInterviewService
     private readonly ApplicationDbContext _db;
     private readonly IMapper _mapper;
     private readonly INotificationService _notificationService;
-    private readonly IGoogleCalendarService _calendarService;
     private readonly IEmailService _emailService;
     private readonly IAiServiceClient _aiServiceClient;
     private readonly ILogger<InterviewService> _logger;
@@ -36,7 +35,6 @@ public class InterviewService : IInterviewService
         ApplicationDbContext db,
         IMapper mapper,
         INotificationService notificationService,
-        IGoogleCalendarService calendarService,
         IEmailService emailService,
         IAiServiceClient aiServiceClient,
         ILogger<InterviewService> logger)
@@ -44,7 +42,6 @@ public class InterviewService : IInterviewService
         _db = db;
         _mapper = mapper;
         _notificationService = notificationService;
-        _calendarService = calendarService;
         _emailService = emailService;
         _aiServiceClient = aiServiceClient;
         _logger = logger;
@@ -164,21 +161,7 @@ public class InterviewService : IInterviewService
         _logger.LogInformation("Interview {InterviewId} scheduled for Application {ApplicationId} by Company {CompanyId}",
             interview.Id, application.Id, recruiterCompanyId);
 
-        // 4. Google Calendar Integration
-        try
-        {
-            var calendarEventId = await _calendarService.CreateInterviewEventAsync(
-                interview, application.Candidate, interviewer, application.Job, ct);
-            if (!string.IsNullOrEmpty(calendarEventId))
-            {
-                interview.GoogleCalendarEventId = calendarEventId;
-                await _db.SaveChangesAsync(ct);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to create Google Calendar event for Interview {InterviewId}", interview.Id);
-        }
+
 
         // 5. Send Notifications
         try
@@ -468,11 +451,7 @@ public class InterviewService : IInterviewService
 
         await _db.SaveChangesAsync(ct);
 
-        // Google Calendar: update event
-        if (!string.IsNullOrEmpty(interview.GoogleCalendarEventId))
-        {
-            await _calendarService.UpdateInterviewEventAsync(interview.GoogleCalendarEventId, interview, ct);
-        }
+
 
         // Notify candidate & interviewer of schedule update
         var updatedTimeStr = interview.ScheduledStartTime.ToString("f");
@@ -562,13 +541,7 @@ public class InterviewService : IInterviewService
 
         _logger.LogInformation("Interview {InterviewId} cancelled by Recruiter for company {CompanyId}", id, recruiterCompanyId);
 
-        // Google Calendar: delete event
-        if (!string.IsNullOrEmpty(interview.GoogleCalendarEventId))
-        {
-            await _calendarService.DeleteInterviewEventAsync(interview.GoogleCalendarEventId, ct);
-            interview.GoogleCalendarEventId = null;
-            await _db.SaveChangesAsync(ct);
-        }
+
 
         // Notify participants
         var reasonMsg = string.IsNullOrEmpty(reason) ? "" : $" Reason: {reason}";

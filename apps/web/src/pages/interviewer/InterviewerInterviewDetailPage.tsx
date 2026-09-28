@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api/interviews-api";
 import {
   ArrowLeft,
+  CalendarPlus,
   Video,
   FileText,
   FileQuestion,
@@ -14,6 +15,7 @@ import {
   Save,
   Edit3,
 } from "lucide-react";
+import { getGoogleCalendarUrl } from "@/lib/utils";
 import type {
   SubmitFeedbackRequest,
   RecommendationType,
@@ -176,6 +178,23 @@ export function InterviewerInterviewDetailPage() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition shadow-sm"
               >
                 <Video className="h-4 w-4" /> Join Google Meet
+              </a>
+            )}
+            {interview.status === "SCHEDULED" && (
+              <a
+                href={getGoogleCalendarUrl({
+                  title: `Technical Interview: ${interview.jobTitle} — ${interview.candidateName || interview.candidateEmail}`,
+                  startTime: interview.scheduledStartTime,
+                  endTime: interview.scheduledEndTime,
+                  description: `HireWise Technical Interview\nPosition: ${interview.jobTitle}\nCandidate: ${interview.candidateName || ""} (${interview.candidateEmail})\nInterviewer: ${interview.interviewerName || ""}\nMeeting Link: ${interview.meetingLink || "N/A"}\nNotes: ${interview.notes || "None"}`,
+                  location: interview.meetingLink,
+                })}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 text-indigo-700 border border-indigo-200 text-sm font-semibold transition shadow-sm"
+                title="Add to Google Calendar"
+              >
+                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
               </a>
             )}
             {interview.resumeSnapshotUrl && (

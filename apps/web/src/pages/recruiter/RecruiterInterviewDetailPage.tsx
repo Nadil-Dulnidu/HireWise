@@ -4,6 +4,7 @@ import { interviewsApi } from "@/lib/api/interviews-api";
 import { applicationsApi } from "@/lib/api/applications-api";
 import {
   ArrowLeft,
+  CalendarPlus,
   Clock,
   Video,
   User,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
+import { getGoogleCalendarUrl } from "@/lib/utils";
 
 const getStatusBadge = (status: InterviewStatus) => {
   switch (status) {
@@ -155,6 +157,23 @@ export function RecruiterInterviewDetailPage() {
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 border border-slate-200 transition"
               >
                 <Video className="h-4 w-4 text-emerald-600" /> Join Meet
+              </a>
+            )}
+            {interview.status === "SCHEDULED" && (
+              <a
+                href={getGoogleCalendarUrl({
+                  title: `Technical Interview: ${interview.jobTitle} — ${interview.candidateName || interview.candidateEmail}`,
+                  startTime: interview.scheduledStartTime,
+                  endTime: interview.scheduledEndTime,
+                  description: `HireWise Technical Interview\nPosition: ${interview.jobTitle}\nCandidate: ${interview.candidateName || ""} (${interview.candidateEmail})\nInterviewer: ${interview.interviewerName || ""}\nMeeting Link: ${interview.meetingLink || "N/A"}\nNotes: ${interview.notes || "None"}`,
+                  location: interview.meetingLink,
+                })}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-indigo-50/70 text-xs font-semibold text-indigo-700 border border-indigo-200 transition shadow-sm"
+                title="Add to Google Calendar"
+              >
+                <CalendarPlus className="h-4 w-4 text-indigo-600" /> Add to Calendar
               </a>
             )}
             <Link

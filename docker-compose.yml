@@ -50,8 +50,6 @@ services:
       AiService__BaseUrl: "http://ai-service:8000"
       AiService__ApiKey: "hw_ai_service_secret_key"
       Storage__Provider: "LocalStorage"
-      Storage__Gcp__BucketName: "hirewise-resumes"
-      GoogleCalendar__Enabled: "false"
       Resend__Enabled: "false"
       Cors__AllowedOrigins__0: "http://localhost:5173"
       Cors__AllowedOrigins__1: "http://localhost:3000"
