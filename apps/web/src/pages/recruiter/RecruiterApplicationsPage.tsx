@@ -203,114 +203,118 @@ export function RecruiterApplicationsPage() {
       </div>
 
       {/* Applications Table / Cards */}
-      <div className="space-y-4">
+      <div>
         {isLoading ? (
           <div className="flex items-center justify-center p-16">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
         ) : applicationsData && applicationsData.items.length > 0 ? (
-          applicationsData.items.map((app) => (
-            <div
-              key={app.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow transition flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-            >
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="text-base font-bold text-slate-900">
-                    {app.candidateName}
-                  </span>
-                  <span className="text-xs text-slate-500 font-mono">
-                    ({app.candidateEmail})
-                  </span>
-                  <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-semibold">
-                    {app.status.replace(/_/g, " ")}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">
-                    Role: {app.jobTitle}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" /> Applied{" "}
-                    {new Date(app.appliedAt).toLocaleDateString()}
-                  </span>
-                  {app.coverLetter && (
-                    <span className="text-emerald-600 text-[11px] font-medium flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> Has Cover Letter
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {applicationsData.items.map((app) => (
+              <div
+                key={app.id}
+                className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-3.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-xs text-slate-500 font-medium truncate">
+                      Role: <strong className="text-slate-800">{app.jobTitle}</strong>
                     </span>
-                  )}
+                    <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 text-[10px] font-semibold shrink-0">
+                      {app.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition line-clamp-1">
+                      {app.candidateName}
+                    </h3>
+                    <p className="text-xs text-slate-500 truncate pt-0.5 font-mono">
+                      {app.candidateEmail}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                    </div>
+                    {app.coverLetter && (
+                      <div className="text-blue-700 text-[11px] font-medium flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> Includes Cover Letter
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {app.resumeSnapshotUrl && (
+                      <a
+                        href={app.resumeSnapshotUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition"
+                      >
+                        <Download className="h-3.5 w-3.5 text-blue-600" /> Resume
+                      </a>
+                    )}
+
+                    {/* Schedulability-aware Actions */}
+                    {(app.status === "APPLIED" ||
+                      app.status === "AI_REVIEW" ||
+                      app.status === "AI_RECOMMENDED" ||
+                      app.status === "RECRUITER_REVIEW") && (
+                      <button
+                        onClick={() => approveMutation.mutate(app.id)}
+                        disabled={approveMutation.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-1.5 text-xs font-semibold transition cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" /> Approve
+                      </button>
+                    )}
+
+                    {app.status === "INTERVIEW_APPROVED" && (
+                      <button
+                        type="button"
+                        onClick={() => setSchedulingApp(app)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-1.5 text-xs font-semibold transition cursor-pointer"
+                      >
+                        <Calendar className="h-3.5 w-3.5 text-blue-600" /> Schedule
+                      </button>
+                    )}
+
+                    {app.status === "INTERVIEW_SCHEDULED" && (
+                      <Link
+                        to="/recruiter/interviews"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-1.5 text-xs font-semibold transition"
+                      >
+                        Scheduled
+                      </Link>
+                    )}
+
+                    {app.status !== "REJECTED" && (
+                      <button
+                        onClick={() => rejectMutation.mutate(app.id)}
+                        disabled={rejectMutation.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+                        title="Reject Candidate"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <Link
+                    to={`/recruiter/applications/${app.id}`}
+                    className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 text-xs font-semibold transition shadow-xs"
+                  >
+                    Review Candidate <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                {app.resumeSnapshotUrl && (
-                  <a
-                    href={app.resumeSnapshotUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition"
-                  >
-                    <Download className="h-3.5 w-3.5 text-blue-600" /> Resume
-                  </a>
-                )}
-
-                {/* Schedulability-aware Actions */}
-                {(app.status === "APPLIED" ||
-                  app.status === "AI_REVIEW" ||
-                  app.status === "AI_RECOMMENDED" ||
-                  app.status === "RECRUITER_REVIEW") && (
-                  <button
-                    onClick={() => approveMutation.mutate(app.id)}
-                    disabled={approveMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />{" "}
-                    Approve Interview
-                  </button>
-                )}
-
-                {app.status === "INTERVIEW_APPROVED" && (
-                  <button
-                    type="button"
-                    onClick={() => setSchedulingApp(app)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                    Schedule Interview
-                  </button>
-                )}
-
-                {app.status === "INTERVIEW_SCHEDULED" && (
-                  <Link
-                    to="/recruiter/interviews"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-3 py-2 text-xs font-semibold transition"
-                  >
-                    Interview Scheduled
-                  </Link>
-                )}
-
-                {app.status !== "REJECTED" && (
-                  <button
-                    onClick={() => rejectMutation.mutate(app.id)}
-                    disabled={rejectMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 px-3 py-2 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <XCircle className="h-3.5 w-3.5" /> Reject
-                  </button>
-                )}
-
-                <Link
-                  to={`/recruiter/applications/${app.id}`}
-                  className="inline-flex items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 text-xs font-semibold transition shadow-sm"
-                >
-                  Review Candidate <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-sm">
             <Users className="h-10 w-10 text-slate-400 mx-auto" />

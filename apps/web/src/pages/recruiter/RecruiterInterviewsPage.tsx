@@ -173,7 +173,7 @@ export function RecruiterInterviewsPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {interviews.map((interview) => {
             const badge = getStatusBadge(interview.status);
             const startDate = new Date(interview.scheduledStartTime);
@@ -182,44 +182,91 @@ export function RecruiterInterviewsPage() {
             return (
               <div
                 key={interview.id}
-                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow transition space-y-4"
+                className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-base font-bold text-slate-900">
-                        {interview.candidateName}
-                      </h3>
-                      <span
-                        className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.color} ${badge.border}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      Position:{" "}
-                      <span className="text-slate-800 font-medium">
-                        {interview.jobTitle}
-                      </span>{" "}
-                      • Interviewer:{" "}
-                      <span className="text-indigo-700 font-medium">
-                        {interview.interviewerName}
-                      </span>
+                <div className="space-y-3.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-xs text-slate-500 font-medium truncate">
+                      Role: <strong className="text-slate-800">{interview.jobTitle}</strong>
+                    </span>
+                    <span
+                      className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium border shrink-0 ${badge.bg} ${badge.color} ${badge.border}`}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition line-clamp-1">
+                      {interview.candidateName}
+                    </h3>
+                    <p className="text-xs text-slate-500 truncate pt-0.5">
+                      Interviewer: <span className="text-blue-700 font-medium">{interview.interviewerName}</span>
                     </p>
                   </div>
 
+                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                      <span>
+                        {startDate.toLocaleDateString(undefined, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        •{" "}
+                        {startDate.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        -{" "}
+                        {endDate.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span>
+                        Feedback:{" "}
+                        {interview.hasFeedback ? (
+                          <strong className="text-blue-700 font-semibold">
+                            Submitted ({interview.overallRating}/5.0)
+                          </strong>
+                        ) : (
+                          <span className="text-slate-400">Pending</span>
+                        )}
+                      </span>
+                    </div>
+
+                    {interview.recommendation && (
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                        <span>
+                          Verdict:{" "}
+                          <strong className="text-slate-800">
+                            {interview.recommendation.replace("_", " ")}
+                          </strong>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     {interview.meetingLink && (
                       <a
                         href={interview.meetingLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 border border-slate-200 transition"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition shadow-xs"
                       >
-                        <Video className="h-3.5 w-3.5 text-emerald-600" /> Meet Link
+                        <Video className="h-3.5 w-3.5" /> Meet Link
                       </a>
                     )}
-
                     {interview.status === "SCHEDULED" && (
                       <a
                         href={getGoogleCalendarUrl({
@@ -231,79 +278,29 @@ export function RecruiterInterviewsPage() {
                         })}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 transition shadow-sm"
+                        className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition shadow-xs"
                         title="Add to Google Calendar"
                       >
-                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" /> Calendar
+                        <CalendarPlus className="h-4 w-4 text-blue-600" />
                       </a>
                     )}
-
                     {interview.status === "SCHEDULED" && (
                       <button
                         onClick={() => setCancelModalId(interview.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-medium transition cursor-pointer"
+                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-medium transition cursor-pointer"
+                        title="Cancel Interview"
                       >
-                        <XCircle className="h-3.5 w-3.5" /> Cancel
+                        <XCircle className="h-4 w-4" />
                       </button>
                     )}
-
-                    <Link
-                      to={`/recruiter/interviews/${interview.id}`}
-                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-medium transition"
-                    >
-                      {interview.hasFeedback ? "Review Feedback" : "Details"}{" "}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    <span>
-                      {startDate.toLocaleDateString(undefined, {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      at{" "}
-                      {startDate.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      -{" "}
-                      {endDate.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    <span>
-                      Feedback:{" "}
-                      {interview.hasFeedback ? (
-                        <strong className="text-emerald-700">
-                          Submitted ({interview.overallRating}/5.0)
-                        </strong>
-                      ) : (
-                        <span className="text-slate-400">Pending</span>
-                      )}
-                    </span>
-                  </div>
-
-                  {interview.recommendation && (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                      <span>
-                        Recommendation:{" "}
-                        <strong className="text-slate-800">
-                          {interview.recommendation.replace("_", " ")}
-                        </strong>
-                      </span>
-                    </div>
-                  )}
+                  <Link
+                    to={`/recruiter/interviews/${interview.id}`}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 border border-slate-200 transition"
+                  >
+                    {interview.hasFeedback ? "Review Feedback" : "View Details"}{" "}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
             );

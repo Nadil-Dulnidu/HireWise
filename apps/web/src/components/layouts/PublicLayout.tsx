@@ -1,6 +1,6 @@
 import { Outlet, Link } from "react-router-dom";
 import { useUser, UserButton } from "@clerk/clerk-react";
-import { Briefcase, ArrowRight, ShieldCheck, Cpu, Smartphone } from "lucide-react";
+import { Briefcase, ArrowRight, ShieldCheck } from "lucide-react";
 
 export function PublicLayout() {
   const { isSignedIn } = useUser();
@@ -21,58 +21,36 @@ export function PublicLayout() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+          <div className="flex items-center gap-3">
             <Link
               to="/jobs"
-              className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-100 border border-slate-200/80 transition"
             >
-              <Briefcase className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
-              Browse Jobs
+              <Briefcase className="h-3.5 w-3.5 text-slate-500" />
+              <span>Browse Jobs</span>
             </Link>
-            <a
-              href="#how-it-works"
-              className="hover:text-blue-600 transition-colors"
-            >
-              How It Works
-            </a>
-            <a
-              href="#ai-agents"
-              className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
-            >
-              <Cpu className="h-4 w-4 text-slate-400" />
-              AI Agents
-            </a>
-            <a
-              href="#mobile-app"
-              className="hover:text-blue-600 transition-colors flex items-center gap-1.5"
-            >
-              <Smartphone className="h-4 w-4 text-slate-400" />
-              Mobile App
-            </a>
-          </nav>
 
-          <div className="flex items-center gap-3">
             {isSignedIn ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/auth-redirect"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5"
+                  className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5"
                 >
-                  Go to Dashboard <ArrowRight className="h-4 w-4" />
+                  Go to Dashboard <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
                 <UserButton afterSignOutUrl="/" />
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/sign-in"
-                  className="text-sm font-medium text-slate-600 hover:text-slate-900 transition px-3 py-2"
+                  className="text-xs font-medium text-slate-600 hover:text-slate-900 transition px-2.5 py-1.5"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/sign-up"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5"
+                  className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5"
                 >
                   Get Started
                 </Link>
