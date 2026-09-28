@@ -5,7 +5,6 @@ import {
   Building2,
   ShieldAlert,
   Sliders,
-  BarChart2,
 } from "lucide-react";
 
 const adminNav: NavItem[] = [
@@ -13,7 +12,6 @@ const adminNav: NavItem[] = [
   { label: "User & Approvals", href: "/admin/users", icon: Users },
   { label: "Companies", href: "/admin/companies", icon: Building2 },
   { label: "Audit Trail", href: "/admin/audit-logs", icon: ShieldAlert },
-  { label: "Platform Analytics", href: "/admin/analytics", icon: BarChart2 },
   { label: "Settings", href: "/admin/settings", icon: Sliders },
 ];
 

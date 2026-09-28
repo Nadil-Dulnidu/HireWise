@@ -49,7 +49,6 @@ import { AdminDashboard } from "@/pages/admin/AdminDashboard";
 import { AdminAuditLogsPage } from "@/pages/admin/AdminAuditLogsPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
 import { AdminCompaniesPage } from "@/pages/admin/AdminCompaniesPage";
-import { AdminAnalyticsPage } from "@/pages/admin/AdminAnalyticsPage";
 import { AdminSettingsPage } from "@/pages/admin/AdminSettingsPage";
 
 export function App() {
@@ -187,7 +186,7 @@ export function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="audit-logs" element={<AdminAuditLogsPage />} />
-            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="analytics" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>
