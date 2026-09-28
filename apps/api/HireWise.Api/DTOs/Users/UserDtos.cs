@@ -3,6 +3,7 @@ using HireWise.Api.Models.Enums;
 
 namespace HireWise.Api.DTOs.Users;
 
+// User details returned to the client
 public class UserDto
 {
     public Guid Id { get; set; }
@@ -20,6 +21,7 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
 }
 
+// Company team member summary with interview activity stats
 public class TeamMemberDto
 {
     public Guid Id { get; set; }
@@ -31,11 +33,13 @@ public class TeamMemberDto
     public UserRole Role { get; set; }
     public UserStatus Status { get; set; }
     public string? ProfileImageUrl { get; set; }
+    // Interview assignment counts for tracking interviewer workload
     public int AssignedInterviewsCount { get; set; }
     public int CompletedFeedbacksCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
+// Payload for updating candidate profile information
 public class UpdateProfileRequest
 {
     public string FirstName { get; set; } = string.Empty;
@@ -44,16 +48,19 @@ public class UpdateProfileRequest
     public string? ProfileImageUrl { get; set; }
 }
 
+// Request to update a user's system role
 public class UpdateUserRoleRequest
 {
     public UserRole Role { get; set; }
 }
 
+// Request to ban a user with an optional reason
 public class BanUserRequest
 {
     public string? Reason { get; set; }
 }
 
+// Query parameters for filtering and paginating users
 public class UserFilterRequest : Common.PagedRequest
 {
     public UserRole? Role { get; set; }

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Service interface for resume management operations
 public interface IResumeService
 {
     Task<Result<UploadResumeResponse>> UploadResumeAsync(Guid candidateId, IFormFile file, CancellationToken ct = default);
@@ -17,6 +18,7 @@ public interface IResumeService
     Task<Result<bool>> DeleteResumeAsync(Guid id, Guid candidateId, CancellationToken ct = default);
 }
 
+// Service implementing resume upload, retrieval, download, and deletion
 public class ResumeService : IResumeService
 {
     private readonly ApplicationDbContext _db;
@@ -39,6 +41,7 @@ public class ResumeService : IResumeService
         _logger = logger;
     }
 
+    // Validate file security, upload resume to storage, and save metadata to database
     public async Task<Result<UploadResumeResponse>> UploadResumeAsync(Guid candidateId, IFormFile file, CancellationToken ct = default)
     {
         if (file == null || file.Length == 0)
@@ -116,6 +119,7 @@ public class ResumeService : IResumeService
         });
     }
 
+    // Retrieve the active resume for a candidate
     public async Task<Result<ResumeDto>> GetActiveResumeAsync(Guid candidateId, CancellationToken ct = default)
     {
         var resume = await _db.Resumes
@@ -131,6 +135,7 @@ public class ResumeService : IResumeService
         return Result<ResumeDto>.Success(_mapper.Map<ResumeDto>(resume));
     }
 
+    // Get resume details by ID with permission checks
     public async Task<Result<ResumeDto>> GetResumeByIdAsync(Guid id, Guid currentUserId, string role, CancellationToken ct = default)
     {
         var resume = await _db.Resumes.FirstOrDefaultAsync(r => r.Id == id, ct);
@@ -148,6 +153,7 @@ public class ResumeService : IResumeService
         return Result<ResumeDto>.Success(_mapper.Map<ResumeDto>(resume));
     }
 
+    // Download resume stream from storage service
     public async Task<(Stream Stream, string ContentType, string FileName)?> DownloadResumeAsync(Guid id, Guid currentUserId, string role, CancellationToken ct = default)
     {
         var resume = await _db.Resumes.FirstOrDefaultAsync(r => r.Id == id, ct);
@@ -158,6 +164,7 @@ public class ResumeService : IResumeService
         return await _storageService.DownloadFileAsync(resume.FileUrl, ct);
     }
 
+    // Soft delete resume record in database and remove physical file from storage
     public async Task<Result<bool>> DeleteResumeAsync(Guid id, Guid candidateId, CancellationToken ct = default)
     {
         var resume = await _db.Resumes.FirstOrDefaultAsync(r => r.Id == id && r.CandidateId == candidateId, ct);

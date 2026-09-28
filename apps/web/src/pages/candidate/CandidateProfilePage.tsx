@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse, UserProfile } from "@/types/auth";
 import { Mail, Phone, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
+// Candidate profile page for editing personal contact details
 export function CandidateProfilePage() {
   const { profile, refetchProfile } = useCurrentUser();
   const queryClient = useQueryClient();
@@ -15,6 +16,7 @@ export function CandidateProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Populate form inputs when current user profile loads
   useEffect(() => {
     if (profile) {
       setFirstName(profile.firstName || "");
@@ -23,6 +25,7 @@ export function CandidateProfilePage() {
     }
   }, [profile]);
 
+  // Mutation to update candidate profile information via API
   const updateMutation = useMutation({
     mutationFn: async (data: {
       firstName: string;
@@ -50,6 +53,7 @@ export function CandidateProfilePage() {
     },
   });
 
+  // Validate form inputs and submit profile changes
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) {

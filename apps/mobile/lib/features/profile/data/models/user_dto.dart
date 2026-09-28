@@ -1,5 +1,6 @@
 import '../../../../shared/models/enums.dart';
 
+// User profile data transfer object for mobile client
 class UserDto {
   final String id;
   final String clerkUserId;
@@ -15,6 +16,7 @@ class UserDto {
   final String? phone;
   final DateTime createdAt;
 
+  // Constructor initializing all user profile fields
   const UserDto({
     required this.id,
     required this.clerkUserId,
@@ -31,6 +33,7 @@ class UserDto {
     required this.createdAt,
   });
 
+  // Parse user profile from backend JSON response
   factory UserDto.fromJson(Map<String, dynamic> json) {
     final roleStr = json['role'] as String? ?? 'CANDIDATE';
     final statusStr = json['status'] as String? ?? 'ACTIVE';
@@ -65,6 +68,7 @@ class UserDto {
     );
   }
 
+  // Convert user profile into JSON map
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -83,6 +87,7 @@ class UserDto {
     };
   }
 
+  // Convenience getters for role and onboarding status
   bool get isCandidate => role == UserRole.candidate;
   bool get isOnboarding => status == UserStatus.onboarding;
 }

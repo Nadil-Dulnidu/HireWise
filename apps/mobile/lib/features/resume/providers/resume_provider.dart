@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/resume_dto.dart';
 import '../data/repositories/resume_repository.dart';
 
+// State model representing active resume details, upload progress, and loading indicators
 class ResumeState {
   final ResumeDto? activeResume;
   final bool isLoading;
@@ -37,6 +38,7 @@ class ResumeState {
   }
 }
 
+// Notifier managing resume state, uploads, downloads, and deletions
 class ResumeNotifier extends StateNotifier<ResumeState> {
   final ResumeRepository _repository;
 
@@ -44,6 +46,7 @@ class ResumeNotifier extends StateNotifier<ResumeState> {
     loadActiveResume();
   }
 
+  // Fetch and update state with the candidate's active resume
   Future<void> loadActiveResume() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -61,6 +64,7 @@ class ResumeNotifier extends StateNotifier<ResumeState> {
     }
   }
 
+  // Upload a resume file with progress tracking and refresh the active resume
   Future<bool> uploadResume(String filePath, String fileName) async {
     state = state.copyWith(
       isUploading: true,
@@ -94,6 +98,7 @@ class ResumeNotifier extends StateNotifier<ResumeState> {
     }
   }
 
+  // Delete a resume by ID and clear active resume state
   Future<bool> deleteResume(String id) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {

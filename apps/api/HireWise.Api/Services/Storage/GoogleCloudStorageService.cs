@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace HireWise.Api.Services.Storage;
 
+// Google Cloud Storage implementation of the storage service
 public class GoogleCloudStorageService : IStorageService
 {
     private readonly IConfiguration _config;
@@ -12,6 +13,7 @@ public class GoogleCloudStorageService : IStorageService
     private readonly string _bucketName;
     private readonly StorageClient _storageClient;
 
+    // Configure bucket settings and initialize the storage client
     public GoogleCloudStorageService(IConfiguration config, ILogger<GoogleCloudStorageService> logger)
     {
         _config = config;
@@ -25,6 +27,7 @@ public class GoogleCloudStorageService : IStorageService
         _storageClient = InitializeStorageClient();
     }
 
+    // Initialize GCS client using service account credentials or default credentials
     private StorageClient InitializeStorageClient()
     {
         try
@@ -63,6 +66,7 @@ public class GoogleCloudStorageService : IStorageService
         }
     }
 
+    // Upload a file to Google Cloud Storage bucket
     public async Task<UploadResult> UploadFileAsync(
         Stream stream,
         string fileName,
@@ -120,6 +124,7 @@ public class GoogleCloudStorageService : IStorageService
         }
     }
 
+    // Download a file from Google Cloud Storage into a memory stream
     public async Task<(Stream Stream, string ContentType, string FileName)?> DownloadFileAsync(
         string fileUrl,
         CancellationToken ct = default)
@@ -157,6 +162,7 @@ public class GoogleCloudStorageService : IStorageService
         }
     }
 
+    // Delete a file object from Google Cloud Storage bucket
     public async Task<bool> DeleteFileAsync(string fileUrl, CancellationToken ct = default)
     {
         try
@@ -183,6 +189,7 @@ public class GoogleCloudStorageService : IStorageService
         }
     }
 
+    // Extract object name from various GCS URL formats
     private string ExtractObjectName(string fileUrl)
     {
         if (string.IsNullOrWhiteSpace(fileUrl)) return string.Empty;
