@@ -55,6 +55,7 @@ def get_llm(
     Initializes and returns LangChain ChatVertexAI or ChatGoogleGenerativeAI instance.
     Supports Vertex AI (via Service Account JSON key or Application Default Credentials)
     and Google AI Studio API key.
+    Model is configured via .env, while temperature and token limits are specified per-agent.
     """
     if not is_google_api_configured():
         logger.info(
@@ -63,6 +64,8 @@ def get_llm(
         return None
 
     target_model = model or settings.GEMINI_MODEL
+    target_temperature = temperature
+    target_max_tokens = max_tokens
 
     # 1. Prefer Vertex AI / Service Account / ADC when USE_VERTEX_AI is True or API Key is absent
     if is_vertex_configured() and (settings.USE_VERTEX_AI or not settings.GOOGLE_API_KEY):
@@ -110,15 +113,15 @@ def get_llm(
 
             kwargs: dict[str, Any] = {
                 "model_name": target_model,
-                "temperature": temperature,
+                "temperature": target_temperature,
                 "location": location,
             }
             if project:
                 kwargs["project"] = project
             if credentials:
                 kwargs["credentials"] = credentials
-            if max_tokens:
-                kwargs["max_output_tokens"] = max_tokens
+            if target_max_tokens:
+                kwargs["max_output_tokens"] = target_max_tokens
 
             logger.info(f"Initialized ChatVertexAI with model '{target_model}', project '{project}', location '{location}'")
             return ChatVertexAI(**kwargs)
@@ -133,11 +136,11 @@ def get_llm(
             kwargs = {
                 "model": target_model,
                 "google_api_key": settings.GOOGLE_API_KEY,
-                "temperature": temperature,
+                "temperature": target_temperature,
                 "convert_system_message_to_human": True,
             }
-            if max_tokens:
-                kwargs["max_output_tokens"] = max_tokens
+            if target_max_tokens:
+                kwargs["max_output_tokens"] = target_max_tokens
 
             logger.info(f"Initialized ChatGoogleGenerativeAI with model '{target_model}'")
             return ChatGoogleGenerativeAI(**kwargs)
@@ -369,6 +372,7 @@ def get_structured_llm(
 ):
     """
     Returns an async callable that outputs an instance of schema_cls.
+    Accepts agent-specific temperature and token limits.
     """
     llm = get_llm(model=model, temperature=temperature, max_tokens=max_tokens)
     if llm is None:

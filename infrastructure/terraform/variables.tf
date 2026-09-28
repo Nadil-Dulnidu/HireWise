@@ -109,3 +109,28 @@ variable "web_image" {
   type        = string
   default     = "us-docker.pkg.dev/cloudrun/container/hello"
 }
+
+variable "gemini_model" {
+  description = "Primary Gemini LLM model name for AI Service"
+  type        = string
+  default     = "gemini-2.5-flash"
+}
+
+variable "gemini_flash_model" {
+  description = "Fast lightweight Gemini model name"
+  type        = string
+  default     = "gemini-2.5-flash"
+}
+
+variable "gemini_pro_model" {
+  description = "Deep reasoning Gemini Pro model name"
+  type        = string
+  default     = "gemini-2.5-pro"
+}
+
+variable "gemini_embedding_model" {
+  description = "Embedding model name for vector matching"
+  type        = string
+  default     = "text-embedding-004"
+}
+

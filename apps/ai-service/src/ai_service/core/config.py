@@ -45,7 +45,10 @@ class Settings(BaseSettings):
     VERTEX_LOCATION: str = "us-central1"
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
     GOOGLE_APPLICATION_CREDENTIALS_JSON: Optional[str] = None
+    # AI Models & Generation Parameters (.env configuration)
     GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_FLASH_MODEL: str = "gemini-2.5-flash"
+    GEMINI_PRO_MODEL: str = "gemini-2.5-pro"
     GEMINI_EMBEDDING_MODEL: str = "text-embedding-004"
 
     # Environment

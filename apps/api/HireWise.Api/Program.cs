@@ -147,7 +147,6 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddHttpClient<IClerkSyncService, ClerkSyncService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-builder.Services.AddScoped<IAgentConfigService, AgentConfigService>();
 builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 
 // Integrations (Email - Resend)

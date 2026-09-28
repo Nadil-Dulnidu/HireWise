@@ -559,7 +559,7 @@ export function AdminUsersPage() {
                       Elevation to Platform Administrator:
                     </span>{" "}
                     This grants full system permissions across candidate
-                    databases, company settings, and AI agent prompts.
+                    databases, company settings, and platform configurations.
                   </div>
                 </div>
               )}

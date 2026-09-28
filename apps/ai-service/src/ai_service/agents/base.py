@@ -44,40 +44,18 @@ class BaseAgent(ABC):
         return allowed
 
     async def invoke_structured_llm(
-        self, system_prompt: str, user_prompt: str, agent_key: Optional[str] = None
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: Optional[str] = None,
+        temperature: float = 0.1,
+        max_tokens: Optional[int] = None,
     ) -> T:
         """
         Invokes the structured LLM with Gemini / Vertex AI and validates output against self.schema.
         Sanitizes user input and logs security warnings if injection patterns are detected.
-        Loads dynamic system prompts, model overrides, and temperature from PostgreSQL if configured.
+        Model is configured via .env, while temperature and token limits are specified per-agent.
         """
-        active_system_prompt = system_prompt
-        model_override: Optional[str] = None
-        temp: float = 0.1
-        max_toks: Optional[int] = None
-
-        if agent_key:
-            try:
-                from ai_service.db.agent_config_repo import agent_config_repo
-
-                db_cfg = await agent_config_repo.get_config(agent_key)
-                if db_cfg and db_cfg.get("IsActive", True):
-                    if db_cfg.get("SystemPrompt"):
-                        active_system_prompt = db_cfg["SystemPrompt"]
-                    if db_cfg.get("Model"):
-                        model_override = db_cfg["Model"]
-                    if db_cfg.get("Temperature") is not None:
-                        temp = float(db_cfg["Temperature"])
-                    if db_cfg.get("MaxTokens"):
-                        max_toks = int(db_cfg["MaxTokens"])
-                    self.logger.info(
-                        f"[{self.name}] Applied dynamic DB config for '{agent_key}': model={model_override}, temp={temp}"
-                    )
-            except Exception as e:
-                self.logger.warning(
-                    f"[{self.name}] Could not retrieve dynamic DB config: {e}. Falling back to default."
-                )
-
         # Security scan and sanitization
         is_injection, reason = detect_prompt_injection(user_prompt)
         if is_injection:
@@ -91,10 +69,13 @@ class BaseAgent(ABC):
             f"[{self.name}] Invoking structured LLM for schema: {self.schema.__name__}"
         )
         llm = get_structured_llm(
-            self.schema, model=model_override, temperature=temp, max_tokens=max_toks
+            self.schema,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
         messages = [
-            SystemMessage(content=active_system_prompt),
+            SystemMessage(content=system_prompt),
             HumanMessage(content=cleaned_user_prompt),
         ]
 

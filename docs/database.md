@@ -283,22 +283,6 @@ erDiagram
         datetime CreatedAt
     }
 
-    AgentConfigs {
-        uuid Id PK
-        string AgentKey UK
-        string Name
-        string Description
-        string Model
-        string SystemPrompt
-        double Temperature
-        int MaxTokens
-        boolean IsActive
-        datetime CreatedAt
-        datetime UpdatedAt
-        boolean IsDeleted
-        datetime DeletedAt
-    }
-
     PlatformSettings {
         uuid Id PK
         string Key UK

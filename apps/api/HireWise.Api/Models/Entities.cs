@@ -251,18 +251,6 @@ public class AuditLog
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
-public class AgentConfig : BaseEntity
-{
-    public string AgentKey { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Model { get; set; } = "gemini-2.5-flash";
-    public string SystemPrompt { get; set; } = string.Empty;
-    public double Temperature { get; set; } = 0.2;
-    public int MaxTokens { get; set; } = 4096;
-    public bool IsActive { get; set; } = true;
-}
-
 public class PlatformSetting : BaseEntity
 {
     public string Key { get; set; } = string.Empty;

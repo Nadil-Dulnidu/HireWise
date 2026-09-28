@@ -148,6 +148,10 @@ module "cloud_run" {
   clerk_publishable_key = var.clerk_publishable_key
   secret_names          = module.secret_manager.secret_names
   api_min_instances     = var.api_min_instances
+  gemini_model          = var.gemini_model
+  gemini_flash_model    = var.gemini_flash_model
+  gemini_pro_model      = var.gemini_pro_model
+  gemini_embedding_model = var.gemini_embedding_model
 
   depends_on = [google_project_service.services, module.storage, module.secret_manager]
 }

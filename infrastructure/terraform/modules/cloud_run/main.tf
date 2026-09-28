@@ -54,12 +54,20 @@ resource "google_cloud_run_v2_service" "ai_service" {
         value = var.region
       }
       env {
+        name  = "GEMINI_MODEL"
+        value = var.gemini_model
+      }
+      env {
         name  = "GEMINI_FLASH_MODEL"
-        value = "gemini-2.5-flash"
+        value = var.gemini_flash_model
       }
       env {
         name  = "GEMINI_PRO_MODEL"
-        value = "gemini-2.5-pro"
+        value = var.gemini_pro_model
+      }
+      env {
+        name  = "GEMINI_EMBEDDING_MODEL"
+        value = var.gemini_embedding_model
       }
 
       # Secrets from Secret Manager
