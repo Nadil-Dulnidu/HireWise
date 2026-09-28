@@ -93,8 +93,7 @@ export function App() {
               element={<Navigate to="/candidate/dashboard" replace />}
             />
             <Route path="dashboard" element={<CandidateDashboard />} />
-            <Route path="jobs" element={<PublicJobsPage />} />
-            <Route path="jobs/:id" element={<JobDetailPage />} />
+            <Route path="jobs" element={<Navigate to="/jobs" replace />} />
             <Route
               path="applications"
               element={<CandidateApplicationsPage />}

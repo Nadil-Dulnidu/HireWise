@@ -67,7 +67,7 @@ export function CandidateDashboard() {
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link
-              to="/candidate/jobs"
+              to="/jobs"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition shadow-sm"
             >
               Browse Open Roles <ArrowRight className="h-4 w-4" />
@@ -162,7 +162,7 @@ export function CandidateDashboard() {
                 You haven't submitted any job applications yet.
               </p>
               <Link
-                to="/candidate/jobs"
+                to="/jobs"
                 className="inline-block text-xs font-semibold text-blue-600 hover:underline"
               >
                 Explore available tech openings →

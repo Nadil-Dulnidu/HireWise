@@ -247,7 +247,7 @@ export function CandidateApplicationsPage() {
             </p>
             <div className="pt-2">
               <Link
-                to="/candidate/jobs"
+                to="/jobs"
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs font-semibold text-white transition shadow-sm"
               >
                 Browse Open Roles <ArrowRight className="h-3.5 w-3.5" />
