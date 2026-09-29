@@ -25,6 +25,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 
+// Job detail page showing position requirements, company info, and application flow
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export function JobDetailPage() {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState(false);
 
+  // Fetch job posting details by ID from route parameters
   const {
     data: job,
     isLoading,
@@ -47,6 +49,7 @@ export function JobDetailPage() {
     enabled: !!id,
   });
 
+  // Fetch candidate's active resume when application modal is open
   const {
     data: activeResume,
     isLoading: isResumeLoading,
@@ -64,6 +67,7 @@ export function JobDetailPage() {
     enabled: isSignedIn && isApplyModalOpen,
   });
 
+  // Mutation to upload a new resume directly from the application modal
   const uploadResumeMutation = useMutation({
     mutationFn: (file: File) => resumesApi.uploadResume(file),
     onSuccess: () => {
@@ -78,6 +82,7 @@ export function JobDetailPage() {
     },
   });
 
+  // Mutation to submit candidate job application with optional cover letter
   const applyMutation = useMutation({
     mutationFn: (data: { coverLetter?: string }) =>
       applicationsApi.applyToJob(id!, data),
@@ -99,6 +104,7 @@ export function JobDetailPage() {
     },
   });
 
+  // Helper to format minimum and maximum salary figures with currency
   const formatSalary = (
     min?: number | null,
     max?: number | null,
@@ -116,6 +122,7 @@ export function JobDetailPage() {
     return `Up to ${formatter.format(max!)}`;
   };
 
+  // Validate sign-in status and open application modal or redirect to sign up
   const handleApplyClick = () => {
     if (!isSignedIn) {
       navigate(`/sign-up?redirect_url=/jobs/${id}`);
@@ -126,6 +133,7 @@ export function JobDetailPage() {
     }
   };
 
+  // Validate active resume and trigger application submission mutation
   const handleSubmitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeResume) {

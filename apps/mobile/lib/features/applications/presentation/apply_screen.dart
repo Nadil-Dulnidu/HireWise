@@ -9,6 +9,7 @@ import '../../resume/presentation/widgets/upload_resume_sheet.dart';
 import '../../resume/providers/resume_provider.dart';
 import '../providers/applications_provider.dart';
 
+// Screen for reviewing job requirements, attaching a resume, and submitting an application
 class ApplyScreen extends ConsumerStatefulWidget {
   final String jobId;
 
@@ -27,6 +28,7 @@ class _ApplyScreenState extends ConsumerState<ApplyScreen> {
     super.dispose();
   }
 
+  // Open modal bottom sheet to pick and upload a new resume
   void _showUploadSheet() {
     showModalBottomSheet<bool>(
       context: context,
@@ -38,6 +40,7 @@ class _ApplyScreenState extends ConsumerState<ApplyScreen> {
     );
   }
 
+  // Show confirmation dialog and dispatch job application submission
   Future<void> _submitApplication() async {
     final confirmed = await showDialog<bool>(
       context: context,

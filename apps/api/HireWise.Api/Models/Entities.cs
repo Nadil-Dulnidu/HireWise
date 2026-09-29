@@ -2,6 +2,7 @@ using HireWise.Api.Models.Enums;
 
 namespace HireWise.Api.Models;
 
+// User account entity representing candidates, interviewers, recruiters, and admins
 public class User : BaseEntity
 {
     public string ClerkUserId { get; set; } = string.Empty;
@@ -24,6 +25,7 @@ public class User : BaseEntity
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
 
+// Company organization profile and employer account
 public class Company : BaseEntity
 {
     public string ClerkOrganizationId { get; set; } = string.Empty;
@@ -44,6 +46,7 @@ public class Company : BaseEntity
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 }
 
+// Department or team unit within a company
 public class Department : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
@@ -55,6 +58,7 @@ public class Department : BaseEntity
     public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 }
 
+// Job vacancy listing published by a company
 public class Job : BaseEntity
 {
     public string Title { get; set; } = string.Empty;
@@ -79,6 +83,7 @@ public class Job : BaseEntity
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
 }
 
+// Candidate uploaded resume document and metadata
 public class Resume : BaseEntity
 {
     public Guid CandidateId { get; set; }
@@ -93,6 +98,7 @@ public class Resume : BaseEntity
     public virtual User Candidate { get; set; } = null!;
 }
 
+// Job application submitted by a candidate for an open job
 public class Application : BaseEntity
 {
     public Guid JobId { get; set; }
@@ -110,6 +116,7 @@ public class Application : BaseEntity
     public virtual Interview? Interview { get; set; }
 }
 
+// Scheduled interview meeting between interviewer and candidate
 public class Interview : BaseEntity
 {
     public Guid ApplicationId { get; set; }
@@ -132,6 +139,7 @@ public class Interview : BaseEntity
     public virtual ICollection<InterviewQuestion> Questions { get; set; } = new List<InterviewQuestion>();
 }
 
+// Evaluation scores and notes submitted by an interviewer
 public class InterviewFeedback : BaseEntity
 {
     public Guid InterviewId { get; set; }
@@ -152,6 +160,7 @@ public class InterviewFeedback : BaseEntity
     public virtual User Interviewer { get; set; } = null!;
 }
 
+// Interview question item generated or assigned to an interview
 public class InterviewQuestion : BaseEntity
 {
     public Guid InterviewId { get; set; }
@@ -166,6 +175,7 @@ public class InterviewQuestion : BaseEntity
     public virtual Interview Interview { get; set; } = null!;
 }
 
+// Weekly recurring or specific date availability time slot for an interviewer
 public class AvailabilitySlot : BaseEntity
 {
     public Guid UserId { get; set; }
@@ -180,6 +190,7 @@ public class AvailabilitySlot : BaseEntity
     public virtual User User { get; set; } = null!;
 }
 
+// In-app notification message delivered to a user
 public class Notification : BaseEntity
 {
     public Guid UserId { get; set; }
@@ -195,6 +206,7 @@ public class Notification : BaseEntity
     public virtual User User { get; set; } = null!;
 }
 
+// Multi-step AI agent workflow tracking for candidate resume screening and processing
 public class AiWorkflow : BaseEntity
 {
     public Guid ApplicationId { get; set; }
@@ -213,6 +225,7 @@ public class AiWorkflow : BaseEntity
     public virtual ICollection<AiWorkflowStep> Steps { get; set; } = new List<AiWorkflowStep>();
 }
 
+// Individual task or agent execution step within an AI workflow
 public class AiWorkflowStep : BaseEntity
 {
     public Guid WorkflowId { get; set; }
@@ -236,6 +249,7 @@ public class AiWorkflowStep : BaseEntity
     public virtual User? ApprovedByUser { get; set; }
 }
 
+// System audit record tracking security events and data modifications
 public class AuditLog
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -251,6 +265,7 @@ public class AuditLog
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
+// Global system configuration parameter stored in database
 public class PlatformSetting : BaseEntity
 {
     public string Key { get; set; } = string.Empty;

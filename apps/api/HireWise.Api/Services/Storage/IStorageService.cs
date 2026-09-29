@@ -1,5 +1,6 @@
 namespace HireWise.Api.Services.Storage;
 
+// Result model returned after a file upload operation
 public class UploadResult
 {
     public bool Success { get; set; }
@@ -10,6 +11,7 @@ public class UploadResult
     public string? Error { get; set; }
 }
 
+// Interface defining file storage operations for uploads and downloads
 public interface IStorageService
 {
     Task<UploadResult> UploadFileAsync(Stream stream, string fileName, string contentType, string folder = "resumes", CancellationToken ct = default);
@@ -17,6 +19,7 @@ public interface IStorageService
     Task<bool> DeleteFileAsync(string fileUrl, CancellationToken ct = default);
 }
 
+// Local filesystem implementation of storage service for development
 public class LocalStorageService : IStorageService
 {
     private readonly IWebHostEnvironment _env;
@@ -30,6 +33,7 @@ public class LocalStorageService : IStorageService
         _logger = logger;
     }
 
+    // Save file stream to local uploads folder on the server
     public async Task<UploadResult> UploadFileAsync(Stream stream, string fileName, string contentType, string folder = "resumes", CancellationToken ct = default)
     {
         try
@@ -76,6 +80,7 @@ public class LocalStorageService : IStorageService
         }
     }
 
+    // Read and return a stored file stream from local disk
     public Task<(Stream Stream, string ContentType, string FileName)?> DownloadFileAsync(string fileUrl, CancellationToken ct = default)
     {
         try
@@ -110,6 +115,7 @@ public class LocalStorageService : IStorageService
         }
     }
 
+    // Delete a stored file from local disk
     public Task<bool> DeleteFileAsync(string fileUrl, CancellationToken ct = default)
     {
         try

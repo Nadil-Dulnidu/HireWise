@@ -6,6 +6,7 @@ import '../../auth/providers/auth_state_provider.dart';
 import '../data/models/update_profile_request.dart';
 import '../providers/profile_provider.dart';
 
+// Screen allowing users to update their personal profile details
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -19,6 +20,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _lastNameController;
   late final TextEditingController _phoneController;
 
+  // Initialize controllers with current user data
   @override
   void initState() {
     super.initState();
@@ -28,6 +30,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneController = TextEditingController(text: user?.phone ?? '');
   }
 
+  // Clean up text controllers when screen is disposed
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -36,6 +39,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
+  // Validate form inputs and submit profile updates
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 

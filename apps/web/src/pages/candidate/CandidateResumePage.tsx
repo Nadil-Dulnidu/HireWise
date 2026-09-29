@@ -13,6 +13,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 
+// Candidate resume management page for uploading, viewing, downloading, and deleting resumes
 export function CandidateResumePage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,6 +33,7 @@ export function CandidateResumePage() {
     },
   });
 
+  // Mutation to upload a new resume file and refresh resume queries
   const uploadMutation = useMutation({
     mutationFn: (file: File) => resumesApi.uploadResume(file),
     onSuccess: () => {
@@ -48,6 +50,7 @@ export function CandidateResumePage() {
     },
   });
 
+  // Mutation to delete the active resume
   const deleteMutation = useMutation({
     mutationFn: (id: string) => resumesApi.deleteResume(id),
     onSuccess: () => {
@@ -57,6 +60,7 @@ export function CandidateResumePage() {
     },
   });
 
+  // Validate file size and extension before triggering upload mutation
   const handleFile = (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       setUploadError("File size exceeds the 5MB limit.");
@@ -73,6 +77,7 @@ export function CandidateResumePage() {
     uploadMutation.mutate(file);
   };
 
+  // Manage drag over and drag leave UI states
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,6 +88,7 @@ export function CandidateResumePage() {
     }
   };
 
+  // Handle dropped resume file from user drag-and-drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();

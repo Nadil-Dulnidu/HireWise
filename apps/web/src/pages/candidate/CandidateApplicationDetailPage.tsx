@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { ApplicationStatus } from "@/types/applications";
 
+// Definition of recruitment pipeline steps and descriptions for the candidate journey
 const pipelineSteps: { key: ApplicationStatus; title: string; desc: string }[] =
   [
     {
@@ -58,9 +59,11 @@ const pipelineSteps: { key: ApplicationStatus; title: string; desc: string }[] =
     },
   ];
 
+// Candidate application detail page displaying current pipeline stage, timeline, and submitted details
 export function CandidateApplicationDetailPage() {
   const { id } = useParams<{ id: string }>();
 
+  // Fetch detailed job application record by ID from route parameters
   const {
     data: application,
     isLoading,

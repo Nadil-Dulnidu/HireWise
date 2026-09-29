@@ -10,6 +10,7 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository(apiClient);
 });
 
+// Repository handling user profile and role API requests
 class UserRepository {
   final ApiClient _apiClient;
 
@@ -24,6 +25,7 @@ class UserRepository {
     return response.data;
   }
 
+  // Update user profile details like name and phone
   Future<UserDto?> updateProfile(UpdateProfileRequest request) async {
     final response = await _apiClient.put<UserDto?>(
       ApiEndpoints.updateProfile,
@@ -34,6 +36,7 @@ class UserRepository {
     return response.data;
   }
 
+  // Set or update user role during onboarding
   Future<UserDto?> setRole(UserRole role) async {
     final response = await _apiClient.put<UserDto?>(
       ApiEndpoints.updateRole,

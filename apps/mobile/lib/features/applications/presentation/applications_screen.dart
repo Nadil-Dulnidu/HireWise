@@ -8,6 +8,7 @@ import '../../../shared/widgets/loading_indicator.dart';
 import '../providers/applications_provider.dart';
 import 'widgets/application_card.dart';
 
+// Candidate applications list screen with infinite scrolling and refresh support
 class ApplicationsScreen extends ConsumerStatefulWidget {
   const ApplicationsScreen({super.key});
 
@@ -18,18 +19,21 @@ class ApplicationsScreen extends ConsumerStatefulWidget {
 class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
   final _scrollController = ScrollController();
 
+  // Register scroll listener for pagination
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
   }
 
+  // Clean up scroll controller when widget is disposed
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
+  // Trigger loading more applications when approaching the bottom of the list
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
@@ -37,6 +41,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     }
   }
 
+  // Build the applications screen UI based on current state
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(applicationsProvider);
@@ -74,6 +79,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             );
           }
 
+          // Pull to refresh applications list
           return RefreshIndicator(
             onRefresh: () => ref
                 .read(applicationsProvider.notifier)
@@ -85,6 +91,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
               itemCount:
                   state.applications.length + (state.hasNextPage ? 1 : 0),
               itemBuilder: (context, index) {
+                // Show bottom loading indicator when fetching next page
                 if (index == state.applications.length) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Service interface defining operations for user accounts, profiles, and team lookups
 public interface IUserService
 {
     Task<Result<UserDto>> GetCurrentUserAsync(string clerkUserId, CancellationToken ct = default);
@@ -26,6 +27,7 @@ public interface IUserService
     Task<Result<CandidateDashboardDto>> GetCandidateDashboardAsync(string clerkUserId, CancellationToken ct = default);
 }
 
+// Service implementation handling user provisioning, profile updates, and organization role syncing
 public class UserService : IUserService
 {
     private readonly ApplicationDbContext _db;
@@ -48,6 +50,7 @@ public class UserService : IUserService
         _logger = logger;
     }
 
+    // Retrieve current user, handling auto-provisioning and role synchronization
     public async Task<Result<UserDto>> GetCurrentUserAsync(string clerkUserId, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -55,6 +58,7 @@ public class UserService : IUserService
             .Include(u => u.Company)
             .FirstOrDefaultAsync(u => u.ClerkUserId == clerkUserId, ct);
 
+        // Restore user if previously soft-deleted
         if (user != null && user.IsDeleted)
         {
             user.IsDeleted = false;
@@ -75,6 +79,7 @@ public class UserService : IUserService
                 user.Id, user.Email, clerkUserId, user.Role);
         }
 
+        // If user does not exist in local database, attempt recovery or auto-provisioning
         if (user == null)
         {
             var email = _currentUserService.Email;
@@ -87,6 +92,7 @@ public class UserService : IUserService
                     .Include(u => u.Company)
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
 
+                // Re-link existing email account with new Clerk ID
                 if (user != null)
                 {
                     user.ClerkUserId = clerkUserId;
@@ -109,6 +115,7 @@ public class UserService : IUserService
                 }
             }
 
+            // Create new user record from Clerk claims if not found
             if (user == null)
             {
                 // Auto-provision new user from authenticated claims
@@ -138,6 +145,7 @@ public class UserService : IUserService
                 }
                 catch (DbUpdateException ex)
                 {
+                    // Reload user if already created concurrently
                     _logger.LogWarning(ex, "Concurrency conflict during auto-provisioning for {ClerkUserId}. Reloading existing user.", clerkUserId);
                     _db.ChangeTracker.Clear();
                     user = await _db.Users
@@ -208,6 +216,7 @@ public class UserService : IUserService
             company = await _db.Companies.FirstOrDefaultAsync(c => c.CreatedByUserId == user.Id, ct);
         }
 
+        // Apply company affiliation and role updates
         if (company != null)
         {
             var targetRole = explicitRole ?? user.Role;
@@ -224,6 +233,7 @@ public class UserService : IUserService
 
             var shouldUpdate = user.CompanyId != company.Id || user.Role != targetRole || user.Status != UserStatus.ACTIVE || company.CreatedByUserId == null;
 
+            // Save updated organization role changes
             if (shouldUpdate)
             {
                 user.CompanyId = company.Id;
@@ -258,12 +268,14 @@ public class UserService : IUserService
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
+    // Fetch a user by their database identifier
     public async Task<Result<UserDto>> GetUserByIdAsync(Guid id, CancellationToken ct = default)
     {
         var user = await _db.Users
             .Include(u => u.Company)
             .FirstOrDefaultAsync(u => u.Id == id, ct);
 
+        // Return error if user does not exist
         if (user == null)
         {
             return Result<UserDto>.NotFound($"User with ID {id} not found.");
@@ -272,8 +284,10 @@ public class UserService : IUserService
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
+    // Query paginated users with optional role, status, and company filters
     public async Task<PagedResult<UserDto>> GetUsersAsync(UserFilterRequest request, CancellationToken ct = default)
     {
+        // Build query with company navigation
         var query = _db.Users
             .Include(u => u.Company)
             .AsNoTracking();
@@ -302,12 +316,14 @@ public class UserService : IUserService
                 u.Email.ToLower().Contains(search));
         }
 
+        // Get total count matching filter criteria
         var totalCount = await query.CountAsync(ct);
 
         query = request.SortDescending
             ? query.OrderByDescending(u => u.CreatedAt)
             : query.OrderBy(u => u.CreatedAt);
 
+        // Apply pagination and project to DTOs
         var users = await query
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -317,6 +333,7 @@ public class UserService : IUserService
         return new PagedResult<UserDto>(users, totalCount, request.Page, request.PageSize);
     }
 
+    // Update candidate or recruiter profile information
     public async Task<Result<UserDto>> UpdateProfileAsync(string clerkUserId, UpdateProfileRequest request, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -336,12 +353,14 @@ public class UserService : IUserService
             user.ProfileImageUrl = request.ProfileImageUrl;
         }
 
+        // Save profile updates to database
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Profile updated for user {UserId} ({Email})", user.Id, user.Email);
 
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
+    // Update user role by administrator and sync with Clerk
     public async Task<Result<UserDto>> UpdateRoleAsync(Guid id, UserRole newRole, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -355,6 +374,7 @@ public class UserService : IUserService
 
         user.Role = newRole;
         user.UpdatedAt = DateTime.UtcNow;
+        // Persist new role in database
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Role updated to {Role} for user {UserId}", newRole, user.Id);
 
@@ -364,6 +384,7 @@ public class UserService : IUserService
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
+    // Allow authenticated user to set their initial onboarding role
     public async Task<Result<UserDto>> SetSelfRoleAsync(string clerkUserId, UserRole newRole, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -392,6 +413,7 @@ public class UserService : IUserService
         }
 
         user.UpdatedAt = DateTime.UtcNow;
+        // Persist role change to database
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Self-updated role to {Role} for user {UserId} ({Email})", newRole, user.Id, user.Email);
 
@@ -401,6 +423,7 @@ public class UserService : IUserService
         return Result<UserDto>.Success(_mapper.Map<UserDto>(user));
     }
 
+    // Deactivate a user account
     public async Task<Result<bool>> DeactivateUserAsync(Guid id, CancellationToken ct = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
@@ -410,12 +433,14 @@ public class UserService : IUserService
         }
 
         user.Status = UserStatus.INACTIVE;
+        // Save deactivation status to database
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("User {UserId} deactivated", user.Id);
 
         return Result<bool>.Success(true);
     }
 
+    // Ban a user by soft-deleting and setting status to inactive
     public async Task<Result<bool>> BanUserAsync(Guid id, string? reason, CancellationToken ct = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
@@ -434,8 +459,10 @@ public class UserService : IUserService
         return Result<bool>.Success(true);
     }
 
+    // Fetch active interviewers belonging to a company
     public async Task<Result<List<UserDto>>> GetInterviewersByCompanyAsync(Guid companyId, CancellationToken ct = default)
     {
+        // Query active interviewers for the specified company
         var interviewers = await _db.Users
             .Where(u => u.CompanyId == companyId && u.Role == UserRole.INTERVIEWER && u.Status == UserStatus.ACTIVE)
             .ProjectTo<UserDto>(_mapper.ConfigurationProvider)
@@ -444,8 +471,10 @@ public class UserService : IUserService
         return Result<List<UserDto>>.Success(interviewers);
     }
 
+    // Get company team members with interview and feedback metrics
     public async Task<Result<List<TeamMemberDto>>> GetTeamMembersAsync(Guid companyId, CancellationToken ct = default)
     {
+        // Query members with aggregated interview and feedback counts
         var members = await _db.Users
             .Where(u => u.CompanyId == companyId)
             .Select(u => new TeamMemberDto
@@ -469,6 +498,7 @@ public class UserService : IUserService
         return Result<List<TeamMemberDto>>.Success(members);
     }
 
+    // Load dashboard summary statistics and upcoming interviews for candidate
     public async Task<Result<CandidateDashboardDto>> GetCandidateDashboardAsync(string clerkUserId, CancellationToken ct = default)
     {
         var user = await _db.Users
@@ -480,12 +510,14 @@ public class UserService : IUserService
             return Result<CandidateDashboardDto>.NotFound("User not found.");
         }
 
+        // Calculate active applications count
         var activeApplicationsCount = await _db.Applications
             .CountAsync(a => a.CandidateId == user.Id &&
                              a.Status != ApplicationStatus.REJECTED &&
                              a.Status != ApplicationStatus.SELECTED, ct);
 
         var now = DateTime.UtcNow;
+        // Fetch next 5 scheduled upcoming interviews
         var upcomingInterviewsEntities = await _db.Interviews
             .Include(i => i.Job).ThenInclude(j => j.Company)
             .Include(i => i.Candidate)
@@ -500,6 +532,7 @@ public class UserService : IUserService
 
         var upcomingInterviews = _mapper.Map<List<InterviewDto>>(upcomingInterviewsEntities);
 
+        // Fetch recent candidate notifications
         var recentNotificationsEntities = await _db.Notifications
             .Where(n => n.UserId == user.Id)
             .OrderByDescending(n => n.CreatedAt)
@@ -509,6 +542,7 @@ public class UserService : IUserService
 
         var recentNotifications = _mapper.Map<List<NotificationDto>>(recentNotificationsEntities);
 
+        // Count currently open job postings
         var openJobsCount = await _db.Jobs
             .CountAsync(j => j.Status == JobStatus.OPEN && !j.IsDeleted, ct);
 

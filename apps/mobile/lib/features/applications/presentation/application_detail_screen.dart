@@ -9,6 +9,7 @@ import '../../../shared/widgets/status_badge.dart';
 import '../providers/applications_provider.dart';
 import 'widgets/status_timeline.dart';
 
+// Screen displaying detailed status, timeline, and submission details for a job application
 class ApplicationDetailScreen extends ConsumerWidget {
   final String applicationId;
 
@@ -17,8 +18,10 @@ class ApplicationDetailScreen extends ConsumerWidget {
     required this.applicationId,
   });
 
+  // Build the application detail screen and watch provider data
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch application detail provider for live updates
     final appAsync = ref.watch(applicationDetailProvider(applicationId));
 
     return Scaffold(
@@ -33,6 +36,7 @@ class ApplicationDetailScreen extends ConsumerWidget {
           onRetry: () => ref.refresh(applicationDetailProvider(applicationId)),
         ),
         data: (app) {
+          // Handle case when application data is not found
           if (app == null) {
             return const Center(child: Text('Application not found.'));
           }
@@ -162,6 +166,7 @@ class ApplicationDetailScreen extends ConsumerWidget {
                         ),
                         ElevatedButton(
                           onPressed: () {
+                            // Navigate to interview details screen
                             context.push('/interviews/${app.interviewId}');
                           },
                           style: ElevatedButton.styleFrom(
@@ -213,6 +218,7 @@ class ApplicationDetailScreen extends ConsumerWidget {
                 // View Job Details Link
                 OutlinedButton.icon(
                   onPressed: () {
+                    // Navigate to the original job posting
                     context.push('/jobs/${app.jobId}');
                   },
                   icon: const Icon(Icons.launch_rounded, size: 16),

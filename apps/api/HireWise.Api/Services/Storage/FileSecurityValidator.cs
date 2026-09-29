@@ -4,6 +4,7 @@ namespace HireWise.Api.Services.Storage;
 
 public static class FileSecurityValidator
 {
+    // Allowed file magic byte signatures for PDF and Word documents
     private static readonly Dictionary<string, List<byte[]>> FileSignatures = new(StringComparer.OrdinalIgnoreCase)
     {
         { ".pdf", new List<byte[]> { new byte[] { 0x25, 0x50, 0x44, 0x46 } } }, // %PDF
@@ -11,6 +12,7 @@ public static class FileSecurityValidator
         { ".doc", new List<byte[]> { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } } } // OLECF
     };
 
+    // Allowed MIME types mapped by file extension
     private static readonly Dictionary<string, string[]> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         { ".pdf", new[] { "application/pdf" } },

@@ -9,11 +9,13 @@ final resumeRepositoryProvider = Provider<ResumeRepository>((ref) {
   return ResumeRepository(apiClient);
 });
 
+// Repository handling resume network requests and data operations
 class ResumeRepository {
   final ApiClient _apiClient;
 
   ResumeRepository(this._apiClient);
 
+  // Fetch the active resume of the authenticated candidate
   Future<ResumeDto?> getActiveResume() async {
     try {
       final response = await _apiClient.get<ResumeDto?>(
@@ -29,6 +31,7 @@ class ResumeRepository {
     }
   }
 
+  // Fetch a specific resume by its ID
   Future<ResumeDto?> getResumeById(String id) async {
     final response = await _apiClient.get<ResumeDto?>(
       ApiEndpoints.resumeById(id),
@@ -39,6 +42,7 @@ class ResumeRepository {
     return response.data;
   }
 
+  // Upload a resume file using multipart form data with progress tracking
   Future<bool> uploadResume(
     String filePath,
     String fileName, {
@@ -61,6 +65,7 @@ class ResumeRepository {
     return response.success;
   }
 
+  // Delete a resume by ID from the server
   Future<bool> deleteResume(String id) async {
     final response = await _apiClient.delete<bool>(
       ApiEndpoints.resumeById(id),

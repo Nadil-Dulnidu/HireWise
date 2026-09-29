@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/models/enums.dart';
 
+// Timeline widget displaying progressive recruitment stages and active status for an application
 class StatusTimeline extends StatelessWidget {
   final ApplicationStatus currentStatus;
 
@@ -43,6 +44,7 @@ class StatusTimeline extends StatelessWidget {
     ),
   ];
 
+  // Calculate active timeline stage index based on current application status
   int get _currentStageIndex {
     for (int i = 0; i < _stages.length; i++) {
       if (_stages[i].statuses.contains(currentStatus)) {
@@ -155,6 +157,7 @@ class StatusTimeline extends StatelessWidget {
   }
 }
 
+// Helper data model representing a single recruitment stage with mapped status values
 class _TimelineStep {
   final String label;
   final List<ApplicationStatus> statuses;

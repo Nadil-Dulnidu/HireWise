@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/resume_provider.dart';
 
+// Modal bottom sheet widget for picking and uploading candidate resume files
 class UploadResumeSheet extends ConsumerStatefulWidget {
   const UploadResumeSheet({super.key});
 
@@ -15,6 +16,7 @@ class _UploadResumeSheetState extends ConsumerState<UploadResumeSheet> {
   PlatformFile? _selectedFile;
   String? _validationError;
 
+  // Open system file picker to select and validate resume document
   Future<void> _pickFile() async {
     setState(() {
       _validationError = null;
@@ -58,6 +60,7 @@ class _UploadResumeSheetState extends ConsumerState<UploadResumeSheet> {
     }
   }
 
+  // Upload selected resume file to server and show feedback
   Future<void> _upload() async {
     if (_selectedFile == null || _selectedFile!.path == null) return;
 
