@@ -19,9 +19,11 @@ import {
 } from "lucide-react";
 
 export function PublicJobsPage() {
+  // Get search parameters and keep the search state in sync with the URL
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
 
+  // Store search and filter values for the job listing
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [selectedType, setSelectedType] = useState<string>("ALL");
@@ -29,6 +31,7 @@ export function PublicJobsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  // Fetch public jobs using the current search, filters, and page
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["publicJobs", activeSearch, selectedType, selectedLevel, page],
     queryFn: () =>
@@ -46,6 +49,7 @@ export function PublicJobsPage() {
     staleTime: 30000,
   });
 
+  // Apply the search term and reset the results to the first page
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveSearch(searchTerm);

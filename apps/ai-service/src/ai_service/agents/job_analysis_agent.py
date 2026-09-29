@@ -14,6 +14,7 @@ class JobDescriptionAnalysisAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="JobDescriptionAnalysisAgent", schema=JobAnalysis)
 
+    # Analyze the job details and return structured information
     async def execute(
         self, job_title: str, job_description: str, job_requirements: str = ""
     ) -> JobAnalysis:
@@ -26,6 +27,7 @@ class JobDescriptionAnalysisAgent(BaseAgent):
         )
 
         try:
+            # Ask the LLM to return the job analysis in the expected structure
             result = await self.invoke_structured_llm(
                 system_prompt=JOB_ANALYSIS_SYSTEM_PROMPT,
                 user_prompt=user_content,
@@ -34,6 +36,7 @@ class JobDescriptionAnalysisAgent(BaseAgent):
             )
             return result
         except Exception as ex:
+            # Use the fallback logic if the LLM request fails
             self.logger.warning(
                 f"[{self.name}] LLM invocation failed, using deterministic fallback: {ex}"
             )
@@ -41,6 +44,7 @@ class JobDescriptionAnalysisAgent(BaseAgent):
                 job_title, job_description, job_requirements
             )
 
+    # Extract basic job information using predefined keywords
     def _deterministic_fallback(
         self, job_title: str, job_description: str, job_requirements: str
     ) -> JobAnalysis:
@@ -73,10 +77,12 @@ class JobDescriptionAnalysisAgent(BaseAgent):
             "ci/cd",
         ]
 
+        # Keep the technical skills found in the job information
         extracted_required = [kw.capitalize() for kw in tech_keywords if kw in combined]
         if not extracted_required:
             extracted_required = ["Software Development", "Problem Solving"]
 
+        # Build the structured analysis result from the extracted information
         return JobAnalysis(
             title=job_title,
             required_skills=extracted_required[:5],

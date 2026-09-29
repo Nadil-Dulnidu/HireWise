@@ -2,6 +2,7 @@ using HireWise.Api.DTOs.Common;
 
 namespace HireWise.Api.DTOs.Companies;
 
+// Holds company details returned by the API
 public class CompanyDto
 {
     public Guid Id { get; set; }
@@ -23,6 +24,7 @@ public class CompanyDto
     public DateTime UpdatedAt { get; set; }
 }
 
+// Contains the data needed to create a new company
 public class CreateCompanyRequest
 {
     public string? ClerkOrganizationId { get; set; }
@@ -36,6 +38,7 @@ public class CreateCompanyRequest
     public string? Location { get; set; }
 }
 
+// Contains the  fields that can be updated for a company
 public class UpdateCompanyRequest
 {
     public string Name { get; set; } = string.Empty;
@@ -48,6 +51,7 @@ public class UpdateCompanyRequest
     public string? Location { get; set; }
 }
 
+// Adds industry filtering to the common paging request
 public class CompanyFilterRequest : PagedRequest
 {
     public string? Industry { get; set; }

@@ -8,6 +8,7 @@ namespace HireWise.Api.Controllers;
 
 [ApiController]
 [Route("api")]
+// Handles API requests related to departments
 public class DepartmentsController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;
@@ -21,6 +22,7 @@ public class DepartmentsController : ControllerBase
 
     [HttpGet("companies/{companyId:guid}/departments")]
     [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    // Get all departments belonging to a company
     public async Task<IActionResult> GetDepartmentsByCompany(Guid companyId, CancellationToken ct)
     {
         if (!_currentUserService.IsAdmin && _currentUserService.CompanyId.HasValue && _currentUserService.CompanyId != companyId)
@@ -34,6 +36,7 @@ public class DepartmentsController : ControllerBase
 
     [HttpPost("companies/{companyId:guid}/departments")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Create a new department within a company
     public async Task<IActionResult> CreateDepartment(Guid companyId, [FromBody] CreateDepartmentRequest request, CancellationToken ct)
     {
         if (!_currentUserService.IsAdmin && _currentUserService.CompanyId.HasValue && _currentUserService.CompanyId != companyId)
@@ -52,6 +55,7 @@ public class DepartmentsController : ControllerBase
 
     [HttpGet("departments/{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    // Get a specific department by its ID
     public async Task<IActionResult> GetDepartmentById(Guid id, CancellationToken ct)
     {
         var result = await _departmentService.GetDepartmentByIdAsync(id, ct);
@@ -70,6 +74,7 @@ public class DepartmentsController : ControllerBase
 
     [HttpPut("departments/{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Update an existing department
     public async Task<IActionResult> UpdateDepartment(Guid id, [FromBody] UpdateDepartmentRequest request, CancellationToken ct)
     {
         var deptResult = await _departmentService.GetDepartmentByIdAsync(id, ct);
@@ -94,6 +99,7 @@ public class DepartmentsController : ControllerBase
 
     [HttpDelete("departments/{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Delete a department
     public async Task<IActionResult> DeleteDepartment(Guid id, CancellationToken ct)
     {
         var deptResult = await _departmentService.GetDepartmentByIdAsync(id, ct);

@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 
 export function RecruiterCompanyPage() {
+  // Get the current user's company and query client
   const queryClient = useQueryClient();
   const { profile } = useCurrentUser();
   const companyId = profile?.companyId;
 
+  // Store company editing state and form values
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [companyForm, setCompanyForm] = useState({
     name: "",
@@ -29,25 +31,25 @@ export function RecruiterCompanyPage() {
     logoUrl: "",
   });
 
-  // Department modal/creation state
+  // Store department creation state and form values
   const [isAddingDept, setIsAddingDept] = useState(false);
   const [deptForm, setDeptForm] = useState({ name: "", description: "" });
 
-  // Fetch company
+  // Fetch company details for the current company
   const { data: company, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", companyId],
     queryFn: () => companiesApi.getCompanyById(companyId!),
     enabled: !!companyId,
   });
 
-  // Fetch departments
+  // Fetch departments belonging to the current company
   const { data: departments = [], isLoading: isLoadingDepts } = useQuery({
     queryKey: ["departments", companyId],
     queryFn: () => departmentsApi.getDepartments(companyId!),
     enabled: !!companyId,
   });
 
-  // Populate company edit form when company data is loaded
+  // Load existing company details into the edit form
   const startEditingCompany = () => {
     if (company) {
       setCompanyForm({
@@ -63,7 +65,7 @@ export function RecruiterCompanyPage() {
     }
   };
 
-  // Update Company Mutation
+  // Update the company details through the API
   const updateCompanyMutation = useMutation({
     mutationFn: () => companiesApi.updateCompany(companyId!, companyForm),
     onSuccess: () => {
@@ -75,7 +77,7 @@ export function RecruiterCompanyPage() {
     },
   });
 
-  // Create Department Mutation
+  // Create a new department for the company
   const createDeptMutation = useMutation({
     mutationFn: () => departmentsApi.createDepartment(companyId!, deptForm),
     onSuccess: () => {
@@ -88,7 +90,7 @@ export function RecruiterCompanyPage() {
     },
   });
 
-  // Delete Department Mutation
+  // Delete a department from the company
   const deleteDeptMutation = useMutation({
     mutationFn: (id: string) => departmentsApi.deleteDepartment(id),
     onSuccess: () => {
@@ -99,6 +101,7 @@ export function RecruiterCompanyPage() {
     },
   });
 
+  // Show a loading state while company or department data is being fetched
   if (isLoadingCompany || isLoadingDepts) {
     return (
       <div className="py-24 flex flex-col items-center justify-center space-y-3">
@@ -108,6 +111,7 @@ export function RecruiterCompanyPage() {
     );
   }
 
+  // Show a message when the recruiter has no company assigned
   if (!companyId) {
     return (
       <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3 max-w-lg mx-auto">

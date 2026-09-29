@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Defines operations for managing company departments.
 public interface IDepartmentService
 {
     Task<List<DepartmentDto>> GetDepartmentsByCompanyAsync(Guid companyId, CancellationToken ct = default);
@@ -17,6 +18,8 @@ public interface IDepartmentService
     Task<Result> DeleteDepartmentAsync(Guid id, CancellationToken ct = default);
 }
 
+
+// Provides business logic for creating, retrieving, updating, and deleting departments.
 public class DepartmentService : IDepartmentService
 {
     private readonly ApplicationDbContext _db;
