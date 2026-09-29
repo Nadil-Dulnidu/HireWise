@@ -63,7 +63,7 @@ public class AiCallbackController : ControllerBase
         // 3. Update Application state and link AI workflow
         application.AiWorkflowId = request.WorkflowId;
 
-        if (request.Status == "AWAITING_APPROVAL" || request.Status == "COMPLETED")
+        if (request.Status == "AWAITING_APPROVAL")
         {
             application.Status = ApplicationStatus.AI_RECOMMENDED;
             await _db.SaveChangesAsync(ct);
@@ -87,6 +87,56 @@ public class AiCallbackController : ControllerBase
                     application.Job.CreatedByUserId,
                     "AI Evaluation Ready For Review",
                     $"AI analysis completed for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}). Recommendation is awaiting your review.",
+                    NotificationType.APPROVAL_REQUIRED,
+                    "Application",
+                    application.Id,
+                    ct);
+            }
+        }
+        else if (request.Status == "AWAITING_SCHEDULE_APPROVAL")
+        {
+            application.Status = ApplicationStatus.INTERVIEW_APPROVED;
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Application {ApplicationId} updated to INTERVIEW_APPROVED (awaiting schedule confirmation).", application.Id);
+
+            // Notify recruiter to confirm the interview slot
+            if (application.Job.CreatedByUserId != Guid.Empty)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    application.Job.CreatedByUserId,
+                    "Interview Slot Ready for Confirmation",
+                    $"AI has recommended interview slots for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}). Please confirm a time slot.",
+                    NotificationType.APPROVAL_REQUIRED,
+                    "Application",
+                    application.Id,
+                    ct);
+            }
+        }
+        else if (request.Status == "COMPLETED")
+        {
+            application.Status = ApplicationStatus.INTERVIEW_SCHEDULED;
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Application {ApplicationId} updated to INTERVIEW_SCHEDULED.", application.Id);
+
+            // Notify candidate the interview is confirmed
+            await _notificationService.CreateNotificationAsync(
+                application.CandidateId,
+                "Interview Scheduled",
+                $"Congratulations! Your interview for '{application.Job.Title}' has been scheduled. Check your dashboard for details.",
+                NotificationType.AI_EVALUATION_COMPLETE,
+                "Application",
+                application.Id,
+                ct);
+
+            // Notify recruiter
+            if (application.Job.CreatedByUserId != Guid.Empty)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    application.Job.CreatedByUserId,
+                    "Interview Confirmed",
+                    $"Interview for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}) has been successfully scheduled.",
                     NotificationType.APPROVAL_REQUIRED,
                     "Application",
                     application.Id,

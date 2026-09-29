@@ -564,7 +564,7 @@ async def scheduling_recommendation_node(state: EvaluationState) -> EvaluationSt
             max_retries=2,
             timeout_seconds=30.0,
         )
-        result_dict = result.model_dump()
+        result_dict = result.model_dump(mode="json")
 
         if step_id:
             await repo.update_step(step_id, status="COMPLETED", output_data=result_dict)

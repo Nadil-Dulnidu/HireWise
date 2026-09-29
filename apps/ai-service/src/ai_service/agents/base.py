@@ -80,4 +80,9 @@ class BaseAgent(ABC):
         ]
 
         result: T = await llm.ainvoke(messages)
+        if result is None:
+            raise ValueError(
+                f"Structured LLM returned None for schema '{self.schema.__name__}'. "
+                "The model may have failed to produce valid structured output (e.g. content filtering, token limit, or malformed JSON)."
+            )
         return result
