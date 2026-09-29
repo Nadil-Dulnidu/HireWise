@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Service interface for managing job applications, status transitions, and interview scheduling workflows
 public interface IApplicationService
 {
     Task<Result<ApplicationDto>> ApplyToJobAsync(Guid jobId, Guid candidateId, ApplyJobRequest request, CancellationToken ct = default);
@@ -24,6 +25,7 @@ public interface IApplicationService
     Task<Result<SchedulingReadinessDto>> GetSchedulingReadinessAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
 }
 
+// Service handling application submission, filtering, status updates, notifications, and AI pipeline orchestration
 public class ApplicationService : IApplicationService
 {
     private readonly ApplicationDbContext _db;
@@ -49,6 +51,7 @@ public class ApplicationService : IApplicationService
         _logger = logger;
     }
 
+    // Submit a new job application, validate resume and deadline, send notifications, and queue AI evaluation
     public async Task<Result<ApplicationDto>> ApplyToJobAsync(Guid jobId, Guid candidateId, ApplyJobRequest request, CancellationToken ct = default)
     {
         // 1. Verify Job exists and is OPEN
@@ -224,6 +227,7 @@ public class ApplicationService : IApplicationService
         return Result<ApplicationDto>.Success(createdDto, 201);
     }
 
+    // Fetch paginated job applications submitted by a specific candidate
     public async Task<PagedResult<ApplicationDto>> GetCandidateApplicationsAsync(Guid candidateId, PagedRequest request, CancellationToken ct = default)
     {
         var query = _db.Applications
@@ -250,6 +254,7 @@ public class ApplicationService : IApplicationService
         return new PagedResult<ApplicationDto>(items, totalCount, request.Page, request.PageSize);
     }
 
+    // Get full application details by ID with role-based access checks
     public async Task<Result<ApplicationDetailDto>> GetApplicationByIdAsync(Guid id, Guid currentUserId, string role, Guid? companyId, CancellationToken ct = default)
     {
         var query = _db.Applications
@@ -281,6 +286,7 @@ public class ApplicationService : IApplicationService
         return Result<ApplicationDetailDto>.Success(detailDto);
     }
 
+    // Fetch paginated applications for a specific company job posting
     public async Task<PagedResult<ApplicationDto>> GetJobApplicationsAsync(Guid jobId, ApplicationFilterRequest request, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var job = await _db.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && j.CompanyId == recruiterCompanyId, ct);
@@ -321,6 +327,7 @@ public class ApplicationService : IApplicationService
         return new PagedResult<ApplicationDto>(items, totalCount, request.Page, request.PageSize);
     }
 
+    // Fetch all applications submitted across company jobs with filters
     public async Task<PagedResult<ApplicationDto>> GetCompanyApplicationsAsync(ApplicationFilterRequest request, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var query = _db.Applications
@@ -361,6 +368,7 @@ public class ApplicationService : IApplicationService
         return new PagedResult<ApplicationDto>(items, totalCount, request.Page, request.PageSize);
     }
 
+    // Update application status, persist changes, and notify the candidate
     public async Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(Guid id, ApplicationStatus newStatus, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var application = await _db.Applications
@@ -414,6 +422,7 @@ public class ApplicationService : IApplicationService
         return Result<ApplicationDto>.Success(_mapper.Map<ApplicationDto>(application));
     }
 
+    // Validate availability readiness, approve application for interview, and trigger AI scheduling pipeline
     public async Task<Result<ApplicationDto>> ApproveForInterviewAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var application = await _db.Applications
@@ -579,6 +588,7 @@ public class ApplicationService : IApplicationService
         return updateResult;
     }
 
+    // Evaluate if company interviewers and candidate have active availability slots for scheduling
     public async Task<Result<SchedulingReadinessDto>> GetSchedulingReadinessAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var application = await _db.Applications
@@ -633,6 +643,7 @@ public class ApplicationService : IApplicationService
         return Result<SchedulingReadinessDto>.Success(dto);
     }
 
+    // Mark application as rejected and notify candidate and AI orchestration workflow
     public async Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
     {
         var application = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);

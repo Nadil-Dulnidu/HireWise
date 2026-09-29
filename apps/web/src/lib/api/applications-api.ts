@@ -8,6 +8,7 @@ import type {
   ApplicationFilterRequest,
 } from "@/types/applications";
 
+// Readiness evaluation response indicating if candidate and interviewers have availability slots
 export interface SchedulingReadiness {
   applicationId: string;
   candidateId: string;
@@ -24,6 +25,7 @@ export interface SchedulingReadiness {
 }
 
 export const applicationsApi = {
+  // Submit a candidate job application with optional cover letter
   applyToJob: async (jobId: string, data: ApplyJobRequest) => {
     const response = await apiClient.post<ApiResponse<Application>>(
       `/jobs/${jobId}/applications`,
@@ -32,6 +34,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Fetch paginated applications submitted by current candidate
   getMyApplications: async (params?: {
     page?: number;
     pageSize?: number;
@@ -44,6 +47,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Fetch detailed application information by ID
   getApplicationById: async (id: string) => {
     const response = await apiClient.get<ApiResponse<ApplicationDetail>>(
       `/applications/${id}`,
@@ -51,6 +55,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Check interviewer and candidate scheduling readiness for an application
   getSchedulingReadiness: async (id: string) => {
     const response = await apiClient.get<ApiResponse<SchedulingReadiness>>(
       `/applications/${id}/scheduling-readiness`,
@@ -58,6 +63,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Fetch paginated applications submitted for a specific job
   getJobApplications: async (
     jobId: string,
     params?: ApplicationFilterRequest,
@@ -69,6 +75,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Fetch all applications across company job postings with optional filters
   getCompanyApplications: async (params?: ApplicationFilterRequest) => {
     const response = await apiClient.get<ApiResponse<PagedResult<Application>>>(
       "/applications",
@@ -77,6 +84,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Update status for a specific application
   updateApplicationStatus: async (
     id: string,
     data: ChangeApplicationStatusRequest,
@@ -88,6 +96,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Approve application for technical interview scheduling
   approveForInterview: async (id: string) => {
     const response = await apiClient.put<ApiResponse<Application>>(
       `/applications/${id}/approve-interview`,
@@ -95,6 +104,7 @@ export const applicationsApi = {
     return response.data.data;
   },
 
+  // Reject a job application and notify applicant
   rejectApplication: async (id: string) => {
     const response = await apiClient.put<ApiResponse<Application>>(
       `/applications/${id}/reject`,

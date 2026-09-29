@@ -3,6 +3,7 @@ import '../data/models/application_dto.dart';
 import '../data/models/apply_job_request.dart';
 import '../data/repositories/application_repository.dart';
 
+// State model for tracking candidate applications list, pagination, and loading status
 class ApplicationsState {
   final List<ApplicationDto> applications;
   final bool isLoading;
@@ -48,6 +49,7 @@ class ApplicationsState {
   }
 }
 
+// Notifier managing application list state, initial load, and pagination
 class ApplicationsNotifier extends StateNotifier<ApplicationsState> {
   final ApplicationRepository _repository;
 
@@ -55,6 +57,7 @@ class ApplicationsNotifier extends StateNotifier<ApplicationsState> {
     loadApplications();
   }
 
+  // Fetch initial or refreshed list of applications for the candidate
   Future<void> loadApplications({bool refresh = false}) async {
     state = state.copyWith(
       isLoading: true,
@@ -76,6 +79,7 @@ class ApplicationsNotifier extends StateNotifier<ApplicationsState> {
     }
   }
 
+  // Fetch the next page of applications for infinite scrolling
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasNextPage) return;
 
@@ -117,12 +121,14 @@ final applyJobControllerProvider = Provider<ApplyJobController>((ref) {
   return ApplyJobController(ref, repository);
 });
 
+// Controller managing job application submission state and error handling
 class ApplyJobController {
   final Ref _ref;
   final ApplicationRepository _repository;
 
   ApplyJobController(this._ref, this._repository);
 
+  // Submit a candidate job application and refresh applications list on success
   Future<ApplicationDto?> apply({
     required String jobId,
     String? coverLetter,

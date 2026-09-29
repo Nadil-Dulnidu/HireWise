@@ -10,11 +10,13 @@ final applicationRepositoryProvider = Provider<ApplicationRepository>((ref) {
   return ApplicationRepository(apiClient);
 });
 
+// Repository handling job application network requests and API operations
 class ApplicationRepository {
   final ApiClient _apiClient;
 
   ApplicationRepository(this._apiClient);
 
+  // Submit a candidate job application with request payload
   Future<ApplicationDto?> applyToJob(
     String jobId,
     ApplyJobRequest request,
@@ -29,6 +31,7 @@ class ApplicationRepository {
     return response.data;
   }
 
+  // Fetch paginated list of applications submitted by the current user
   Future<PagedResult<ApplicationDto>> getMyApplications({
     int page = 1,
     int pageSize = 20,
@@ -56,6 +59,7 @@ class ApplicationRepository {
     return response.data ?? PagedResult<ApplicationDto>.empty();
   }
 
+  // Fetch detailed application information by application ID
   Future<ApplicationDetailDto?> getApplicationById(String id) async {
     final response = await _apiClient.get<ApplicationDetailDto?>(
       ApiEndpoints.applicationById(id),
