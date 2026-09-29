@@ -38,7 +38,7 @@ public class CreateCompanyRequest
     public string? Location { get; set; }
 }
 
-
+// Contains the  fields that can be updated for a company
 public class UpdateCompanyRequest
 {
     public string Name { get; set; } = string.Empty;
@@ -51,6 +51,7 @@ public class UpdateCompanyRequest
     public string? Location { get; set; }
 }
 
+// Adds industry filtering to the common paging request
 public class CompanyFilterRequest : PagedRequest
 {
     public string? Industry { get; set; }

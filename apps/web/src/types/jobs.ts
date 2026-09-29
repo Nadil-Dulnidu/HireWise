@@ -1,11 +1,16 @@
+// Defines the available employment types
 export type EmploymentType =
   | "FULL_TIME"
   | "PART_TIME"
   | "CONTRACT"
   | "INTERNSHIP";
+
+// Defines the available experience levels
 export type ExperienceLevel = "ENTRY" | "MID" | "SENIOR" | "LEAD";
+// Defines the possible job statuses
 export type JobStatus = "DRAFT" | "OPEN" | "PAUSED" | "CLOSED";
 
+// Represents company information returned by the API
 export interface Company {
   id: string;
   name: string;
@@ -24,6 +29,7 @@ export interface Company {
   updatedAt: string;
 }
 
+// Represents department information returned by the API
 export interface Department {
   id: string;
   name: string;
@@ -35,6 +41,7 @@ export interface Department {
   updatedAt: string;
 }
 
+// Represents complete job information returned by the API
 export interface Job {
   id: string;
   title: string;
@@ -61,6 +68,7 @@ export interface Job {
   updatedAt: string;
 }
 
+// Represents the main job fields used in job listings
 export interface JobSummary {
   id: string;
   title: string;
@@ -79,6 +87,7 @@ export interface JobSummary {
   createdAt: string;
 }
 
+// Defines the data needed to create a new job
 export interface CreateJobPayload {
   title: string;
   description: string;
@@ -95,6 +104,7 @@ export interface CreateJobPayload {
   applicationDeadline?: string | null;
 }
 
+// Defines the data that can be updated for a job
 export interface UpdateJobPayload {
   title: string;
   description: string;
@@ -109,17 +119,20 @@ export interface UpdateJobPayload {
   applicationDeadline?: string | null;
 }
 
+// Defines the data needed to create a new department
 export interface CreateDepartmentPayload {
   name: string;
   description?: string;
   companyId?: string;
 }
 
+// Defines the data that can be updated for a department
 export interface UpdateDepartmentPayload {
   name: string;
   description?: string;
 }
 
+// Defines the data needed to create a new company
 export interface CreateCompanyPayload {
   name: string;
   description?: string;
@@ -130,6 +143,7 @@ export interface CreateCompanyPayload {
   location?: string;
 }
 
+// Defines the data that can be updated for a company
 export interface UpdateCompanyPayload {
   name: string;
   description?: string;
@@ -140,6 +154,7 @@ export interface UpdateCompanyPayload {
   location?: string;
 }
 
+// Defines the available filters for job searches
 export interface JobFilterParams {
   page?: number;
   pageSize?: number;

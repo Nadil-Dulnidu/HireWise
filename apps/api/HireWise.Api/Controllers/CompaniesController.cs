@@ -8,6 +8,7 @@ namespace HireWise.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+// Handles API requests related to companies
 public class CompaniesController : ControllerBase
 {
     private readonly ICompanyService _companyService;
@@ -26,6 +27,7 @@ public class CompaniesController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Get a list of companies with filtering and pagination
     public async Task<IActionResult> GetCompanies([FromQuery] CompanyFilterRequest request, CancellationToken ct)
     {
         var result = await _companyService.GetCompaniesAsync(request, ct);
@@ -34,6 +36,7 @@ public class CompaniesController : ControllerBase
 
     [HttpGet("my-company")]
     [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    // Get the company associated with the current user
     public async Task<IActionResult> GetMyCompany(CancellationToken ct)
     {
         var companyId = _currentUserService.CompanyId;
@@ -72,6 +75,7 @@ public class CompaniesController : ControllerBase
 
     [HttpGet("by-org/{clerkOrgId}")]
     [Authorize(Roles = "ADMIN,RECRUITER,INTERVIEWER")]
+    // Get a company using its Clerk organization ID
     public async Task<IActionResult> GetCompanyByOrg(string clerkOrgId, CancellationToken ct)
     {
         var result = await _companyService.GetCompanyByClerkOrgIdAsync(clerkOrgId, ct);
@@ -85,6 +89,7 @@ public class CompaniesController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Get a company using its ID
     public async Task<IActionResult> GetCompanyById(Guid id, CancellationToken ct)
     {
         var result = await _companyService.GetCompanyByIdAsync(id, ct);
@@ -98,6 +103,7 @@ public class CompaniesController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Create a new company
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request, CancellationToken ct)
     {
         var result = await _companyService.CreateCompanyAsync(request, _currentUserService.UserId, ct);
@@ -111,6 +117,7 @@ public class CompaniesController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Update an existing company
     public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyRequest request, CancellationToken ct)
     {
         if (_currentUserService.IsRecruiter && _currentUserService.CompanyId.HasValue && _currentUserService.CompanyId.Value != id)
@@ -129,6 +136,7 @@ public class CompaniesController : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "ADMIN")]
+    // Delete a company
     public async Task<IActionResult> DeleteCompany(Guid id, CancellationToken ct)
     {
         var result = await _companyService.DeleteCompanyAsync(id, ct);

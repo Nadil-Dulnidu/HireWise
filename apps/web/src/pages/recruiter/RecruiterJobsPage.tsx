@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 export function RecruiterJobsPage() {
+  // Get the current user's company and query client
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");

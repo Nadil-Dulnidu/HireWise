@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Defines the available company service operations
 public interface ICompanyService
 {
     Task<PagedResult<CompanyDto>> GetCompaniesAsync(CompanyFilterRequest request, CancellationToken ct = default);
@@ -18,6 +19,7 @@ public interface ICompanyService
     Task<Result> DeleteCompanyAsync(Guid id, CancellationToken ct = default);
 }
 
+// Provides company-related business logic
 public class CompanyService : ICompanyService
 {
     private readonly ApplicationDbContext _db;

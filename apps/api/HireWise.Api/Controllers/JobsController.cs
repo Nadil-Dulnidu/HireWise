@@ -9,6 +9,7 @@ namespace HireWise.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+// Handles API requests related to job postings
 public class JobsController : ControllerBase
 {
     private readonly IJobService _jobService;
@@ -27,6 +28,7 @@ public class JobsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
+    // Get jobs based on the user's access level and filters
     public async Task<IActionResult> GetJobs([FromQuery] JobFilterRequest request, [FromQuery] bool publicOnly = false, CancellationToken ct = default)
     {
         if (!_currentUserService.IsAuthenticated || _currentUserService.IsCandidate || publicOnly)
@@ -52,6 +54,7 @@ public class JobsController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
+    // Get a specific job posting by its ID
     public async Task<IActionResult> GetJobById(Guid id, CancellationToken ct)
     {
         var isStaff = _currentUserService.IsAdmin || _currentUserService.IsRecruiter || _currentUserService.IsInterviewer;
@@ -68,6 +71,7 @@ public class JobsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Create a new job posting
     public async Task<IActionResult> CreateJob([FromBody] CreateJobRequest request, CancellationToken ct)
     {
         var clerkUserId = _currentUserService.ClerkUserId;
@@ -106,6 +110,7 @@ public class JobsController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Update an existing job posting
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobRequest request, CancellationToken ct)
     {
         var userCompanyId = _currentUserService.CompanyId;
@@ -120,6 +125,7 @@ public class JobsController : ControllerBase
 
     [HttpPut("{id:guid}/status")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Update the status of a specific job posting
     public async Task<IActionResult> UpdateJobStatus(Guid id, [FromBody] UpdateJobStatusRequest request, CancellationToken ct)
     {
         var userCompanyId = _currentUserService.CompanyId;
@@ -134,6 +140,7 @@ public class JobsController : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "ADMIN,RECRUITER")]
+    // Delete a specific job posting
     public async Task<IActionResult> DeleteJob(Guid id, CancellationToken ct)
     {
         var userCompanyId = _currentUserService.CompanyId;

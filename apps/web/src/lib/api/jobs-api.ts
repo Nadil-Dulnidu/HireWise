@@ -14,6 +14,7 @@ import type {
   JobFilterParams,
 } from "@/types/jobs";
 
+// Standard response structure returned by the API
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -23,6 +24,7 @@ export interface ApiResponse<T> {
   correlationId?: string;
 }
 
+// Contains paging information along with the returned items
 export interface PagedResult<T> {
   items: T[];
   page: number;

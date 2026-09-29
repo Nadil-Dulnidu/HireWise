@@ -13,6 +13,7 @@ public class DepartmentDto
     public DateTime UpdatedAt { get; set; }
 }
 
+// Contains the data needed to create a new department
 public class CreateDepartmentRequest
 {
     public string Name { get; set; } = string.Empty;
@@ -20,6 +21,7 @@ public class CreateDepartmentRequest
     public Guid? CompanyId { get; set; }
 }
 
+// Contains the fields that can be updated for a department
 public class UpdateDepartmentRequest
 {
     public string Name { get; set; } = string.Empty;
