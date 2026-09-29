@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HireWise.Api.Services;
 
+// Defines operations for creating, retrieving, updating, filtering, and deleting job postings.
 public interface IJobService
 {
     Task<PagedResult<JobSummaryDto>> GetPublicJobsAsync(JobFilterRequest request, CancellationToken ct = default);
@@ -20,6 +21,8 @@ public interface IJobService
     Task<Result> DeleteJobAsync(Guid id, Guid? userCompanyId, bool isAdmin, CancellationToken ct = default);
 }
 
+// Provides business logic for managing job postings.
+// Handles CRUD operations, filtering, pagination, authorization, status management, and soft deletion.
 public class JobService : IJobService
 {
     private readonly ApplicationDbContext _db;

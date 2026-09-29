@@ -3,6 +3,7 @@ using HireWise.Api.Models.Enums;
 
 namespace HireWise.Api.DTOs.Jobs;
 
+// Data Transfer Object used to return complete job information.
 public class JobDto
 {
     public Guid Id { get; set; }
@@ -30,6 +31,7 @@ public class JobDto
     public DateTime UpdatedAt { get; set; }
 }
 
+// Lightweight DTO containing the main information needed to display a job in lists or search results.
 public class JobSummaryDto
 {
     public Guid Id { get; set; }
@@ -49,6 +51,8 @@ public class JobSummaryDto
     public DateTime CreatedAt { get; set; }
 }
 
+// Request DTO used when creating a new job.
+// Contains the information required from the client.
 public class CreateJobRequest
 {
     public string Title { get; set; } = string.Empty;
@@ -66,6 +70,7 @@ public class CreateJobRequest
     public DateTime? ApplicationDeadline { get; set; }
 }
 
+// Request DTO used to update an existing job.
 public class UpdateJobRequest
 {
     public string Title { get; set; } = string.Empty;
@@ -81,11 +86,14 @@ public class UpdateJobRequest
     public DateTime? ApplicationDeadline { get; set; }
 }
 
+// Request DTO used to update only the status of a job.
 public class UpdateJobStatusRequest
 {
     public JobStatus Status { get; set; }
 }
 
+// Request DTO used to filter and paginate job listings.
+// Inherits pagination properties from PagedRequest.
 public class JobFilterRequest : PagedRequest
 {
     public JobStatus? Status { get; set; }
