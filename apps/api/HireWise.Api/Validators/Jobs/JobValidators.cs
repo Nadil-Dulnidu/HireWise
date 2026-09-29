@@ -3,6 +3,7 @@ using HireWise.Api.DTOs.Jobs;
 
 namespace HireWise.Api.Validators.Jobs;
 
+// Validates data when creating a new job
 public class CreateJobRequestValidator : AbstractValidator<CreateJobRequest>
 {
     public CreateJobRequestValidator()
@@ -40,6 +41,7 @@ public class CreateJobRequestValidator : AbstractValidator<CreateJobRequest>
     }
 }
 
+// Validates data when updating an existing job
 public class UpdateJobRequestValidator : AbstractValidator<UpdateJobRequest>
 {
     public UpdateJobRequestValidator()
@@ -73,6 +75,7 @@ public class UpdateJobRequestValidator : AbstractValidator<UpdateJobRequest>
     }
 }
 
+// Validates the status value when updating a job
 public class UpdateJobStatusRequestValidator : AbstractValidator<UpdateJobStatusRequest>
 {
     public UpdateJobStatusRequestValidator()

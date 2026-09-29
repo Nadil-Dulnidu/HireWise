@@ -3,6 +3,7 @@ using HireWise.Api.DTOs.Companies;
 
 namespace HireWise.Api.Validators.Companies;
 
+// Validates data when creating a new company
 public class CreateCompanyRequestValidator : AbstractValidator<CreateCompanyRequest>
 {
     public CreateCompanyRequestValidator()
@@ -24,6 +25,7 @@ public class CreateCompanyRequestValidator : AbstractValidator<CreateCompanyRequ
     }
 }
 
+// Validates data when updating an existing company
 public class UpdateCompanyRequestValidator : AbstractValidator<UpdateCompanyRequest>
 {
     public UpdateCompanyRequestValidator()

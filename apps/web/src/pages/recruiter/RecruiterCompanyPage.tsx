@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 export function RecruiterCompanyPage() {
+  // Get the current user's company and query client
   const queryClient = useQueryClient();
   const { profile } = useCurrentUser();
   const companyId = profile?.companyId;

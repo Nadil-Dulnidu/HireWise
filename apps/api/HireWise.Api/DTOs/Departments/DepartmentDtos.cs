@@ -1,5 +1,6 @@
 namespace HireWise.Api.DTOs.Departments;
 
+// Holds department details returned by the API
 public class DepartmentDto
 {
     public Guid Id { get; set; }

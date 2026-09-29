@@ -3,6 +3,7 @@ using HireWise.Api.DTOs.Departments;
 
 namespace HireWise.Api.Validators.Departments;
 
+// Validates data when creating a new department
 public class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartmentRequest>
 {
     public CreateDepartmentRequestValidator()
@@ -16,6 +17,7 @@ public class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartme
     }
 }
 
+// Validates data when updating an existing department
 public class UpdateDepartmentRequestValidator : AbstractValidator<UpdateDepartmentRequest>
 {
     public UpdateDepartmentRequestValidator()
