@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { ApplicationStatus } from "@/types/applications";
 
+// Helper function to map application status to display labels, badge colors, and pipeline steps
 const getStatusDetails = (status: ApplicationStatus) => {
   switch (status) {
     case "APPLIED":
@@ -107,10 +108,12 @@ const getStatusDetails = (status: ApplicationStatus) => {
   }
 };
 
+// Candidate applications tracking page displaying submitted applications and pipeline progress
 export function CandidateApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
 
+  // Fetch paginated applications submitted by current user with optional search filtering
   const { data, isLoading } = useQuery({
     queryKey: ["myApplications", page, searchTerm],
     queryFn: () =>

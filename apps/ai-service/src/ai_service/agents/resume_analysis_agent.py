@@ -8,14 +8,17 @@ from ai_service.prompts.templates import (
 )
 
 
+# Agent responsible for extracting skills, experience, and competencies from resumes
 class ResumeAnalysisAgent(BaseAgent):
     """
     Agent 2: Parses candidate resumes (PDF, DOCX, text) and extracts structured competencies.
     """
 
+    # Initialize the resume analysis agent with its schema definition
     def __init__(self):
         super().__init__(name="ResumeAnalysisAgent", schema=ResumeAnalysis)
 
+    # Parse resume inputs and extract structured competency details using LLM
     async def execute(
         self,
         resume_url: Optional[str] = None,
@@ -28,12 +31,15 @@ class ResumeAnalysisAgent(BaseAgent):
         # 1. Resolve text content from inputs
         resume_content = raw_text or ""
 
+        # Parse document from uploaded file bytes if provided
         if not resume_content and file_bytes and file_name:
             resume_content = DocumentParser.parse_from_bytes(file_bytes, file_name)
 
+        # Download and parse document from URL if provided
         if not resume_content and resume_url:
             resume_content = await DocumentParser.parse_from_relative_path_or_url(resume_url)
 
+        # Fallback to default placeholder if content is empty
         if not resume_content.strip():
             resume_content = (
                 "Candidate submitted standard software engineering profile."
@@ -44,6 +50,7 @@ class ResumeAnalysisAgent(BaseAgent):
         )
 
         try:
+            # Invoke LLM to extract structured resume analysis
             result = await self.invoke_structured_llm(
                 system_prompt=RESUME_ANALYSIS_SYSTEM_PROMPT,
                 user_prompt=user_content,
@@ -57,6 +64,7 @@ class ResumeAnalysisAgent(BaseAgent):
             )
             return self._deterministic_fallback(resume_content)
 
+    # Fallback to keyword matching if LLM parsing fails
     def _deterministic_fallback(self, resume_content: str) -> ResumeAnalysis:
         """
         Deterministic rule-based extraction fallback.
@@ -89,6 +97,7 @@ class ResumeAnalysisAgent(BaseAgent):
         ]
 
         extracted_skills = [kw.capitalize() for kw in tech_keywords if kw in combined]
+        # Set default skills if no keywords were matched
         if not extracted_skills:
             extracted_skills = ["Software Engineering", "Full Stack Development"]
 

@@ -3,17 +3,20 @@ using HireWise.Api.Models.Enums;
 
 namespace HireWise.Api.DTOs.Applications;
 
+// Request model for submitting a candidate job application.
 public class ApplyJobRequest
 {
     public string? CoverLetter { get; set; }
 }
 
+// Request payload for updating the status of an application.
 public class ChangeApplicationStatusRequest
 {
     public ApplicationStatus Status { get; set; }
     public string? Notes { get; set; }
 }
 
+// Data transfer object representing summary information of a job application.
 public class ApplicationDto
 {
     public Guid Id { get; set; }
@@ -35,6 +38,7 @@ public class ApplicationDto
     public DateTime CreatedAt { get; set; }
 }
 
+// Detailed data transfer object containing full job and applicant information.
 public class ApplicationDetailDto : ApplicationDto
 {
     public string JobDescription { get; set; } = string.Empty;
@@ -48,6 +52,7 @@ public class ApplicationDetailDto : ApplicationDto
     public Guid? InterviewId { get; set; }
 }
 
+// Query parameters for filtering and paginating job applications.
 public class ApplicationFilterRequest : PagedRequest
 {
     public Guid? JobId { get; set; }
@@ -56,6 +61,7 @@ public class ApplicationFilterRequest : PagedRequest
     public ApplicationStatus? Status { get; set; }
 }
 
+// Readiness evaluation model for verifying interviewer and candidate availability.
 public class SchedulingReadinessDto
 {
     public bool HasInterviewers { get; set; }
