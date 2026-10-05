@@ -12,6 +12,7 @@ public interface IEmailService
     Task SendAiEvaluationCompleteEmailAsync(string toEmail, string recruiterName, string candidateName, string jobTitle, CancellationToken ct = default);
     Task SendInterviewFeedbackSubmittedEmailAsync(string toEmail, string recruiterName, string interviewerName, string candidateName, string jobTitle, CancellationToken ct = default);
     Task SendAvailabilitySlotRequestEmailAsync(string toEmail, string candidateName, string jobTitle, string companyName, CancellationToken ct = default);
+    Task SendFinalHiringDecisionEmailAsync(string toEmail, string candidateName, string jobTitle, string companyName, string? companyWebsite, string? companyLocation, string recruiterName, string? recruiterEmail, Models.Enums.ApplicationStatus decision, string? customNotes = null, CancellationToken ct = default);
 }
 
 public class EmailService : IEmailService
@@ -56,7 +57,31 @@ public class EmailService : IEmailService
         }
     }
 
-    private async Task SendEmailAsync(string to, string subject, string htmlBody, CancellationToken ct)
+    private string BuildFromAddress(string? recruiterName, string? companyName)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(_fromAddress, @"<([^>]+)>");
+        var rawEmail = match.Success ? match.Groups[1].Value.Trim() : _fromAddress.Trim();
+
+        if (!string.IsNullOrWhiteSpace(recruiterName) && !string.IsNullOrWhiteSpace(companyName))
+        {
+            return $"{recruiterName} ({companyName}) <{rawEmail}>";
+        }
+        if (!string.IsNullOrWhiteSpace(companyName))
+        {
+            return $"{companyName} Recruitment <{rawEmail}>";
+        }
+
+        return _fromAddress;
+    }
+
+    private async Task SendEmailAsync(
+        string to,
+        string subject,
+        string htmlBody,
+        CancellationToken ct,
+        string? recruiterName = null,
+        string? companyName = null,
+        string? replyTo = null)
     {
         if (!_enabled)
         {
@@ -66,16 +91,23 @@ public class EmailService : IEmailService
 
         try
         {
+            var from = BuildFromAddress(recruiterName, companyName);
             var message = new EmailMessage
             {
-                From = _fromAddress,
+                From = from,
                 To = { to },
                 Subject = subject,
                 HtmlBody = htmlBody
             };
 
+            if (!string.IsNullOrWhiteSpace(replyTo))
+            {
+                message.ReplyTo ??= new();
+                message.ReplyTo.Add(replyTo);
+            }
+
             await _resend.EmailSendAsync(message, ct);
-            _logger.LogInformation("Email sent successfully: To={To}, Subject={Subject}", to, subject);
+            _logger.LogInformation("Email sent successfully: To={To}, Subject={Subject}, From={From}", to, subject, from);
         }
         catch (Exception ex)
         {
@@ -130,6 +162,37 @@ public class EmailService : IEmailService
     {
         var html = EmailTemplates.AvailabilitySlotRequest(candidateName, jobTitle, companyName);
         await SendEmailAsync(toEmail, $"Action Required: Add Your Interview Availability — {jobTitle} at {companyName}", html, ct);
+    }
+
+    public async Task SendFinalHiringDecisionEmailAsync(
+        string toEmail,
+        string candidateName,
+        string jobTitle,
+        string companyName,
+        string? companyWebsite,
+        string? companyLocation,
+        string recruiterName,
+        string? recruiterEmail,
+        Models.Enums.ApplicationStatus decision,
+        string? customNotes = null,
+        CancellationToken ct = default)
+    {
+        var html = EmailTemplates.FinalHiringDecision(
+            candidateName,
+            jobTitle,
+            companyName,
+            companyWebsite,
+            companyLocation,
+            recruiterName,
+            recruiterEmail,
+            decision,
+            customNotes);
+
+        var subject = decision == Models.Enums.ApplicationStatus.SELECTED
+            ? $"Job Offer: {jobTitle} at {companyName} 🎉"
+            : $"Update on your application for {jobTitle} at {companyName}";
+
+        await SendEmailAsync(toEmail, subject, html, ct, recruiterName, companyName, recruiterEmail);
     }
 }
 

@@ -116,5 +116,5 @@ public class CurrentUserService : ICurrentUserService
     public bool IsAdmin => Role == UserRole.ADMIN;
     public bool IsRecruiter => Role == UserRole.RECRUITER;
     public bool IsInterviewer => Role == UserRole.INTERVIEWER;
-    public bool IsCandidate => Role == UserRole.CANDIDATE;
+    public bool IsCandidate => Role == UserRole.CANDIDATE || (!IsAdmin && !IsRecruiter && !IsInterviewer);
 }

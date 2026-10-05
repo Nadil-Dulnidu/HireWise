@@ -7,6 +7,7 @@ import '../../features/applications/presentation/apply_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/auth/presentation/unauthorized_screen.dart';
 import '../../features/auth/providers/auth_state_provider.dart';
+import '../../features/availability/presentation/availability_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/interviews/presentation/interview_detail_screen.dart';
 import '../../features/interviews/presentation/interviews_screen.dart';
@@ -78,6 +79,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/availability',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AvailabilityScreen(),
       ),
 
       // 5-Tab Shell Navigation

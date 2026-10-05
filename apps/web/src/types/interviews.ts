@@ -1,3 +1,5 @@
+import type { ApplicationStatus } from "./applications";
+
 export type InterviewStatus =
   | "SCHEDULED"
   | "IN_PROGRESS"
@@ -37,6 +39,7 @@ export interface Interview {
   scheduledEndTime: string;
   meetingLink?: string;
   status: InterviewStatus;
+  applicationStatus?: ApplicationStatus;
   notes?: string;
   hasFeedback: boolean;
   overallRating?: number;

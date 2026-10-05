@@ -31,7 +31,8 @@ public class JobsController : ControllerBase
     // Get jobs based on the user's access level and filters
     public async Task<IActionResult> GetJobs([FromQuery] JobFilterRequest request, [FromQuery] bool publicOnly = false, CancellationToken ct = default)
     {
-        if (!_currentUserService.IsAuthenticated || _currentUserService.IsCandidate || publicOnly)
+        var isStaff = _currentUserService.IsAdmin || _currentUserService.IsRecruiter || _currentUserService.IsInterviewer;
+        if (!_currentUserService.IsAuthenticated || !isStaff || _currentUserService.IsCandidate || publicOnly)
         {
             var publicResult = await _jobService.GetPublicJobsAsync(request, ct);
             return Ok(ApiResponse<PagedResult<JobSummaryDto>>.Ok(publicResult));

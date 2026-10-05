@@ -41,8 +41,10 @@ class Settings(BaseSettings):
     USE_VERTEX_AI: bool = False
     GOOGLE_API_KEY: Optional[str] = None
     GOOGLE_CLOUD_PROJECT: Optional[str] = None
+    GCP_PROJECT_ID: Optional[str] = None
     VERTEX_PROJECT_ID: Optional[str] = None
     VERTEX_LOCATION: str = "us-central1"
+    GCP_REGION: Optional[str] = None
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
     GOOGLE_APPLICATION_CREDENTIALS_JSON: Optional[str] = None
     # AI Models & Generation Parameters (.env configuration)

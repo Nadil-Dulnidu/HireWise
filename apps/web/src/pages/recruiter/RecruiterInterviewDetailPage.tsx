@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api/interviews-api";
@@ -16,6 +17,10 @@ import {
   XCircle,
   Award,
   ChevronRight,
+  Mail,
+  Send,
+  Sparkles,
+  X,
 } from "lucide-react";
 import type { InterviewStatus } from "@/types/interviews";
 import { getGoogleCalendarUrl } from "@/lib/utils";
@@ -64,6 +69,13 @@ export function RecruiterInterviewDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
+  // Decision Modal and Feedback State
+  const [decisionModalOpen, setDecisionModalOpen] = useState(false);
+  const [decisionType, setDecisionType] = useState<"SELECTED" | "REJECTED" | null>(null);
+  const [customNotes, setCustomNotes] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const {
     data: interview,
     isLoading,
@@ -75,14 +87,58 @@ export function RecruiterInterviewDetailPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: (newStatus: "SELECTED" | "REJECTED") =>
+    mutationFn: ({
+      status,
+      notes,
+    }: {
+      status: "SELECTED" | "REJECTED";
+      notes?: string;
+    }) =>
       applicationsApi.updateApplicationStatus(interview!.applicationId, {
-        status: newStatus,
+        status,
+        notes: notes?.trim() || undefined,
       }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      setDecisionModalOpen(false);
+      setCustomNotes("");
+      setErrorMessage(null);
+      const isOffer = variables.status === "SELECTED";
+      setSuccessMessage(
+        isOffer
+          ? `🎉 Job offer successfully extended to ${interview?.candidateName}! An official offer email was dispatched to ${interview?.candidateEmail}.`
+          : `Decision recorded: Candidate marked as Not Selected. A professional closing email was dispatched to ${interview?.candidateEmail}.`
+      );
       queryClient.invalidateQueries({ queryKey: ["interviewDetail", id] });
+      queryClient.invalidateQueries({
+        queryKey: ["recruiterApplicationDetail", interview?.applicationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["companyApplications"] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      setTimeout(() => setSuccessMessage(null), 8000);
+    },
+    onError: (err: any) => {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update candidate status. Please try again.";
+      setErrorMessage(msg);
     },
   });
+
+  const handleOpenDecisionModal = (type: "SELECTED" | "REJECTED") => {
+    setDecisionType(type);
+    setDecisionModalOpen(true);
+    setErrorMessage(null);
+  };
+
+  const handleConfirmDecision = () => {
+    if (!decisionType || !interview?.applicationId) return;
+    updateStatusMutation.mutate({
+      status: decisionType,
+      notes: customNotes,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -117,6 +173,42 @@ export function RecruiterInterviewDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Action Notification Banners */}
+      {successMessage && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-start justify-between gap-3 shadow-sm animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-emerald-900">Action Complete</p>
+              <p className="text-xs text-emerald-700 mt-0.5">{successMessage}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-emerald-500 hover:text-emerald-700 text-xs p-1 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start justify-between gap-3 shadow-sm animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-900">Decision Update Error</p>
+              <p className="text-xs text-red-700 mt-0.5">{errorMessage}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-red-500 hover:text-red-700 text-xs p-1 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {/* Back Link */}
       <Link
         to="/recruiter/interviews"
@@ -249,34 +341,90 @@ export function RecruiterInterviewDetailPage() {
           </div>
 
           {/* Hiring Decision Actions */}
-          {feedback && (
-            <div className="bg-white p-6 rounded-2xl border border-indigo-200 shadow-sm space-y-3 bg-indigo-50/30">
+          <div className="bg-white p-6 rounded-2xl border border-indigo-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Award className="h-4 w-4 text-indigo-600" /> Take Final Hiring
-                Action
+                <Award className="h-4 w-4 text-indigo-600" /> Final Hiring Decision
               </h3>
-              <p className="text-xs text-slate-500">
-                Review completed evaluator rubric and choose whether to issue an
-                offer or reject candidate.
-              </p>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button
-                  onClick={() => updateStatusMutation.mutate("SELECTED")}
-                  disabled={updateStatusMutation.isPending}
-                  className="py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+              {interview.applicationStatus && (
+                <span
+                  className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                    interview.applicationStatus === "SELECTED"
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : interview.applicationStatus === "REJECTED"
+                      ? "bg-red-100 text-red-800 border border-red-300"
+                      : "bg-blue-100 text-blue-800 border border-blue-300"
+                  }`}
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Make Offer
-                </button>
-                <button
-                  onClick={() => updateStatusMutation.mutate("REJECTED")}
-                  disabled={updateStatusMutation.isPending}
-                  className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <XCircle className="h-3.5 w-3.5" /> Reject
-                </button>
-              </div>
+                  {interview.applicationStatus.replace(/_/g, " ")}
+                </span>
+              )}
             </div>
-          )}
+
+            {interview.applicationStatus === "SELECTED" ? (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2.5">
+                <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Candidate Selected & Offer Extended
+                </div>
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  An official job offer notification was emailed to{" "}
+                  <strong>{interview.candidateEmail}</strong> with recruiter & company details and next onboarding steps.
+                </p>
+                <div className="pt-2 border-t border-emerald-200/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Need to revise?</span>
+                  <button
+                    onClick={() => handleOpenDecisionModal("REJECTED")}
+                    className="text-red-600 hover:text-red-800 font-semibold cursor-pointer underline"
+                  >
+                    Change to Reject
+                  </button>
+                </div>
+              </div>
+            ) : interview.applicationStatus === "REJECTED" ? (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                  <XCircle className="h-4 w-4 text-red-500" />
+                  Candidate Not Selected
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  A respectful closing notification was emailed to{" "}
+                  <strong>{interview.candidateEmail}</strong>.
+                </p>
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Need to revise?</span>
+                  <button
+                    onClick={() => handleOpenDecisionModal("SELECTED")}
+                    className="text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer underline"
+                  >
+                    Change to Make Offer
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Review the completed evaluator rubric. Choosing an action will update the candidate's status and automatically send a professional decision email.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={() => handleOpenDecisionModal("SELECTED")}
+                    disabled={updateStatusMutation.isPending}
+                    className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Make Offer
+                  </button>
+                  <button
+                    onClick={() => handleOpenDecisionModal("REJECTED")}
+                    disabled={updateStatusMutation.isPending}
+                    className="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <XCircle className="h-3.5 w-3.5" /> Reject
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column (7 cols): Evaluator Feedback */}
@@ -393,6 +541,152 @@ export function RecruiterInterviewDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Decision Confirmation Modal Dialog */}
+      {decisionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                {decisionType === "SELECTED" ? (
+                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <Award className="h-5 w-5" />
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-red-50 text-red-600 border border-red-200">
+                    <XCircle className="h-5 w-5" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {decisionType === "SELECTED"
+                      ? "Extend Job Offer"
+                      : "Send Rejection Notice"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {decisionType === "SELECTED"
+                      ? "Approve candidate and trigger official offer email"
+                      : "Politely decline candidate and dispatch closing email"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDecisionModalOpen(false)}
+                disabled={updateStatusMutation.isPending}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Candidate & Position Summary */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Candidate:</span>
+                <span className="font-semibold text-slate-800">
+                  {interview.candidateName} ({interview.candidateEmail})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Position:</span>
+                <span className="font-semibold text-slate-800">
+                  {interview.jobTitle}
+                </span>
+              </div>
+              {feedback && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Interviewer Rubric:</span>
+                  <span className="font-semibold text-slate-800">
+                    {feedback.overallRating}/5.0 (
+                    {feedback.recommendation?.replace(/_/g, " ")})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Informational callout */}
+            <div
+              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
+                decisionType === "SELECTED"
+                  ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
+                  : "bg-slate-50 border-slate-200 text-slate-700"
+              }`}
+            >
+              {decisionType === "SELECTED" ? (
+                <div className="flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    A professional offer email will be dispatched to{" "}
+                    <strong>{interview.candidateEmail}</strong> with recruiter &
+                    company sign-off, outlining next formal steps.
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <Mail className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+                  <span>
+                    A respectful closing email will be dispatched to{" "}
+                    <strong>{interview.candidateEmail}</strong> thanking them for
+                    their interview and keeping them in your talent network.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Optional Personal Note */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 block">
+                Personalized Recruiter Note{" "}
+                <span className="text-slate-400 font-normal">
+                  (Included in candidate's email)
+                </span>
+              </label>
+              <textarea
+                value={customNotes}
+                onChange={(e) => setCustomNotes(e.target.value)}
+                rows={3}
+                placeholder={
+                  decisionType === "SELECTED"
+                    ? "e.g., We were thoroughly impressed by your system design answers and look forward to welcoming you aboard!"
+                    : "e.g., Thank you for your insightful questions during the technical interview. We wish you the best in your career!"
+                }
+                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDecisionModalOpen(false)}
+                disabled={updateStatusMutation.isPending}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDecision}
+                disabled={updateStatusMutation.isPending}
+                className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 ${
+                  decisionType === "SELECTED"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {updateStatusMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                {decisionType === "SELECTED"
+                  ? "Confirm & Send Offer Email"
+                  : "Confirm & Send Rejection Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,9 +19,9 @@ public interface IApplicationService
     Task<Result<ApplicationDetailDto>> GetApplicationByIdAsync(Guid id, Guid currentUserId, string role, Guid? companyId, CancellationToken ct = default);
     Task<PagedResult<ApplicationDto>> GetJobApplicationsAsync(Guid jobId, ApplicationFilterRequest request, Guid recruiterCompanyId, CancellationToken ct = default);
     Task<PagedResult<ApplicationDto>> GetCompanyApplicationsAsync(ApplicationFilterRequest request, Guid recruiterCompanyId, CancellationToken ct = default);
-    Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(Guid id, ApplicationStatus newStatus, Guid recruiterCompanyId, CancellationToken ct = default);
+    Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(Guid id, ApplicationStatus newStatus, Guid recruiterCompanyId, string? recruiterName = null, string? recruiterEmail = null, string? notes = null, CancellationToken ct = default);
     Task<Result<ApplicationDto>> ApproveForInterviewAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
-    Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
+    Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, string? recruiterName = null, string? recruiterEmail = null, string? notes = null, CancellationToken ct = default);
     Task<Result<SchedulingReadinessDto>> GetSchedulingReadinessAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default);
 }
 
@@ -369,7 +369,14 @@ public class ApplicationService : IApplicationService
     }
 
     // Update application status, persist changes, and notify the candidate
-    public async Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(Guid id, ApplicationStatus newStatus, Guid recruiterCompanyId, CancellationToken ct = default)
+    public async Task<Result<ApplicationDto>> UpdateApplicationStatusAsync(
+        Guid id,
+        ApplicationStatus newStatus,
+        Guid recruiterCompanyId,
+        string? recruiterName = null,
+        string? recruiterEmail = null,
+        string? notes = null,
+        CancellationToken ct = default)
     {
         var application = await _db.Applications
             .Include(a => a.Job).ThenInclude(j => j.Company)
@@ -387,32 +394,78 @@ public class ApplicationService : IApplicationService
         }
 
         application.Status = newStatus;
+
+        // If an interview is associated with this application and final decision is reached, ensure it is completed
+        var interview = await _db.Interviews.FirstOrDefaultAsync(i => i.ApplicationId == id, ct);
+        if (interview != null && (newStatus == ApplicationStatus.SELECTED || newStatus == ApplicationStatus.REJECTED))
+        {
+            if (interview.Status != InterviewStatus.COMPLETED && interview.Status != InterviewStatus.CANCELLED)
+            {
+                interview.Status = InterviewStatus.COMPLETED;
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation("Recruiter updated Application {ApplicationId} status to {Status}", id, newStatus);
 
         // Notify candidate
+        var notificationTitle = newStatus switch
+        {
+            ApplicationStatus.SELECTED => "🎉 Job Offer Extended!",
+            ApplicationStatus.REJECTED => "Application Decision",
+            _ => "Application Status Update"
+        };
         var friendlyStatusMessage = GetFriendlyStatusMessage(application.Job.Title, newStatus);
         await _notificationService.CreateNotificationAsync(
             application.CandidateId,
-            "Application Status Update",
+            notificationTitle,
             friendlyStatusMessage,
             NotificationType.APPLICATION_UPDATE,
             "Application",
             application.Id,
             ct);
 
-        // Send status update email
+        // Capture data safely for asynchronous background email dispatch
+        var candidateEmail = application.Candidate.Email;
+        var candidateName = $"{application.Candidate.FirstName} {application.Candidate.LastName}".Trim();
+        var jobTitle = application.Job.Title;
+        var companyName = application.Job.Company?.Name ?? "HireWise";
+        var companyWebsite = application.Job.Company?.Website;
+        var companyLocation = application.Job.Company?.Location ?? application.Job.Location;
+
         _ = Task.Run(async () =>
         {
             try
             {
-                await _emailService.SendApplicationStatusUpdateEmailAsync(
-                    application.Candidate.Email,
-                    $"{application.Candidate.FirstName} {application.Candidate.LastName}",
-                    application.Job.Title,
-                    newStatus.ToString(),
-                    CancellationToken.None);
+                if (newStatus == ApplicationStatus.SELECTED || newStatus == ApplicationStatus.REJECTED)
+                {
+                    var resolvedRecruiterName = !string.IsNullOrWhiteSpace(recruiterName)
+                        ? recruiterName
+                        : $"{companyName} Recruitment Team";
+
+                    await _emailService.SendFinalHiringDecisionEmailAsync(
+                        candidateEmail,
+                        candidateName,
+                        jobTitle,
+                        companyName,
+                        companyWebsite,
+                        companyLocation,
+                        resolvedRecruiterName,
+                        recruiterEmail,
+                        newStatus,
+                        notes,
+                        CancellationToken.None);
+                }
+                else
+                {
+                    await _emailService.SendApplicationStatusUpdateEmailAsync(
+                        candidateEmail,
+                        candidateName,
+                        jobTitle,
+                        newStatus.ToString(),
+                        CancellationToken.None);
+                }
             }
             catch (Exception ex)
             {
@@ -519,7 +572,7 @@ public class ApplicationService : IApplicationService
                 400);
         }
 
-        var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct);
+        var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.INTERVIEW_APPROVED, recruiterCompanyId, ct: ct);
         if (!updateResult.IsSuccess)
         {
             return updateResult;
@@ -645,10 +698,23 @@ public class ApplicationService : IApplicationService
     }
 
     // Mark application as rejected and notify candidate and AI orchestration workflow
-    public async Task<Result<ApplicationDto>> RejectApplicationAsync(Guid id, Guid recruiterCompanyId, CancellationToken ct = default)
+    public async Task<Result<ApplicationDto>> RejectApplicationAsync(
+        Guid id,
+        Guid recruiterCompanyId,
+        string? recruiterName = null,
+        string? recruiterEmail = null,
+        string? notes = null,
+        CancellationToken ct = default)
     {
         var application = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
-        var updateResult = await UpdateApplicationStatusAsync(id, ApplicationStatus.REJECTED, recruiterCompanyId, ct);
+        var updateResult = await UpdateApplicationStatusAsync(
+            id,
+            ApplicationStatus.REJECTED,
+            recruiterCompanyId,
+            recruiterName,
+            recruiterEmail,
+            notes,
+            ct);
         if (!updateResult.IsSuccess)
         {
             return updateResult;

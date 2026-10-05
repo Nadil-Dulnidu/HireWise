@@ -33,6 +33,17 @@ public class NotificationHub : Hub
     }
 
     /// <summary>
+    /// Explicitly join user group by Clerk User ID
+    /// </summary>
+    public async Task JoinUserGroup(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) return;
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
+        _logger.LogInformation("Connection {ConnectionId} explicitly joined user group: user_{UserId}", Context.ConnectionId, userId);
+    }
+
+    /// <summary>
     /// Allows recruiters/interviewers to subscribe to company-level real-time alerts.
     /// </summary>
     public async Task JoinCompanyGroup(string companyId)

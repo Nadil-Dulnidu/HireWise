@@ -646,6 +646,31 @@ export function RecruiterApplicationDetailPage() {
               </button>
             )}
 
+            {(application.status === "INTERVIEW_COMPLETED" ||
+              application.status === "EVALUATION_PENDING" ||
+              application.status === "INTERVIEW_SCHEDULED") && (
+              <button
+                type="button"
+                onClick={() => updateStatusMutation.mutate("SELECTED")}
+                disabled={updateStatusMutation.isPending}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2.5 text-xs font-bold text-white transition shadow-sm cursor-pointer"
+              >
+                {updateStatusMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                Make Offer / Select
+              </button>
+            )}
+
+            {application.status === "SELECTED" && (
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2.5 text-xs font-bold">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Offer Extended
+              </span>
+            )}
+
             {application.status !== "REJECTED" && (
               <button
                 type="button"

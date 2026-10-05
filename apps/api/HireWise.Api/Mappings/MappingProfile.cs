@@ -94,7 +94,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.InterviewerEmail, opt => opt.MapFrom(src => src.Interviewer != null ? src.Interviewer.Email : string.Empty))
             .ForMember(dest => dest.HasFeedback, opt => opt.MapFrom(src => src.Feedback != null))
             .ForMember(dest => dest.OverallRating, opt => opt.MapFrom(src => src.Feedback != null ? (decimal?)src.Feedback.OverallRating : null))
-            .ForMember(dest => dest.Recommendation, opt => opt.MapFrom(src => src.Feedback != null ? (Models.Enums.RecommendationType?)src.Feedback.Recommendation : null));
+            .ForMember(dest => dest.Recommendation, opt => opt.MapFrom(src => src.Feedback != null ? (Models.Enums.RecommendationType?)src.Feedback.Recommendation : null))
+            .ForMember(dest => dest.ApplicationStatus, opt => opt.MapFrom(src => src.Application != null ? (Models.Enums.ApplicationStatus?)src.Application.Status : null));
 
         CreateMap<Interview, DTOs.Interviews.InterviewDetailDto>()
             .IncludeBase<Interview, DTOs.Interviews.InterviewDto>()

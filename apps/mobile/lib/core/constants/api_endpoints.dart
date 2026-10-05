@@ -25,6 +25,12 @@ class ApiEndpoints {
   static const String myInterviews = '/api/interviews/me';
   static String interviewById(String id) => '/api/interviews/$id';
 
+  // Availability
+  static const String myAvailability = '/api/availability/me';
+  static const String availability = '/api/availability';
+  static const String availabilityBulk = '/api/availability/bulk';
+  static String availabilityById(String id) => '/api/availability/$id';
+
   // Notifications
   static const String notifications = '/api/notifications';
   static const String unreadNotificationsCount =

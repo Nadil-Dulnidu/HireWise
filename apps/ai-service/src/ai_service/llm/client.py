@@ -24,7 +24,10 @@ def is_vertex_configured() -> bool:
     """Checks if Google Cloud Vertex AI infrastructure / ADC / Service Account is configured."""
     if settings.USE_VERTEX_AI:
         return True
-    if settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT:
+    if settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT or settings.GCP_PROJECT_ID:
+        return True
+    # Auto-detect Cloud Run / Google Cloud container runtime
+    if os.environ.get("K_SERVICE") or os.environ.get("K_REVISION") or os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCP_PROJECT_ID"):
         return True
     if settings.GOOGLE_APPLICATION_CREDENTIALS_JSON or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
         return True
@@ -74,8 +77,21 @@ def get_llm(
             import google.auth
             import json
 
-            project = settings.VERTEX_PROJECT_ID or settings.GOOGLE_CLOUD_PROJECT or os.environ.get("GOOGLE_CLOUD_PROJECT")
-            location = settings.VERTEX_LOCATION or "us-central1"
+            project = (
+                settings.VERTEX_PROJECT_ID
+                or settings.GOOGLE_CLOUD_PROJECT
+                or settings.GCP_PROJECT_ID
+                or os.environ.get("GCP_PROJECT_ID")
+                or os.environ.get("GOOGLE_CLOUD_PROJECT")
+                or os.environ.get("GCP_PROJECT")
+                or "hirewise-509609"
+            )
+            location = (
+                settings.VERTEX_LOCATION
+                or settings.GCP_REGION
+                or os.environ.get("GCP_REGION")
+                or "us-central1"
+            )
             raw_json = settings.GOOGLE_APPLICATION_CREDENTIALS_JSON or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
             cred_file = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 

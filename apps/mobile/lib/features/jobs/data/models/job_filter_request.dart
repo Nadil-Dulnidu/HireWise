@@ -48,6 +48,7 @@ class JobFilterRequest {
     final params = <String, dynamic>{
       'page': page,
       'pageSize': pageSize,
+      'publicOnly': true,
     };
 
     if (search != null && search!.trim().isNotEmpty) {
