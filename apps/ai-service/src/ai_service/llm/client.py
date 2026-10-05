@@ -175,9 +175,9 @@ class MockStructuredLLM:
 
         if self.schema_cls == JobAnalysis:
             # Extract job title if present in prompt
-            title_match = re.search(r"Job Title:\s*(.+)", msg_str, re.IGNORECASE)
+            title_match = re.search(r"(?:\*\*)?Job Title:?(?:\*\*)?\s*(.+)", msg_str, re.IGNORECASE)
             job_title = (
-                title_match.group(1).strip() if title_match else "Software Engineer"
+                title_match.group(1).strip().strip("*").strip() if title_match else "Software Engineer"
             )
 
             tech_keywords = [
@@ -283,28 +283,31 @@ class MockStructuredLLM:
 
         if self.schema_cls == CandidateEvaluation:
             # Perform dynamic assessment based on prompt text
-            req_match = re.search(r"Required Skills:\s*(.+)", msg_str, re.IGNORECASE)
+            req_match = re.search(
+                r"(?:Mandatory|Required)\s*Skills:\s*(.+)", msg_str, re.IGNORECASE
+            )
             cand_skills_match = re.search(
-                r"Extracted Skills:\s*(.+)", msg_str, re.IGNORECASE
+                r"(?:ATS-)?Extracted\s*Skills:\s*(.+)", msg_str, re.IGNORECASE
             )
             req_exp_match = re.search(
-                r"Min Experience:\s*(\d+)", msg_str, re.IGNORECASE
+                r"Min(?:imum)?\s*Experience:\s*(\d+)", msg_str, re.IGNORECASE
             )
             cand_exp_match = re.search(
                 r"Years of Experience:\s*([\d\.]+)", msg_str, re.IGNORECASE
             )
 
+            raw_req = req_match.group(1).strip() if req_match else ""
+            raw_cand = cand_skills_match.group(1).strip() if cand_skills_match else ""
+
             req_skills = [
-                s.strip().lower()
-                for s in (req_match.group(1).split(",") if req_match else [])
-                if s.strip()
+                s.strip("[]'\" \r\n").lower()
+                for s in raw_req.split(",")
+                if s.strip("[]'\" \r\n")
             ]
             cand_skills = [
-                s.strip().lower()
-                for s in (
-                    cand_skills_match.group(1).split(",") if cand_skills_match else []
-                )
-                if s.strip()
+                s.strip("[]'\" \r\n").lower()
+                for s in raw_cand.split(",")
+                if s.strip("[]'\" \r\n")
             ]
             min_exp = float(req_exp_match.group(1)) if req_exp_match else 3.0
             cand_exp = float(cand_exp_match.group(1)) if cand_exp_match else 3.0

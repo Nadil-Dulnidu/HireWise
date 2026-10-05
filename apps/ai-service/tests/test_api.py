@@ -39,6 +39,11 @@ async def test_workflows_evaluate_success():
             new_callable=AsyncMock,
         ) as mock_create_step,
         patch(
+            "ai_service.db.repository.WorkflowRepository.get_availability_slots_for_application",
+            new_callable=AsyncMock,
+            return_value=(None, None, [], []),
+        ),
+        patch(
             "ai_service.services.workflow_service.WorkflowService._run_workflow_graph",
             new_callable=AsyncMock,
         ) as mock_run_graph,
@@ -104,6 +109,11 @@ async def test_workflows_approve_evaluation_endpoint():
         patch(
             "ai_service.db.repository.WorkflowRepository.update_step",
             new_callable=AsyncMock,
+        ),
+        patch(
+            "ai_service.db.repository.WorkflowRepository.get_availability_slots_for_application",
+            new_callable=AsyncMock,
+            return_value=(None, None, [], []),
         ),
         patch(
             "ai_service.services.workflow_service.WorkflowService._run_workflow_graph",

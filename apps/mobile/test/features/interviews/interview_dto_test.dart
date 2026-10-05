@@ -5,6 +5,7 @@ import 'package:hirewise_mobile/shared/models/enums.dart';
 void main() {
   group('Interview Models Tests', () {
     test('InterviewDto parses valid JSON', () {
+      final futureDate = DateTime.now().add(const Duration(days: 7));
       final json = {
         'id': 'int-1',
         'applicationId': 'app-1',
@@ -18,8 +19,9 @@ void main() {
         'interviewerId': 'user-interviewer-1',
         'interviewerName': 'Sarah Connor',
         'interviewerEmail': 'sarah@hirewise.com',
-        'scheduledStartTime': '2026-10-01T14:00:00Z',
-        'scheduledEndTime': '2026-10-01T15:00:00Z',
+        'scheduledStartTime': futureDate.toIso8601String(),
+        'scheduledEndTime':
+            futureDate.add(const Duration(hours: 1)).toIso8601String(),
         'meetingLink': 'https://meet.google.com/abc-def-ghi',
         'status': 'SCHEDULED',
         'notes': 'Technical architecture round.',

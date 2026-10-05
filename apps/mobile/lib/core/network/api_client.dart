@@ -8,8 +8,7 @@ import 'error_interceptor.dart';
 
 final tokenGetterProvider = StateProvider<TokenGetter?>((ref) => null);
 
-final apiBaseUrlProvider =
-    StateProvider<String>((ref) => EnvConfig.apiBaseUrl);
+final apiBaseUrlProvider = StateProvider<String>((ref) => EnvConfig.apiBaseUrl);
 
 final dioProvider = Provider<Dio>((ref) {
   final tokenGetter = ref.watch(tokenGetterProvider);
