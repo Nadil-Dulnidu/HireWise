@@ -30,7 +30,7 @@ output "db_password" {
 }
 
 output "database_url" {
-  description = "Full asyncpg connection string"
-  value       = "postgresql+asyncpg://${google_sql_user.user.name}:${random_password.db_password.result}@${google_sql_database_instance.postgres.private_ip_address}:5432/${google_sql_database.database.name}"
+  description = "Standard PostgreSQL connection string"
+  value       = "postgresql://${google_sql_user.user.name}:${random_password.db_password.result}@${google_sql_database_instance.postgres.private_ip_address}:5432/${google_sql_database.database.name}"
   sensitive   = true
 }

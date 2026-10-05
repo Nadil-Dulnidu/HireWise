@@ -42,12 +42,30 @@ Serilog.Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // 2. Database Context
-var rawConnectionString = builder.Configuration["DATABASE_URL"]
-    ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? builder.Configuration["ConnectionStrings__DefaultConnection"]
+var candidateConnectionStrings = new[]
+{
+    builder.Configuration["DATABASE_URL"],
+    builder.Configuration["ConnectionStrings__DefaultConnection"],
+    builder.Configuration.GetConnectionString("DefaultConnection"),
+    Environment.GetEnvironmentVariable("DATABASE_URL"),
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+};
+
+var rawConnectionString = candidateConnectionStrings.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s))
     ?? "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
 
 var connectionString = ParseConnectionString(rawConnectionString);
+
+try
+{
+    var csb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+    Serilog.Log.Information("Configured database target: Host={Host};Port={Port};Database={Database};Username={Username};SslMode={SslMode}",
+        csb.Host, csb.Port, csb.Database, csb.Username, csb.SslMode);
+}
+catch
+{
+    // Ignore logging errors if builder cannot inspect
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -346,43 +364,168 @@ app.Logger.LogInformation("HireWise API started and listening on: {BindUrl}", bi
 app.Run();
 
 // Helper method to parse PostgreSQL URIs or standard ADO.NET connection strings
-static string ParseConnectionString(string connectionStringOrUrl)
+static string ParseConnectionString(string? connectionStringOrUrl)
 {
     if (string.IsNullOrWhiteSpace(connectionStringOrUrl))
-        return connectionStringOrUrl;
-
-    if (connectionStringOrUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
-        connectionStringOrUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
     {
+        return "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
+    }
+
+    // 1. Strip surrounding quotes and whitespace
+    var conn = connectionStringOrUrl.Trim();
+    while ((conn.StartsWith("\"") && conn.EndsWith("\"")) ||
+           (conn.StartsWith("'") && conn.EndsWith("'")))
+    {
+        if (conn.Length <= 2)
+            return "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
+        conn = conn.Substring(1, conn.Length - 2).Trim();
+    }
+
+    conn = conn.Trim('"', '\'').Trim();
+
+    if (string.IsNullOrWhiteSpace(conn))
+    {
+        return "Host=localhost;Database=hirewise_db;Username=postgres;Password=postgres";
+    }
+
+    // 2. Check if it contains a URI scheme (e.g. postgres://, postgresql://, postgresql+asyncpg://, etc.)
+    var schemeIdx = conn.IndexOf("://", StringComparison.Ordinal);
+    if (schemeIdx == -1)
+    {
+        // ADO.NET key-value format (e.g., Host=localhost;Port=5432;Database=...)
         try
         {
-            var uri = new Uri(connectionStringOrUrl);
-            var userInfo = uri.UserInfo.Split(':');
-            var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
-            var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
-            var database = uri.AbsolutePath.TrimStart('/');
-            var port = uri.Port > 0 ? uri.Port : 5432;
-            var host = uri.Host;
-
-            var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
-            {
-                Host = host,
-                Port = port,
-                Database = database,
-                Username = username,
-                Password = password
-            };
-
-            return npgsqlBuilder.ConnectionString;
+            var testBuilder = new Npgsql.NpgsqlConnectionStringBuilder(conn);
+            return testBuilder.ConnectionString;
         }
-        catch
+        catch (Exception ex)
         {
-            return connectionStringOrUrl;
+            Serilog.Log.Warning(ex, "Direct ADO.NET parsing encountered an issue; returning raw trimmed connection string.");
+            return conn;
         }
     }
 
-    return connectionStringOrUrl;
+    // 3. Parse URI format robustly
+    try
+    {
+        var afterScheme = conn.Substring(schemeIdx + 3);
+
+        // Separate query string if present (?sslmode=require&...)
+        string queryString = string.Empty;
+        var queryIdx = afterScheme.IndexOf('?');
+        if (queryIdx != -1)
+        {
+            queryString = afterScheme.Substring(queryIdx + 1);
+            afterScheme = afterScheme.Substring(0, queryIdx);
+        }
+
+        // Separate user credentials from host/path
+        string userInfo = string.Empty;
+        string hostAndPath = afterScheme;
+
+        var slashIdx = afterScheme.IndexOf('/');
+        var atIdx = slashIdx != -1 ? afterScheme.LastIndexOf('@', slashIdx) : afterScheme.LastIndexOf('@');
+
+        if (atIdx != -1)
+        {
+            userInfo = afterScheme.Substring(0, atIdx);
+            hostAndPath = afterScheme.Substring(atIdx + 1);
+        }
+
+        string username = "postgres";
+        string password = string.Empty;
+
+        if (!string.IsNullOrEmpty(userInfo))
+        {
+            var colonIdx = userInfo.IndexOf(':');
+            if (colonIdx != -1)
+            {
+                username = Uri.UnescapeDataString(userInfo.Substring(0, colonIdx));
+                password = Uri.UnescapeDataString(userInfo.Substring(colonIdx + 1));
+            }
+            else
+            {
+                username = Uri.UnescapeDataString(userInfo);
+            }
+        }
+
+        string host = "localhost";
+        int port = 5432;
+        string database = "hirewise_db";
+
+        slashIdx = hostAndPath.IndexOf('/');
+        string hostAndPort = slashIdx != -1 ? hostAndPath.Substring(0, slashIdx) : hostAndPath;
+        if (slashIdx != -1 && slashIdx + 1 < hostAndPath.Length)
+        {
+            database = hostAndPath.Substring(slashIdx + 1).Trim('/');
+        }
+
+        var portColonIdx = hostAndPort.LastIndexOf(':');
+        if (portColonIdx != -1 && int.TryParse(hostAndPort.Substring(portColonIdx + 1), out var parsedPort))
+        {
+            port = parsedPort;
+            host = hostAndPort.Substring(0, portColonIdx);
+        }
+        else if (!string.IsNullOrWhiteSpace(hostAndPort))
+        {
+            host = hostAndPort;
+        }
+
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = host,
+            Port = port,
+            Database = string.IsNullOrWhiteSpace(database) ? "hirewise_db" : database,
+            Username = username,
+            Password = password
+        };
+
+        // Parse query string options (SSL mode, pooling, etc.)
+        if (!string.IsNullOrWhiteSpace(queryString))
+        {
+            var queryParams = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var param in queryParams)
+            {
+                var kv = param.Split('=', 2);
+                var key = Uri.UnescapeDataString(kv[0]).Trim();
+                var val = kv.Length > 1 ? Uri.UnescapeDataString(kv[1]).Trim() : string.Empty;
+
+                if (string.Equals(key, "sslmode", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.Equals(val, "require", StringComparison.OrdinalIgnoreCase))
+                        builder.SslMode = Npgsql.SslMode.Require;
+                    else if (string.Equals(val, "disable", StringComparison.OrdinalIgnoreCase))
+                        builder.SslMode = Npgsql.SslMode.Disable;
+                    else if (string.Equals(val, "prefer", StringComparison.OrdinalIgnoreCase))
+                        builder.SslMode = Npgsql.SslMode.Prefer;
+                    else if (string.Equals(val, "verify-full", StringComparison.OrdinalIgnoreCase))
+                        builder.SslMode = Npgsql.SslMode.VerifyFull;
+                    else if (string.Equals(val, "verify-ca", StringComparison.OrdinalIgnoreCase))
+                        builder.SslMode = Npgsql.SslMode.VerifyCA;
+                }
+                else if (string.Equals(key, "trust_server_certificate", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(key, "trustservercertificate", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Parameter handled for compatibility
+                }
+            }
+        }
+
+        return builder.ConnectionString;
+    }
+    catch (Exception ex)
+    {
+        Serilog.Log.Error(ex, "Failed to parse database connection string URI: {Raw}", RedactPassword(conn));
+        return conn;
+    }
 }
+
+static string RedactPassword(string input)
+{
+    if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+    return System.Text.RegularExpressions.Regex.Replace(input, @":([^@/:\?]+)@", ":****@");
+}
+
 
 public class ClerkJwksResolver
 {
