@@ -326,18 +326,9 @@ class HomeScreen extends ConsumerWidget {
                           return NotificationTile(
                             notification: notif,
                             onTap: () {
-                              final refType =
-                                  notif.referenceType?.toLowerCase();
-                              final refId = notif.referenceId;
-                              if (refId != null && refId.isNotEmpty) {
-                                if (refType == 'application') {
-                                  context.push('/applications/$refId');
-                                } else if (refType == 'interview') {
-                                  context.push('/interviews/$refId');
-                                }
-                              } else {
-                                context.push('/notifications');
-                              }
+                              ref
+                                  .read(notificationsProvider.notifier)
+                                  .markAsRead(notif.id);
                             },
                           );
                         }).toList(),

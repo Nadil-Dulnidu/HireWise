@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSignalR } from "./useSignalR";
 import type { SignalRNotificationPayload } from "./useSignalR";
-import { useCurrentUser } from "./useCurrentUser";
+import {
+  formatFriendlyTitle,
+  formatFriendlyMessage,
+} from "@/components/common/NotificationDropdown";
 
 export interface ToastItem {
   id: string;
   title: string;
   message: string;
   type: "success" | "info" | "warning" | "error" | "ai";
-  link?: string;
   timestamp: number;
   duration?: number;
 }
@@ -27,10 +29,9 @@ export function addToast(
 ) {
   const newToast: ToastItem = {
     id: toast.id || crypto.randomUUID(),
-    title: toast.title,
-    message: toast.message,
+    title: formatFriendlyTitle(toast.title),
+    message: formatFriendlyMessage(toast.message),
     type: toast.type,
-    link: toast.link,
     timestamp: Date.now(),
     duration: toast.duration ?? 5000,
   };
@@ -55,7 +56,6 @@ export function removeToast(id: string) {
 
 export function useToastNotifications() {
   const [activeToasts, setActiveToasts] = useState<ToastItem[]>(toasts);
-  const { role } = useCurrentUser();
   const { subscribe, isConnected } = useSignalR();
 
   useEffect(() => {
@@ -72,10 +72,6 @@ export function useToastNotifications() {
         title: payload.title || "Interview Scheduled",
         message: payload.message,
         type: "success",
-        link:
-          role === "CANDIDATE"
-            ? "/candidate/interviews"
-            : "/recruiter/interviews",
         duration: 6000,
       });
     };
@@ -85,10 +81,6 @@ export function useToastNotifications() {
         title: payload.title || "Application Update",
         message: payload.message,
         type: "info",
-        link:
-          role === "CANDIDATE"
-            ? "/candidate/applications"
-            : "/recruiter/applications",
         duration: 6000,
       });
     };
@@ -97,22 +89,18 @@ export function useToastNotifications() {
       payload: SignalRNotificationPayload,
     ) => {
       addToast({
-        title: payload.title || "AI Evaluation Ready ⚡",
+        title: payload.title || "Evaluation Ready",
         message: payload.message,
         type: "ai",
-        link: payload.referenceId
-          ? `/recruiter/applications/${payload.referenceId}`
-          : "/recruiter/applications",
         duration: 8000,
       });
     };
 
     const handleApprovalRequired = (payload: SignalRNotificationPayload) => {
       addToast({
-        title: payload.title || "Action Required ⚠️",
+        title: payload.title || "Review Required",
         message: payload.message,
         type: "warning",
-        link: "/recruiter/applications",
         duration: 8000,
       });
     };
@@ -122,7 +110,6 @@ export function useToastNotifications() {
         title: payload.title || "Interview Feedback Submitted",
         message: payload.message,
         type: "info",
-        link: "/recruiter/interviews",
         duration: 6000,
       });
     };
@@ -149,7 +136,7 @@ export function useToastNotifications() {
       unsubApproval();
       unsubFeedback();
     };
-  }, [subscribe, role]);
+  }, [subscribe]);
 
   const dismiss = useCallback((id: string) => {
     removeToast(id);

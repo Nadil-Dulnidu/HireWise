@@ -73,8 +73,8 @@ public class AiCallbackController : ControllerBase
             // Notify candidate
             await _notificationService.CreateNotificationAsync(
                 application.CandidateId,
-                "Application AI Review Complete",
-                $"Your application for '{application.Job.Title}' has completed preliminary evaluation and is now under recruiter review.",
+                "Application Under Review",
+                $"Your application for '{application.Job.Title}' has progressed and is now being reviewed by the hiring team.",
                 NotificationType.AI_EVALUATION_COMPLETE,
                 "Application",
                 application.Id,
@@ -85,8 +85,8 @@ public class AiCallbackController : ControllerBase
             {
                 await _notificationService.CreateNotificationAsync(
                     application.Job.CreatedByUserId,
-                    "AI Evaluation Ready For Review",
-                    $"AI analysis completed for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}). Recommendation is awaiting your review.",
+                    "Candidate Ready for Review",
+                    $"The profile evaluation for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}) is ready for your review.",
                     NotificationType.APPROVAL_REQUIRED,
                     "Application",
                     application.Id,
@@ -105,8 +105,8 @@ public class AiCallbackController : ControllerBase
             {
                 await _notificationService.CreateNotificationAsync(
                     application.Job.CreatedByUserId,
-                    "Interview Slot Ready for Confirmation",
-                    $"AI has recommended interview slots for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}). Please confirm a time slot.",
+                    "Interview Slots Ready",
+                    $"Suggested interview time slots are ready for {application.Candidate.FirstName} {application.Candidate.LastName} ({application.Job.Title}). Please select your preferred time slot.",
                     NotificationType.APPROVAL_REQUIRED,
                     "Application",
                     application.Id,

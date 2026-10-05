@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -16,6 +15,53 @@ import type { AppNotification } from "@/lib/api/notifications-api";
 import { useSignalR } from "@/hooks/useSignalR";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
+export function formatFriendlyTitle(title: string): string {
+  if (!title) return "";
+  return title
+    .replace(/\bAI_EVALUATION_COMPLETE\b/g, "Evaluation Complete")
+    .replace(/\bAPPLICATION_UPDATE\b/g, "Application Update")
+    .replace(/\bINTERVIEW_SCHEDULED\b/g, "Interview Scheduled")
+    .replace(/\bAPPROVAL_REQUIRED\b/g, "Review Required")
+    .replace(/\bFEEDBACK_SUBMITTED\b/g, "Feedback Submitted")
+    .replace(/AI Evaluation Ready For Review/gi, "Candidate Ready for Review")
+    .replace(/Application AI Review Complete/gi, "Application Under Review")
+    .replace(/AI Evaluation Ready ⚡/gi, "Evaluation Ready")
+    .replace(/Action Required ⚠️/gi, "Review Required")
+    .trim();
+}
+
+export function formatFriendlyMessage(message: string): string {
+  if (!message) return "";
+  return message
+    .replace(/status changed to: AI RECOMMENDED/gi, "status updated to: Advanced to next review stage")
+    .replace(/status changed to: AI REVIEW/gi, "status updated to: Under review")
+    .replace(/status changed to: RECRUITER REVIEW/gi, "status updated to: Under recruiter review")
+    .replace(/status changed to: INTERVIEW APPROVED/gi, "status updated to: Shortlisted for interview")
+    .replace(/status changed to: INTERVIEW SCHEDULED/gi, "status updated to: Interview scheduled")
+    .replace(/status changed to: INTERVIEW COMPLETED/gi, "status updated to: Interview completed")
+    .replace(/status changed to: EVALUATION PENDING/gi, "status updated to: Evaluation in progress")
+    .replace(/status changed to: SELECTED/gi, "status updated to: Selected")
+    .replace(/status changed to: REJECTED/gi, "status updated to: Not selected")
+    .replace(/\bAI_RECOMMENDED\b/g, "Under Review")
+    .replace(/\bAI_REVIEW\b/g, "Under Review")
+    .replace(/\bINTERVIEW_APPROVED\b/g, "Shortlisted")
+    .replace(/\bINTERVIEW_SCHEDULED\b/g, "Scheduled")
+    .replace(/\bINTERVIEW_COMPLETED\b/g, "Completed")
+    .replace(/\bEVALUATION_PENDING\b/g, "Evaluation Pending")
+    .replace(/\bSTRONG_HIRE\b/g, "Strongly Recommended")
+    .replace(/\bSTRONG HIRE\b/g, "Strongly Recommended")
+    .replace(/\bNO_HIRE\b/g, "Not Recommended")
+    .replace(/\bNO HIRE\b/g, "Not Recommended")
+    .replace(/\bSTRONG_NO_HIRE\b/g, "Not Recommended")
+    .replace(/\bSTRONG NO HIRE\b/g, "Not Recommended")
+    .replace(/is queued for AI review/gi, "is under review")
+    .replace(/completed preliminary evaluation and is now under recruiter review/gi, "is currently under review by the hiring team")
+    .replace(/AI analysis completed for/gi, "Candidate review ready for")
+    .replace(/Recommendation is awaiting your review/gi, "Candidate is awaiting your review")
+    .replace(/AI has recommended interview slots for/gi, "Suggested interview time slots are ready for")
+    .trim();
+}
+
 interface NotificationDropdownProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,9 +72,8 @@ export function NotificationDropdown({
   onClose,
 }: NotificationDropdownProps) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { role, isSignedIn } = useCurrentUser();
+  const { isSignedIn } = useCurrentUser();
   const { subscribe } = useSignalR();
 
   // Query notifications list
@@ -128,53 +173,9 @@ export function NotificationDropdown({
 
   if (!isOpen) return null;
 
-  const handleNotificationClick = async (notification: AppNotification) => {
+  const handleNotificationClick = (notification: AppNotification) => {
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification.id);
-    }
-
-    onClose();
-
-    // Determine target route based on notification type and user role
-    if (notification.type === "AI_EVALUATION_COMPLETE") {
-      if (notification.referenceId) {
-        navigate(`/recruiter/applications/${notification.referenceId}`);
-      } else {
-        navigate("/recruiter/applications");
-      }
-    } else if (notification.type === "INTERVIEW_SCHEDULED") {
-      if (notification.referenceId) {
-        navigate(
-          role === "CANDIDATE"
-            ? `/candidate/interviews/${notification.referenceId}`
-            : `/recruiter/interviews/${notification.referenceId}`,
-        );
-      } else {
-        navigate(
-          role === "CANDIDATE"
-            ? "/candidate/interviews"
-            : "/recruiter/interviews",
-        );
-      }
-    } else if (
-      notification.type === "APPLICATION_UPDATE" ||
-      notification.type === "APPROVAL_REQUIRED"
-    ) {
-      if (notification.referenceId) {
-        navigate(
-          role === "CANDIDATE"
-            ? `/candidate/applications/${notification.referenceId}`
-            : `/recruiter/applications/${notification.referenceId}`,
-        );
-      } else {
-        navigate(
-          role === "CANDIDATE"
-            ? "/candidate/applications"
-            : "/recruiter/applications",
-        );
-      }
-    } else if (notification.type === "FEEDBACK_SUBMITTED") {
-      navigate("/recruiter/interviews");
     }
   };
 
@@ -262,6 +263,8 @@ function NotificationItem({
   onClick: () => void;
 }) {
   const { title, message, type, isRead, createdAt } = notification;
+  const friendlyTitle = formatFriendlyTitle(title);
+  const friendlyMessage = formatFriendlyMessage(message);
 
   const config = {
     APPLICATION_UPDATE: {
@@ -325,12 +328,12 @@ function NotificationItem({
           <h4
             className={`text-xs font-semibold truncate ${!isRead ? "text-slate-900 font-bold" : "text-slate-700"}`}
           >
-            {title}
+            {friendlyTitle}
           </h4>
           <span className="text-[10px] text-slate-400 shrink-0">{timeAgo}</span>
         </div>
         <p className="text-xs text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
-          {message}
+          {friendlyMessage}
         </p>
       </div>
 

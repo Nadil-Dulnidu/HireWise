@@ -114,11 +114,19 @@ public class InterviewFeedbackService : IInterviewFeedbackService
         // Send notification to Recruiter
         if (interview.Job.CreatedByUserId != Guid.Empty)
         {
-            var recName = feedback.Recommendation.ToString().Replace('_', ' ');
+            var recLabel = feedback.Recommendation switch
+            {
+                RecommendationType.STRONG_HIRE => "Strongly Recommended",
+                RecommendationType.HIRE => "Recommended",
+                RecommendationType.NO_HIRE => "Not Recommended",
+                RecommendationType.STRONG_NO_HIRE => "Not Recommended",
+                _ => "Reviewed"
+            };
+
             await _notificationService.CreateNotificationAsync(
                 interview.Job.CreatedByUserId,
                 "Interview Feedback Submitted",
-                $"{interview.Interviewer.FirstName} submitted feedback for {interview.Candidate.FirstName} {interview.Candidate.LastName} ({interview.Job.Title}). Recommendation: {recName} ({overallRating}/5).",
+                $"{interview.Interviewer.FirstName} submitted feedback for {interview.Candidate.FirstName} {interview.Candidate.LastName} ({interview.Job.Title}): {recLabel} ({overallRating}/5 rating).",
                 NotificationType.FEEDBACK_SUBMITTED,
                 "Interview",
                 interview.Id,
@@ -128,8 +136,8 @@ public class InterviewFeedbackService : IInterviewFeedbackService
         // Send notification to Candidate
         await _notificationService.CreateNotificationAsync(
             interview.CandidateId,
-            "Evaluation Under Review",
-            $"Your interview feedback for '{interview.Job.Title}' has been recorded and is under final recruiter review.",
+            "Interview Feedback Received",
+            $"Your interview for '{interview.Job.Title}' has concluded and the hiring team is reviewing feedback.",
             NotificationType.APPLICATION_UPDATE,
             "Application",
             interview.ApplicationId,

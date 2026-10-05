@@ -48,6 +48,48 @@ class NotificationTile extends StatelessWidget {
     }
   }
 
+  String _friendlyTitle(String title) {
+    return title
+        .replaceAll('AI_EVALUATION_COMPLETE', 'Evaluation Complete')
+        .replaceAll('APPLICATION_UPDATE', 'Application Update')
+        .replaceAll('INTERVIEW_SCHEDULED', 'Interview Scheduled')
+        .replaceAll('APPROVAL_REQUIRED', 'Review Required')
+        .replaceAll('FEEDBACK_SUBMITTED', 'Feedback Submitted')
+        .replaceAll('AI Evaluation Ready For Review', 'Candidate Ready for Review')
+        .replaceAll('Application AI Review Complete', 'Application Under Review')
+        .replaceAll('AI Evaluation Ready ⚡', 'Evaluation Ready')
+        .replaceAll('Action Required ⚠️', 'Review Required')
+        .trim();
+  }
+
+  String _friendlyMessage(String message) {
+    return message
+        .replaceAll(RegExp(r'status changed to:\s*AI RECOMMENDED', caseSensitive: false), 'status updated to: Advanced to next stage')
+        .replaceAll(RegExp(r'status changed to:\s*AI REVIEW', caseSensitive: false), 'status updated to: Under review')
+        .replaceAll(RegExp(r'status changed to:\s*RECRUITER REVIEW', caseSensitive: false), 'status updated to: Under recruiter review')
+        .replaceAll(RegExp(r'status changed to:\s*INTERVIEW APPROVED', caseSensitive: false), 'status updated to: Shortlisted for interview')
+        .replaceAll(RegExp(r'status changed to:\s*INTERVIEW SCHEDULED', caseSensitive: false), 'status updated to: Interview scheduled')
+        .replaceAll(RegExp(r'status changed to:\s*INTERVIEW COMPLETED', caseSensitive: false), 'status updated to: Interview completed')
+        .replaceAll(RegExp(r'status changed to:\s*EVALUATION PENDING', caseSensitive: false), 'status updated to: Evaluation in progress')
+        .replaceAll(RegExp(r'status changed to:\s*SELECTED', caseSensitive: false), 'status updated to: Selected')
+        .replaceAll(RegExp(r'status changed to:\s*REJECTED', caseSensitive: false), 'status updated to: Not selected')
+        .replaceAll('AI_RECOMMENDED', 'Under Review')
+        .replaceAll('AI_REVIEW', 'Under Review')
+        .replaceAll('INTERVIEW_APPROVED', 'Shortlisted')
+        .replaceAll('INTERVIEW_SCHEDULED', 'Scheduled')
+        .replaceAll('STRONG_HIRE', 'Strongly Recommended')
+        .replaceAll('STRONG HIRE', 'Strongly Recommended')
+        .replaceAll('NO_HIRE', 'Not Recommended')
+        .replaceAll('NO HIRE', 'Not Recommended')
+        .replaceAll('STRONG_NO_HIRE', 'Not Recommended')
+        .replaceAll('is queued for AI review', 'is under review')
+        .replaceAll('completed preliminary evaluation and is now under recruiter review', 'is currently under review by the hiring team')
+        .replaceAll('AI analysis completed for', 'Candidate review ready for')
+        .replaceAll('Recommendation is awaiting your review', 'Candidate is awaiting your review')
+        .replaceAll('AI has recommended interview slots for', 'Suggested interview time slots are ready for')
+        .trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final iconColor = _getColorForType(notification.type);
@@ -89,7 +131,7 @@ class NotificationTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          notification.title,
+                          _friendlyTitle(notification.title),
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight:
@@ -112,7 +154,7 @@ class NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    notification.message,
+                    _friendlyMessage(notification.message),
                     style: TextStyle(
                       fontSize: 13,
                       color: isUnread ? AppColors.slate800 : AppColors.slate600,

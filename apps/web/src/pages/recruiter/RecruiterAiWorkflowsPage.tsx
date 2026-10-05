@@ -5,6 +5,7 @@ import {
   type ApplicationWorkflowResponse,
   type StepResponse,
 } from "@/lib/api/ai-api";
+import { ScheduleInterviewDialog } from "@/components/recruiter/ScheduleInterviewDialog";
 import {
   Bot,
   Cpu,
@@ -18,6 +19,7 @@ import {
   Layers,
   ShieldCheck,
   CalendarCheck,
+  Calendar,
   Code2,
 } from "lucide-react";
 
@@ -25,6 +27,7 @@ export function RecruiterAiWorkflowsPage() {
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   // 1. Fetch AI pipeline applications
   const {
@@ -220,6 +223,21 @@ export function RecruiterAiWorkflowsPage() {
             (() => {
               const wf = appWorkflow.workflow;
               const steps: StepResponse[] = wf.steps || [];
+              const isSchedulingAgentComplete =
+                wf.status === "AWAITING_SCHEDULE_APPROVAL" ||
+                wf.status === "COMPLETED" ||
+                wf.current_step === "SCHEDULE_APPROVAL_GATE" ||
+                wf.current_step === "SCHEDULE_APPROVAL" ||
+                steps.some(
+                  (s) =>
+                    (s.agent_name?.toLowerCase().includes("scheduling") ||
+                     s.step_name?.toUpperCase() === "SCHEDULING") &&
+                    s.status === "COMPLETED",
+                ) ||
+                Boolean(
+                  wf.final_result?.scheduling_recommendation ||
+                  wf.final_result?.schedulingRecommendation,
+                );
 
               return (
                 <div className="space-y-6">
@@ -236,6 +254,24 @@ export function RecruiterAiWorkflowsPage() {
                       </div>
 
                       <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsScheduleModalOpen(true)}
+                          disabled={!isSchedulingAgentComplete}
+                          title={
+                            isSchedulingAgentComplete
+                              ? "Schedule an interview with candidate"
+                              : "Enabled after the Scheduling agent execution is complete"
+                          }
+                          className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold shadow-sm transition ${
+                            isSchedulingAgentComplete
+                              ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                              : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+                          }`}
+                        >
+                          <Calendar className="h-4 w-4" /> Schedule Interview
+                        </button>
+
                         <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-right">
                           <span className="text-[10px] text-slate-500 block font-medium uppercase">
                             Workflow Status
@@ -438,6 +474,21 @@ export function RecruiterAiWorkflowsPage() {
                                       </pre>
                                     </div>
                                   )}
+                                  {(step.agent_name?.toLowerCase().includes("scheduling") || step.step_name?.toUpperCase() === "SCHEDULING") && isCompleted && (
+                                    <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl">
+                                      <div className="text-xs text-slate-700">
+                                        <span className="font-semibold text-slate-900 block">Scheduling Agent Complete</span>
+                                        <span className="text-slate-500 text-[11px]">Recommended interview slots are generated and ready for confirmation.</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => setIsScheduleModalOpen(true)}
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition cursor-pointer shrink-0"
+                                      >
+                                        <Calendar className="h-4 w-4" /> Schedule Interview
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -452,6 +503,22 @@ export function RecruiterAiWorkflowsPage() {
           )}
         </div>
       </div>
+
+      {/* Schedule Interview Modal Dialog */}
+      {appWorkflow && (
+        <ScheduleInterviewDialog
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          applicationId={appWorkflow.applicationId}
+          candidateName={appWorkflow.candidateName}
+          jobTitle={appWorkflow.jobTitle}
+          aiWorkflowId={appWorkflow.workflow?.workflow_id}
+          onSuccess={() => {
+            refetchWorkflow();
+            refetchList();
+          }}
+        />
+      )}
     </div>
   );
 }

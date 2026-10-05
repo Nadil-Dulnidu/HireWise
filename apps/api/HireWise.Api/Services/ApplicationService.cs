@@ -119,7 +119,7 @@ public class ApplicationService : IApplicationService
         await _notificationService.CreateNotificationAsync(
             candidateId,
             "Application Received",
-            $"Your application for '{job.Title}' at {job.Company.Name} has been submitted and is queued for AI review.",
+            $"Your application for '{job.Title}' at {job.Company.Name} has been submitted successfully and is currently under review.",
             NotificationType.APPLICATION_UPDATE,
             "Application",
             application.Id,
@@ -392,10 +392,11 @@ public class ApplicationService : IApplicationService
         _logger.LogInformation("Recruiter updated Application {ApplicationId} status to {Status}", id, newStatus);
 
         // Notify candidate
+        var friendlyStatusMessage = GetFriendlyStatusMessage(application.Job.Title, newStatus);
         await _notificationService.CreateNotificationAsync(
             application.CandidateId,
-            "Application Status Updated",
-            $"Your application for '{application.Job.Title}' status changed to: {newStatus.ToString().Replace('_', ' ')}.",
+            "Application Status Update",
+            friendlyStatusMessage,
             NotificationType.APPLICATION_UPDATE,
             "Application",
             application.Id,
@@ -501,8 +502,8 @@ public class ApplicationService : IApplicationService
             {
                 await _notificationService.CreateNotificationAsync(
                     application.CandidateId,
-                    "Action Required: Add Interview Availability",
-                    $"You are shortlisted for {jobTitle} at {companyName}! Please add your availability slots in your candidate dashboard so our team can schedule your interview.",
+                    "Interview Availability Needed",
+                    $"You have been shortlisted for {jobTitle} at {companyName}! Please share your available times so our team can schedule your interview.",
                     NotificationType.APPLICATION_UPDATE,
                     "Application",
                     application.Id,
@@ -673,5 +674,32 @@ public class ApplicationService : IApplicationService
         }
 
         return updateResult;
+    }
+
+    private static string GetFriendlyStatusMessage(string jobTitle, ApplicationStatus status)
+    {
+        return status switch
+        {
+            ApplicationStatus.APPLIED =>
+                $"Your application for '{jobTitle}' has been received and is waiting for initial review.",
+            ApplicationStatus.AI_REVIEW or ApplicationStatus.RECRUITER_REVIEW =>
+                $"Your application for '{jobTitle}' is currently under review by our hiring team.",
+            ApplicationStatus.AI_RECOMMENDED =>
+                $"Your application for '{jobTitle}' has advanced to the next review stage.",
+            ApplicationStatus.INTERVIEW_APPROVED =>
+                $"Great news! You have been shortlisted for an interview for '{jobTitle}'.",
+            ApplicationStatus.INTERVIEW_SCHEDULED =>
+                $"Your interview for '{jobTitle}' has been scheduled.",
+            ApplicationStatus.INTERVIEW_COMPLETED =>
+                $"Your interview for '{jobTitle}' has concluded. Feedback is being finalized.",
+            ApplicationStatus.EVALUATION_PENDING =>
+                $"Your interview results for '{jobTitle}' are being evaluated.",
+            ApplicationStatus.SELECTED =>
+                $"Congratulations! You have been selected for the position of '{jobTitle}'.",
+            ApplicationStatus.REJECTED =>
+                $"Thank you for your interest in '{jobTitle}'. The hiring team has chosen to proceed with other candidates at this time.",
+            _ =>
+                $"Your application for '{jobTitle}' has been updated."
+        };
     }
 }

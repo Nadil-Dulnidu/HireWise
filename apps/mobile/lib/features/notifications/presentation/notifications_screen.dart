@@ -65,17 +65,6 @@ class NotificationsScreen extends ConsumerWidget {
                     ref
                         .read(notificationsProvider.notifier)
                         .markAsRead(notification.id);
-
-                    final refType = notification.referenceType?.toLowerCase();
-                    final refId = notification.referenceId;
-
-                    if (refId != null && refId.isNotEmpty) {
-                      if (refType == 'application') {
-                        context.push('/applications/$refId');
-                      } else if (refType == 'interview') {
-                        context.push('/interviews/$refId');
-                      }
-                    }
                   },
                 );
               },

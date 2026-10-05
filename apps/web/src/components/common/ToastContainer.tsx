@@ -1,11 +1,9 @@
-import { Link } from "react-router-dom";
 import {
   CheckCircle,
   AlertTriangle,
   Info,
   Bot,
   X,
-  ExternalLink,
 } from "lucide-react";
 import { useToastNotifications } from "@/hooks/useToastNotifications";
 import type { ToastItem } from "@/hooks/useToastNotifications";
@@ -37,7 +35,7 @@ interface ToastCardProps {
 }
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
-  const { id, title, message, type, link } = toast;
+  const { id, title, message, type } = toast;
 
   const config = {
     success: {
@@ -104,19 +102,6 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">
           {message}
         </p>
-
-        {link && (
-          <div className="mt-2.5">
-            <Link
-              to={link}
-              onClick={onDismiss}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              <span>View details</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        )}
       </div>
 
       <button
