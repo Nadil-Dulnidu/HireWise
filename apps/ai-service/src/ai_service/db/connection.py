@@ -23,10 +23,12 @@ def get_connection_uri(raw_url: str) -> str:
     if not raw_url:
         return "postgresql://postgres:postgres@localhost:5432/hirewise_db"
 
+    clean_url = raw_url.strip().strip("\"'").strip()
+
     # If connection string is in key=value format (ADO.NET)
-    if "Host=" in raw_url or "host=" in raw_url:
+    if "Host=" in clean_url or "host=" in clean_url:
         parts = {}
-        for item in raw_url.split(";"):
+        for item in clean_url.split(";"):
             if "=" in item:
                 k, v = item.split("=", 1)
                 parts[k.strip().lower()] = v.strip()
@@ -39,10 +41,17 @@ def get_connection_uri(raw_url: str) -> str:
         pwd = urllib.parse.quote_plus(parts.get("password", "postgres"))
         return f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
 
-    if raw_url.startswith("postgres://"):
-        return "postgresql://" + raw_url[len("postgres://") :]
+    # Handle postgresql+asyncpg://, postgresql+psycopg://, postgres:// etc.
+    if "://" in clean_url:
+        scheme, rest = clean_url.split("://", 1)
+        if scheme.startswith("postgres"):
+            return f"postgresql://{rest}"
 
-    return raw_url
+    if clean_url.startswith("postgres://"):
+        return "postgresql://" + clean_url[len("postgres://") :]
+
+    return clean_url
+
 
 
 async def init_db_pool() -> AsyncConnectionPool:
