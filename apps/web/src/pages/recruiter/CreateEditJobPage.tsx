@@ -19,6 +19,15 @@ import {
   FileCheck2,
 } from "lucide-react";
 
+const getTomorrowDateString = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const year = tomorrow.getFullYear();
+  const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+  const day = String(tomorrow.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export function CreateEditJobPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -29,12 +38,12 @@ export function CreateEditJobPage() {
   const [formData, setFormData] = useState({
     title: "",
     departmentId: "",
-    location: "San Francisco, CA / Remote",
+    location: "Colombo, Sri Lanka / Remote",
     employmentType: "FULL_TIME" as EmploymentType,
     experienceLevel: "MID" as ExperienceLevel,
-    salaryMin: 120000,
-    salaryMax: 160000,
-    salaryCurrency: "USD",
+    salaryMin: 150000,
+    salaryMax: 250000,
+    salaryCurrency: "LKR",
     applicationDeadline: "",
     description: "",
     requirements: "",
@@ -67,7 +76,7 @@ export function CreateEditJobPage() {
         experienceLevel: existingJob.experienceLevel,
         salaryMin: existingJob.salaryMin || 0,
         salaryMax: existingJob.salaryMax || 0,
-        salaryCurrency: existingJob.salaryCurrency || "USD",
+        salaryCurrency: existingJob.salaryCurrency || "LKR",
         applicationDeadline: existingJob.applicationDeadline
           ? existingJob.applicationDeadline.split("T")[0]
           : "",
@@ -135,8 +144,30 @@ export function CreateEditJobPage() {
       return;
     }
 
+    if (formData.applicationDeadline) {
+      const minDeadline = getTomorrowDateString();
+      if (formData.applicationDeadline < minDeadline) {
+        setFormError(
+          `Application deadline must be greater than or equal to tomorrow (${minDeadline}).`,
+        );
+        return;
+      }
+    }
+
+    if (
+      formData.salaryMin &&
+      formData.salaryMax &&
+      Number(formData.salaryMax) < Number(formData.salaryMin)
+    ) {
+      setFormError(
+        "Maximum monthly salary must be greater than or equal to minimum monthly salary.",
+      );
+      return;
+    }
+
     mutation.mutate();
   };
+
 
   if (isEditing && isLoadingJob) {
     return (
@@ -230,7 +261,7 @@ export function CreateEditJobPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. San Francisco, CA / Remote"
+                placeholder="e.g. Colombo, Sri Lanka / Remote"
                 value={formData.location}
                 onChange={(e) =>
                   setFormData({ ...formData, location: e.target.value })
@@ -286,19 +317,20 @@ export function CreateEditJobPage() {
         {/* Section 2: Compensation & Schedule */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-emerald-600" /> Compensation &
+            <DollarSign className="h-4 w-4 text-emerald-600" /> Monthly Compensation &
             Lifecycle
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700">
-                Minimum Annual Salary
+                Minimum Monthly Salary
               </label>
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="5000"
+                placeholder="e.g. 150000"
                 value={formData.salaryMin}
                 onChange={(e) =>
                   setFormData({
@@ -312,12 +344,13 @@ export function CreateEditJobPage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700">
-                Maximum Annual Salary
+                Maximum Monthly Salary
               </label>
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="5000"
+                placeholder="e.g. 250000"
                 value={formData.salaryMax}
                 onChange={(e) =>
                   setFormData({
@@ -336,6 +369,7 @@ export function CreateEditJobPage() {
               <input
                 type="text"
                 maxLength={3}
+                placeholder="LKR"
                 value={formData.salaryCurrency}
                 onChange={(e) =>
                   setFormData({
@@ -353,6 +387,7 @@ export function CreateEditJobPage() {
               </label>
               <input
                 type="date"
+                min={getTomorrowDateString()}
                 value={formData.applicationDeadline}
                 onChange={(e) =>
                   setFormData({
@@ -362,6 +397,9 @@ export function CreateEditJobPage() {
                 }
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
+              <span className="text-[11px] text-slate-500">
+                Must be tomorrow or later ({getTomorrowDateString()}).
+              </span>
             </div>
 
             {!isEditing && (
@@ -419,7 +457,7 @@ export function CreateEditJobPage() {
               <textarea
                 required
                 rows={5}
-                placeholder="• 5+ years building backend systems&#10;• Experience with React, TypeScript, C#, and PostgreSQL&#10;• Understanding of distributed state and CI/CD"
+                placeholder="• 3+ years building scalable software systems&#10;• Experience with React, TypeScript, C#, and PostgreSQL&#10;• Based in Sri Lanka or remote availability&#10;• Good communication and problem-solving skills"
                 value={formData.requirements}
                 onChange={(e) =>
                   setFormData({ ...formData, requirements: e.target.value })
