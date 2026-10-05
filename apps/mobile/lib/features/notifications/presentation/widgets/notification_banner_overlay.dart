@@ -204,8 +204,9 @@ class _NotificationBannerOverlayState
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: _getColorForType(_currentNotification!.type)
-                                  .withOpacity(0.35),
+                              color:
+                                  _getColorForType(_currentNotification!.type)
+                                      .withOpacity(0.35),
                               width: 1.5,
                             ),
                           ),

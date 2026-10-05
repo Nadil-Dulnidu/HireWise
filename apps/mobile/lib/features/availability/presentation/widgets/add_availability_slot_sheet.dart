@@ -229,9 +229,8 @@ class _AddAvailabilitySlotSheetState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.slate200,
+                        color:
+                            isSelected ? AppColors.primary : AppColors.slate200,
                       ),
                     ),
                   ),
@@ -407,8 +406,7 @@ class _AddAvailabilitySlotSheetState
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Text(

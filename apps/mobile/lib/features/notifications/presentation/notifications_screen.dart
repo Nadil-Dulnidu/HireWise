@@ -22,7 +22,9 @@ class NotificationsScreen extends ConsumerWidget {
             icon: const Icon(Icons.add_alert_outlined),
             tooltip: 'Test Notification Popup',
             onPressed: () {
-              ref.read(notificationsProvider.notifier).triggerTestNotification();
+              ref
+                  .read(notificationsProvider.notifier)
+                  .triggerTestNotification();
             },
           ),
           if (state.unreadCount > 0)

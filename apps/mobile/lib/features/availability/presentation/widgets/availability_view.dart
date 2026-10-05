@@ -208,8 +208,9 @@ class _AvailabilityViewState extends ConsumerState<AvailabilityView> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed:
-                                state.isSubmitting ? null : _addStandardSchedule,
+                            onPressed: state.isSubmitting
+                                ? null
+                                : _addStandardSchedule,
                             icon: const Icon(Icons.flash_on_rounded, size: 16),
                             label: const Text('Fill Weekdays (9–5)'),
                             style: OutlinedButton.styleFrom(

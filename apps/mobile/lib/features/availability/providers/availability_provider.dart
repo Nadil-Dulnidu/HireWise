@@ -53,8 +53,7 @@ class AvailabilityState {
   /// Specific date slots
   List<AvailabilitySlotDto> get specificDateSlots {
     final list = slots.where((s) => !s.isRecurring).toList();
-    list.sort(
-        (a, b) => (a.specificDate ?? '').compareTo(b.specificDate ?? ''));
+    list.sort((a, b) => (a.specificDate ?? '').compareTo(b.specificDate ?? ''));
     return list;
   }
 
@@ -70,8 +69,7 @@ final availabilityProvider =
 class AvailabilityNotifier extends StateNotifier<AvailabilityState> {
   final AvailabilityRepository _repository;
 
-  AvailabilityNotifier(this._repository)
-      : super(const AvailabilityState()) {
+  AvailabilityNotifier(this._repository) : super(const AvailabilityState()) {
     loadAvailability();
   }
 
@@ -89,7 +87,8 @@ class AvailabilityNotifier extends StateNotifier<AvailabilityState> {
   }
 
   Future<bool> addSlot(CreateAvailabilitySlotRequest request) async {
-    state = state.copyWith(isSubmitting: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(
+        isSubmitting: true, clearError: true, clearSuccess: true);
     try {
       final created = await _repository.createSlot(request);
       if (created != null) {
@@ -116,7 +115,8 @@ class AvailabilityNotifier extends StateNotifier<AvailabilityState> {
   }
 
   Future<bool> addStandardWeekdaySchedule({String timezone = 'UTC'}) async {
-    state = state.copyWith(isSubmitting: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(
+        isSubmitting: true, clearError: true, clearSuccess: true);
     try {
       final weekdaySlots = [1, 2, 3, 4, 5].map((d) {
         return CreateAvailabilitySlotRequest(

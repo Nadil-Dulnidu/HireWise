@@ -64,7 +64,8 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   void _onNotificationReceived(NotificationDto notification) {
-    debugPrint('[NotificationsNotifier] Received new notification: ${notification.title}');
+    debugPrint(
+        '[NotificationsNotifier] Received new notification: ${notification.title}');
     final isNew = !_knownNotificationIds.contains(notification.id);
     _knownNotificationIds.add(notification.id);
 
@@ -117,7 +118,8 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
       // If a brand new notification was found during polling, pop it out
       if (newestToPop != null) {
-        debugPrint('[NotificationsNotifier] Polled new notification: ${newestToPop.title}');
+        debugPrint(
+            '[NotificationsNotifier] Polled new notification: ${newestToPop.title}');
         _ref.read(notificationPopupProvider.notifier).show(newestToPop);
       }
     } catch (_) {}
