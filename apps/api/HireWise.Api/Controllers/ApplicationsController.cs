@@ -113,7 +113,15 @@ public class ApplicationsController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("Recruiter must be assigned to a company."));
         }
 
-        var result = await _applicationService.UpdateApplicationStatusAsync(id, request.Status, user.CompanyId.Value, ct);
+        var recruiterName = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Email;
+        var result = await _applicationService.UpdateApplicationStatusAsync(
+            id,
+            request.Status,
+            user.CompanyId.Value,
+            recruiterName,
+            user.Email,
+            request.Notes,
+            ct);
         if (!result.IsSuccess)
         {
             return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to update application status"));
@@ -173,7 +181,14 @@ public class ApplicationsController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("Recruiter must be assigned to a company."));
         }
 
-        var result = await _applicationService.RejectApplicationAsync(id, user.CompanyId.Value, ct);
+        var recruiterName = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Email;
+        var result = await _applicationService.RejectApplicationAsync(
+            id,
+            user.CompanyId.Value,
+            recruiterName,
+            user.Email,
+            null,
+            ct);
         if (!result.IsSuccess)
         {
             return StatusCode(result.StatusCode, ApiResponse<object>.Fail(result.Error ?? "Failed to reject application"));

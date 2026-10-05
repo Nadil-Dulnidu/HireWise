@@ -6,6 +6,7 @@ import '../core/network/api_client.dart';
 import '../core/routing/app_router.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/providers/auth_state_provider.dart';
+import '../features/notifications/presentation/widgets/notification_banner_overlay.dart';
 import '../features/notifications/providers/notifications_provider.dart';
 
 class HireWiseApp extends ConsumerWidget {
@@ -91,7 +92,11 @@ class _ClerkAuthBridgeState extends ConsumerState<_ClerkAuthBridge> {
             try {
               final tokenObj = await clerkAuth.sessionToken();
               if (tokenObj.jwt.isNotEmpty && mounted) {
-                ref.read(signalRServiceProvider).connect(tokenObj.jwt);
+                final clerkUser = clerkAuth.user;
+                ref.read(signalRServiceProvider).connect(
+                      tokenObj.jwt,
+                      clerkUserId: clerkUser?.id,
+                    );
               }
             } catch (_) {}
           }();
@@ -113,6 +118,9 @@ class _ClerkAuthBridgeState extends ConsumerState<_ClerkAuthBridge> {
       theme: AppTheme.lightTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => NotificationBannerOverlay(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

@@ -142,19 +142,39 @@ flutter pub get
 
 ### Running the App
 
-Run on your connected device or emulator with the environment configuration:
+Run on your connected device or emulator with the development configuration:
 
 ```bash
 flutter run --dart-define-from-file=env.development.json
 ```
 
-Or specify definitions directly:
+Or run in **production / release mode**:
 
 ```bash
-flutter run \
-  --dart-define=API_BASE_URL=http://10.0.2.2:5101/api \
-  --dart-define=CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key_here
+flutter run --release --dart-define-from-file=env.production.json
 ```
+
+### Production Builds
+
+Generate release binaries for distribution:
+
+- **Android APK** (Direct installation or testing):
+  ```bash
+  flutter build apk --release --dart-define-from-file=env.production.json
+  ```
+  Artifact location: `build/app/outputs/flutter-apk/app-release.apk`
+
+- **Android App Bundle** (Google Play Store):
+  ```bash
+  flutter build appbundle --release --dart-define-from-file=env.production.json
+  ```
+  Artifact location: `build/app/outputs/bundle/release/app-release.aab`
+
+- **iOS Archive / IPA** (macOS required):
+  ```bash
+  flutter build ipa --release --dart-define-from-file=env.production.json
+  ```
+
 
 ---
 

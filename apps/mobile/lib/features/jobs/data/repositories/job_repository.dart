@@ -17,9 +17,11 @@ class JobRepository {
   JobRepository(this._apiClient);
 
   Future<PagedResult<JobSummaryDto>> getJobs(JobFilterRequest request) async {
+    final queryParams = Map<String, dynamic>.from(request.toQueryParameters())
+      ..putIfAbsent('publicOnly', () => true);
     final response = await _apiClient.get<PagedResult<JobSummaryDto>>(
       ApiEndpoints.jobs,
-      queryParameters: request.toQueryParameters(),
+      queryParameters: queryParams,
       fromJsonT: (json) {
         if (json is Map<String, dynamic>) {
           return PagedResult<JobSummaryDto>.fromJson(

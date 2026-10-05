@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_state_provider.dart';
+import '../../availability/providers/availability_provider.dart';
 import '../../resume/presentation/widgets/resume_card.dart';
 import '../../resume/presentation/widgets/upload_resume_sheet.dart';
 import '../../resume/providers/resume_provider.dart';
@@ -28,6 +29,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final resumeState = ref.watch(resumeProvider);
     final activeResume = resumeState.activeResume;
+    final availabilityState = ref.watch(availabilityProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -119,6 +121,70 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            const SizedBox(height: 28),
+
+            // Interview Availability Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Interview Availability',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.slate900,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/availability'),
+                  child: const Text('Manage'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.slate200),
+              ),
+              child: ListTile(
+                onTap: () => context.push('/availability'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.event_available_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'Weekly Time Slots',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.slate900,
+                  ),
+                ),
+                subtitle: Text(
+                  availabilityState.slots.isEmpty
+                      ? 'No availability slots set'
+                      : '${availabilityState.slots.length} active time slot${availabilityState.slots.length == 1 ? '' : 's'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.slate500,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.slate400,
+                ),
+              ),
+            ),
             const SizedBox(height: 28),
 
             // Account & App Details

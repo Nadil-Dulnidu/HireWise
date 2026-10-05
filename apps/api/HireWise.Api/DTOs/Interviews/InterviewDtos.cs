@@ -50,6 +50,7 @@ public class InterviewDto
     public DateTime ScheduledEndTime { get; set; }
     public string? MeetingLink { get; set; }
     public InterviewStatus Status { get; set; }
+    public ApplicationStatus? ApplicationStatus { get; set; }
     public string? Notes { get; set; }
     public bool HasFeedback { get; set; }
     public decimal? OverallRating { get; set; }

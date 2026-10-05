@@ -14,8 +14,11 @@ public static class EmailTemplates
     private const string CardBackground = "#ffffff";
     private const string BorderColor = "#e2e8f0";
 
-    private static string WrapInLayout(string title, string bodyContent)
+    private static string WrapInLayout(string title, string bodyContent, string? companyName = null)
     {
+        var headerTitle = !string.IsNullOrWhiteSpace(companyName) ? $"{companyName} Careers" : "HireWise";
+        var headerSubtitle = !string.IsNullOrWhiteSpace(companyName) ? "Talent & Recruitment Platform • Powered by HireWise" : "AI-Powered Recruitment Platform";
+
         return $"""
         <!DOCTYPE html>
         <html lang="en">
@@ -32,8 +35,8 @@ public static class EmailTemplates
                             <!-- Header -->
                             <tr>
                                 <td style="background:{BrandGradient};padding:32px 40px;border-radius:16px 16px 0 0;text-align:center;">
-                                    <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">HireWise</h1>
-                                    <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:400;">AI-Powered Recruitment Platform</p>
+                                    <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">{headerTitle}</h1>
+                                    <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:400;">{headerSubtitle}</p>
                                 </td>
                             </tr>
                             <!-- Body -->
@@ -47,8 +50,8 @@ public static class EmailTemplates
                                 <td style="background-color:{CardBackground};padding:24px 40px 32px;border-radius:0 0 16px 16px;border:1px solid {BorderColor};border-top:none;text-align:center;">
                                     <hr style="border:none;border-top:1px solid {BorderColor};margin:0 0 20px;">
                                     <p style="margin:0;color:{TextSecondary};font-size:12px;line-height:1.6;">
-                                        This is an automated message from HireWise.<br>
-                                        Please do not reply directly to this email.
+                                        {(!string.IsNullOrWhiteSpace(companyName) ? $"This is an official recruitment notification from {companyName} delivered via HireWise." : "This is an automated message from HireWise.")}<br>
+                                        Please contact your designated recruiter if you have any questions.
                                     </p>
                                     <p style="margin:12px 0 0;color:{TextSecondary};font-size:11px;">
                                         &copy; {DateTime.UtcNow.Year} HireWise. All rights reserved.
@@ -340,5 +343,151 @@ public static class EmailTemplates
         """;
 
         return WrapInLayout($"Interview Availability Needed — {jobTitle}", body);
+    }
+
+    // =========================================================================
+    // Final Hiring Decision Emails (Offer & Rejection)
+    // =========================================================================
+
+    public static string FinalHiringDecision(
+        string candidateName,
+        string jobTitle,
+        string companyName,
+        string? companyWebsite,
+        string? companyLocation,
+        string recruiterName,
+        string? recruiterEmail,
+        Models.Enums.ApplicationStatus decision,
+        string? customNotes)
+    {
+        var isOffer = decision == Models.Enums.ApplicationStatus.SELECTED;
+        var headline = isOffer ? $"Job Offer: {jobTitle} at {companyName}" : $"Interview Outcome: {jobTitle} at {companyName}";
+
+        var notesHtml = string.IsNullOrWhiteSpace(customNotes) ? "" : $"""
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f1f5f9;border-left:4px solid {(isOffer ? "#10b981" : "#6366f1")};border-radius:8px;padding:16px 20px;margin:20px 0 24px;">
+            <tr>
+                <td style="color:{TextPrimary};font-size:14px;line-height:1.7;">
+                    <strong style="color:{(isOffer ? "#059669" : "#4f46e5")};">Personal Note from {recruiterName}:</strong><br>
+                    <span style="font-style:italic;display:inline-block;margin-top:4px;">"{customNotes.Trim()}"</span>
+                </td>
+            </tr>
+        </table>
+        """;
+
+        var websiteHtml = string.IsNullOrWhiteSpace(companyWebsite) ? "" :
+            $"<a href=\"{companyWebsite}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:{BrandColor};text-decoration:none;\">{companyWebsite}</a>";
+
+        var recruiterEmailHtml = string.IsNullOrWhiteSpace(recruiterEmail) ? "" :
+            $"<a href=\"mailto:{recruiterEmail}\" style=\"color:{BrandColor};text-decoration:none;\">{recruiterEmail}</a>";
+
+        var locationStr = !string.IsNullOrWhiteSpace(companyLocation) ? companyLocation : "As specified in job listing";
+
+        string body;
+
+        if (isOffer)
+        {
+            body = $"""
+            <div style="text-align:center;margin-bottom:24px;">
+                <span style="display:inline-block;background-color:#ecfdf5;color:#059669;border:1px solid #a7f3d0;padding:6px 16px;border-radius:24px;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                    🎉 Formal Offer Extended
+                </span>
+            </div>
+
+            <h2 style="margin:0 0 8px;color:{TextPrimary};font-size:24px;font-weight:700;letter-spacing:-0.5px;text-align:center;">
+                Congratulations, {candidateName}!
+            </h2>
+            <p style="margin:0 0 24px;color:{TextSecondary};font-size:15px;line-height:1.7;text-align:center;">
+                On behalf of the entire team at <strong>{companyName}</strong>, we are thrilled to formally extend an offer of employment to you for the position of <strong>{jobTitle}</strong>.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:{BackgroundLight};border:1px solid {BorderColor};border-radius:12px;padding:24px;margin-bottom:24px;">
+                {InfoRow("Position", $"<strong style=\"color:{TextPrimary};\">{jobTitle}</strong>")}
+                {InfoRow("Company", $"<strong>{companyName}</strong>")}
+                {(!string.IsNullOrWhiteSpace(locationStr) ? InfoRow("Location / Mode", locationStr) : "")}
+                {InfoRow("Decision", StatusBadge("OFFER EXTENDED", "#10b981"))}
+                {InfoRow("Primary Recruiter", $"<strong>{recruiterName}</strong>" + (!string.IsNullOrWhiteSpace(recruiterEmail) ? $" ({recruiterEmailHtml})" : ""))}
+            </table>
+
+            {notesHtml}
+
+            <div style="background-color:#ffffff;border:1px solid #e0e7ff;border-radius:12px;padding:20px;margin-bottom:24px;">
+                <h4 style="margin:0 0 10px;color:#3730a3;font-size:15px;font-weight:700;">
+                    What Happens Next?
+                </h4>
+                <ol style="margin:0;padding-left:20px;color:{TextSecondary};font-size:14px;line-height:1.8;">
+                    <li><strong>Official Documentation:</strong> Our HR and talent acquisition team is preparing your comprehensive offer package containing salary details, benefits, and start date.</li>
+                    <li><strong>Direct Consultation:</strong> Feel free to reply directly to this email or reach out to <strong>{recruiterName}</strong> at any time if you have questions or wish to discuss details.</li>
+                    <li><strong>Onboarding Kickoff:</strong> Once accepted, you will receive our welcome portal instructions to prepare for your day one.</li>
+                </ol>
+            </div>
+
+            <p style="margin:0 0 24px;color:{TextPrimary};font-size:15px;line-height:1.7;">
+                Our team was deeply impressed with your technical skills, problem-solving abilities, and cultural contribution throughout the interview process. We are truly looking forward to building the future together at <strong>{companyName}</strong>!
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid {BorderColor};padding-top:20px;margin-top:24px;">
+                <tr>
+                    <td style="color:{TextPrimary};font-size:14px;line-height:1.6;">
+                        Warm regards,<br>
+                        <strong style="font-size:15px;color:{TextPrimary};">{recruiterName}</strong><br>
+                        <span style="color:{TextSecondary};">Talent Acquisition & Hiring Team</span><br>
+                        <strong style="color:#4f46e5;">{companyName}</strong><br>
+                        {(!string.IsNullOrWhiteSpace(recruiterEmail) ? $"<span style=\"color:{TextSecondary};font-size:13px;\">Email: {recruiterEmailHtml}</span><br>" : "")}
+                        {(!string.IsNullOrWhiteSpace(companyWebsite) ? $"<span style=\"color:{TextSecondary};font-size:13px;\">Website: {websiteHtml}</span>" : "")}
+                    </td>
+                </tr>
+            </table>
+            """;
+        }
+        else
+        {
+            body = $"""
+            <h2 style="margin:0 0 8px;color:{TextPrimary};font-size:22px;font-weight:700;letter-spacing:-0.5px;">
+                Interview Outcome: {jobTitle}
+            </h2>
+            <p style="margin:0 0 20px;color:{TextSecondary};font-size:15px;line-height:1.7;">
+                Dear {candidateName},
+            </p>
+            <p style="margin:0 0 20px;color:{TextSecondary};font-size:15px;line-height:1.7;">
+                Thank you very much for taking the time to interview with our engineering and hiring team for the <strong>{jobTitle}</strong> position at <strong>{companyName}</strong>. We truly enjoyed speaking with you and learning more about your technical experience, career journey, and perspectives.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:{BackgroundLight};border:1px solid {BorderColor};border-radius:12px;padding:24px;margin-bottom:24px;">
+                {InfoRow("Position", $"<strong>{jobTitle}</strong>")}
+                {InfoRow("Company", companyName)}
+                {InfoRow("Application Status", StatusBadge("NOT SELECTED", "#64748b"))}
+                {InfoRow("Recruitment Contact", $"{recruiterName}" + (!string.IsNullOrWhiteSpace(recruiterEmail) ? $" ({recruiterEmailHtml})" : ""))}
+            </table>
+
+            {notesHtml}
+
+            <p style="margin:0 0 20px;color:{TextSecondary};font-size:14px;line-height:1.8;">
+                After careful consideration and reviewing our current technical requirements, we have decided to move forward with another candidate whose background more directly aligns with the specific priorities of this opening.
+            </p>
+
+            <p style="margin:0 0 20px;color:{TextSecondary};font-size:14px;line-height:1.8;">
+                This was a difficult decision given the high caliber of candidates we met. Our team was genuinely impressed with your preparation and accomplishments. With your permission, we would love to retain your information in our talent network for upcoming openings that may be a great match.
+            </p>
+
+            <p style="margin:0 0 24px;color:{TextPrimary};font-size:14px;line-height:1.7;">
+                We sincerely appreciate your interest in <strong>{companyName}</strong> and wish you the very best in your job search and future professional endeavors.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid {BorderColor};padding-top:20px;margin-top:24px;">
+                <tr>
+                    <td style="color:{TextPrimary};font-size:14px;line-height:1.6;">
+                        Sincerely,<br>
+                        <strong style="font-size:15px;color:{TextPrimary};">{recruiterName}</strong><br>
+                        <span style="color:{TextSecondary};">Talent Acquisition Team</span><br>
+                        <strong style="color:#4f46e5;">{companyName}</strong><br>
+                        {(!string.IsNullOrWhiteSpace(recruiterEmail) ? $"<span style=\"color:{TextSecondary};font-size:13px;\">Email: {recruiterEmailHtml}</span><br>" : "")}
+                        {(!string.IsNullOrWhiteSpace(companyWebsite) ? $"<span style=\"color:{TextSecondary};font-size:13px;\">Website: {websiteHtml}</span>" : "")}
+                    </td>
+                </tr>
+            </table>
+            """;
+        }
+
+        return WrapInLayout(headline, body, companyName);
     }
 }

@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/models/enums.dart';
 import '../data/models/notification_dto.dart';
 import '../data/repositories/notification_repository.dart';
 import '../data/repositories/signalr_service.dart';
+import 'notification_popup_provider.dart';
 
 final signalRServiceProvider = Provider<SignalRService>((ref) {
   final service = SignalRService();
@@ -47,18 +51,78 @@ class NotificationsState {
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
   final NotificationRepository _repository;
   final SignalRService _signalRService;
+  final Ref _ref;
+  Timer? _pollingTimer;
+  final Set<String> _knownNotificationIds = {};
+  bool _isFirstLoad = true;
 
-  NotificationsNotifier(this._repository, this._signalRService)
+  NotificationsNotifier(this._repository, this._signalRService, this._ref)
       : super(NotificationsState.initial()) {
     _signalRService.addListener(_onNotificationReceived);
     loadNotifications();
+    _startPolling();
   }
 
   void _onNotificationReceived(NotificationDto notification) {
+    debugPrint(
+        '[NotificationsNotifier] Received new notification: ${notification.title}');
+    final isNew = !_knownNotificationIds.contains(notification.id);
+    _knownNotificationIds.add(notification.id);
+
+    // Update list & badge
+    final existingIndex =
+        state.notifications.indexWhere((n) => n.id == notification.id);
+    final updatedList = existingIndex >= 0
+        ? [
+            ...state.notifications.sublist(0, existingIndex),
+            notification,
+            ...state.notifications.sublist(existingIndex + 1),
+          ]
+        : [notification, ...state.notifications];
+
     state = state.copyWith(
-      notifications: [notification, ...state.notifications],
-      unreadCount: state.unreadCount + 1,
+      notifications: updatedList,
+      unreadCount: isNew ? state.unreadCount + 1 : state.unreadCount,
     );
+
+    // Trigger visual pop-out mobile banner
+    _ref.read(notificationPopupProvider.notifier).show(notification);
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
+      await _pollNewNotifications();
+    });
+  }
+
+  Future<void> _pollNewNotifications() async {
+    try {
+      final list = await _repository.getNotifications(limit: 10);
+      final count = await _repository.getUnreadCount();
+
+      NotificationDto? newestToPop;
+      for (final item in list) {
+        if (!_knownNotificationIds.contains(item.id)) {
+          _knownNotificationIds.add(item.id);
+          if (!_isFirstLoad && !item.isRead) {
+            newestToPop ??= item;
+          }
+        }
+      }
+
+      state = state.copyWith(
+        notifications: list,
+        unreadCount: count,
+      );
+
+      // If a brand new notification was found during polling, pop it out
+      if (newestToPop != null) {
+        debugPrint(
+            '[NotificationsNotifier] Polled new notification: ${newestToPop.title}');
+        _ref.read(notificationPopupProvider.notifier).show(newestToPop);
+      }
+    } catch (_) {}
   }
 
   Future<void> loadNotifications() async {
@@ -66,6 +130,12 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     try {
       final list = await _repository.getNotifications();
       final count = await _repository.getUnreadCount();
+
+      for (final n in list) {
+        _knownNotificationIds.add(n.id);
+      }
+      _isFirstLoad = false;
+
       state = state.copyWith(
         notifications: list,
         unreadCount: count,
@@ -74,6 +144,22 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
+  }
+
+  /// Triggers a test interview notification banner (useful for verification)
+  void triggerTestNotification() {
+    final testNotification = NotificationDto(
+      id: 'test-${DateTime.now().millisecondsSinceEpoch}',
+      userId: 'test',
+      title: 'Interview Confirmed!',
+      message: 'Your interview with Apex Cloud Technologies is confirmed!',
+      type: NotificationType.interviewScheduled,
+      referenceType: 'INTERVIEW',
+      referenceId: 'test-interview-id',
+      isRead: false,
+      createdAt: DateTime.now(),
+    );
+    _onNotificationReceived(testNotification);
   }
 
   Future<void> markAsRead(String id) async {
@@ -112,6 +198,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _signalRService.removeListener(_onNotificationReceived);
     super.dispose();
   }
@@ -121,7 +208,7 @@ final notificationsProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
   final repository = ref.watch(notificationRepositoryProvider);
   final signalR = ref.watch(signalRServiceProvider);
-  return NotificationsNotifier(repository, signalR);
+  return NotificationsNotifier(repository, signalR, ref);
 });
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {

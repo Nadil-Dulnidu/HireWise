@@ -79,6 +79,7 @@ void main() {
       expect(query['minSalary'], 100000);
       expect(query['page'], 2);
       expect(query['pageSize'], 15);
+      expect(query['publicOnly'], true);
       expect(filter.hasActiveFilters, true);
     });
   });

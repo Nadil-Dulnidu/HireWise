@@ -295,6 +295,7 @@ public class InterviewService : IInterviewService
         if (interview.Application != null)
         {
             detailDto.ResumeSnapshotUrl = interview.Application.ResumeSnapshotUrl;
+            detailDto.ApplicationStatus = interview.Application.Status;
         }
 
         return Result<InterviewDetailDto>.Success(detailDto);
@@ -306,6 +307,7 @@ public class InterviewService : IInterviewService
             .Include(i => i.Job).ThenInclude(j => j.Company)
             .Include(i => i.Candidate)
             .Include(i => i.Interviewer)
+            .Include(i => i.Application)
             .Include(i => i.Feedback)
             .AsNoTracking();
 
