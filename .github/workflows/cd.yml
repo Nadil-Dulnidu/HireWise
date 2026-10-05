@@ -11,8 +11,8 @@ permissions:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-  REGISTRY: ${{ secrets.GCP_REGION || 'us-central1' }}-docker.pkg.dev
+  REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+  REGISTRY: ${{ vars.GCP_REGION || 'us-central1' }}-docker.pkg.dev
   REPOSITORY: hirewise-prod-repo
   WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -63,8 +63,8 @@ jobs:
       - name: Build & Push Web Image
         run: |
           docker build \
-            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
-            --build-arg VITE_CLERK_PUBLISHABLE_KEY="${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" \
+            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL || 'https://hirewise-prod-api-pofxtzi7yq-uc.a.run.app' }}" \
+            --build-arg VITE_CLERK_PUBLISHABLE_KEY="${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_aGVscGluZy1hbmVtb25lLTQ3MzAuY2xlcmsuYWNjb3VudHMuZGV2JA' }}" \
             -t ${{ env.WEB_IMAGE }} -f docker/Dockerfile.web .
           docker push ${{ env.WEB_IMAGE }}
 
