@@ -1,0 +1,117 @@
+services:
+  # 1. PostgreSQL Database (Matches Supabase/Cloud SQL Schema)
+  postgres:
+    image: postgres:16-alpine
+    container_name: hirewise-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hirewise_db
+      POSTGRES_USER: hirewise_user
+      POSTGRES_PASSWORD: hirewise_secure_password_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hirewise_user -d hirewise_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: hirewise-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 3. ASP.NET Core 8 Web API
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: hirewise-api
+    restart: unless-stopped
+    ports:
+      - "5101:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      PORT: "8080"
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=hirewise_db;Username=hirewise_user;Password=hirewise_secure_password_dev"
+      AiService__BaseUrl: "http://ai-service:8000"
+      AiService__ApiKey: "hw_ai_service_secret_key"
+      Storage__Provider: "LocalStorage"
+      Resend__Enabled: "false"
+      Cors__AllowedOrigins__0: "http://localhost:5173"
+      Cors__AllowedOrigins__1: "http://localhost:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - api_uploads:/app/uploads
+
+  # 4. Python FastAPI AI Service
+  ai-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai-service
+    container_name: hirewise-ai-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: development
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: hirewise_db
+      POSTGRES_USER: hirewise_user
+      POSTGRES_PASSWORD: hirewise_secure_password_dev
+      DATABASE_URL: "postgresql://hirewise_user:hirewise_secure_password_dev@postgres:5432/hirewise_db"
+      DOTNET_API_BASE_URL: "http://api:8080"
+      AI_SERVICE_API_KEY: "hw_ai_service_secret_key"
+      USE_VERTEX_AI: "true"
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-hirewise-509609}
+      VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-hirewise-509609}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      GOOGLE_APPLICATION_CREDENTIALS_JSON: ${GOOGLE_APPLICATION_CREDENTIALS_JSON:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_FLASH_MODEL: ${GEMINI_FLASH_MODEL:-gemini-2.5-flash}
+      GEMINI_PRO_MODEL: ${GEMINI_PRO_MODEL:-gemini-2.5-pro}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-text-embedding-004}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 5. React / Vite Web Client (Nginx)
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5101}
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-pk_test_aGVscGluZy1hbmVtb25lLTQ3MzAuY2xlcmsuYWNjb3VudHMuZGV2JA}
+    container_name: hirewise-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads:

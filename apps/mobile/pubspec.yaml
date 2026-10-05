@@ -1,0 +1,46 @@
+name: hirewise_mobile
+description: "HireWise Mobile - Candidate Application"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  clerk_flutter: ^0.0.18-beta
+  clerk_auth: ^0.0.18-beta
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  go_router: ^14.8.1
+  dio: ^5.7.0
+  uuid: ^4.5.1
+  json_annotation: ^4.9.0
+  file_picker: ^8.1.7
+  signalr_netcore: ^1.3.7
+  intl: ^0.20.2
+  cached_network_image: ^3.4.1
+  url_launcher: ^6.3.1
+  flutter_svg: ^2.0.17
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.9.4
+  riverpod_generator: ^2.6.3
+  mockito: ^5.4.4
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+    - assets/images/
