@@ -189,13 +189,27 @@ var allowedOrigins = (allowedOriginsConfig != null && allowedOriginsConfig.Lengt
     ? allowedOriginsConfig
     : (allowedOriginsEnv != null
         ? allowedOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        : new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:4173" });
+        : new[] {
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:4173",
+            "https://hirewise-prod-web-pofxtzi7yq-uc.a.run.app"
+        });
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendCorsPolicy", policy =>
     {
         policy.WithOrigins(allowedOrigins)
+              .SetIsOriginAllowed(origin =>
+              {
+                  if (string.IsNullOrEmpty(origin)) return false;
+                  // Allow localhost, custom configured domains, and Cloud Run production web services
+                  return origin.StartsWith("http://localhost:") ||
+                         origin.StartsWith("https://localhost:") ||
+                         origin.EndsWith(".run.app") ||
+                         allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+              })
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

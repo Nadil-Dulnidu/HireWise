@@ -18,9 +18,12 @@ const queryClient = new QueryClient({
   },
 });
 
-const clerkPubKey =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_placeholder_key_for_dev_mode";
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+if (!clerkPubKey) {
+  throw new Error(
+    "Missing VITE_CLERK_PUBLISHABLE_KEY. Add it to your .env file. See .env.example for reference.",
+  );
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
