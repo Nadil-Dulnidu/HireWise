@@ -23,7 +23,7 @@ api-build:
 	dotnet build apps/api/HireWise.Api/HireWise.Api.csproj
 
 api-test:
-	dotnet test apps/api/HireWise.sln
+	dotnet test apps/api/HireWise.sln -c Release
 
 web-install:
 	cd apps/web && npm install

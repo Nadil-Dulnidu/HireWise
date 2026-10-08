@@ -43,7 +43,7 @@ make api-test
 
 # Or from apps/api:
 cd apps/api
-dotnet test HireWise.sln --logger "console;verbosity=normal"
+dotnet test HireWise.sln -c Release --logger "console;verbosity=normal"
 ```
 
 To run with code coverage:
