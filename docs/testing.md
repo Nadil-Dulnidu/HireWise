@@ -64,9 +64,13 @@ dotnet test HireWise.sln /p:CollectCoverage=true /p:CoverletOutputFormat=cobertu
 ### 3.2 Running AI Service Tests
 ```bash
 cd apps/ai-service
-poetry run pytest -v
-# Or with standard venv:
-pytest tests/ -v --asyncio-mode=auto
+
+# Using uv:
+uv run pytest -v
+
+# Or activating the virtual environment:
+.venv\Scripts\activate
+pytest -v
 ```
 
 ---
