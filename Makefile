@@ -1,9 +1,10 @@
-.PHONY: help api-run api-build web-install web-dev mobile-install mobile-analyze mobile-test mobile-format mobile-run mobile-run-prod mobile-build-apk mobile-build-appbundle
+.PHONY: help api-run api-build api-test web-install web-dev mobile-install mobile-analyze mobile-test mobile-format mobile-run mobile-run-prod mobile-build-apk mobile-build-appbundle
 
 help:
 	@echo "HireWise Monorepo Commands:"
 	@echo "  api-run              - Run ASP.NET Core API with watch"
 	@echo "  api-build            - Build ASP.NET Core API"
+	@echo "  api-test             - Run unit tests for ASP.NET Core API"
 	@echo "  web-install          - Install React web app dependencies"
 	@echo "  web-dev              - Run React web app dev server"
 	@echo "  mobile-install       - Run flutter pub get for mobile app"
@@ -20,6 +21,9 @@ api-run:
 
 api-build:
 	dotnet build apps/api/HireWise.Api/HireWise.Api.csproj
+
+api-test:
+	dotnet test apps/api/HireWise.sln -c Release
 
 web-install:
 	cd apps/web && npm install
