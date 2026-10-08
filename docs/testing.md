@@ -31,19 +31,25 @@ HireWise enforces rigorous quality gates across all four applications in the mon
 ## 2. Backend Testing (`apps/api`)
 
 ### 2.1 Scope & Test Structure
-- **Unit Tests**: Test business rules in isolation (e.g., `JobService`, `ApplicationService`, `InterviewService`).
-- **Authorization Tests**: Verify that candidate accounts cannot access `/api/interviews/{id}/questions` or `/api/auditlogs`.
-- **Tenant Isolation Tests**: Ensure a recruiter belonging to Company A cannot read or mutate applications for Company B.
+The `HireWise.Api.Tests` test project (`apps/api/HireWise.Api.Tests`) covers:
+- **Request Validators**: FluentValidation rules for jobs, applications, interviews, availability, departments, and companies.
+- **Entity Mappings**: AutoMapper profile transformation and calculation verification for users, jobs, departments, and companies.
+- **Service Layer**: Business logic, soft-deletion, and conflict handling (e.g., `DepartmentService`, `PlatformSettingsService`) using EF Core In-Memory database.
 
 ### 2.2 Running Backend Tests
 ```bash
+# From repository root:
+make api-test
+
+# Or from apps/api:
 cd apps/api
-dotnet test --logger "console;verbosity=normal"
+dotnet test HireWise.sln --logger "console;verbosity=normal"
 ```
 
 To run with code coverage:
 ```bash
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
+cd apps/api
+dotnet test HireWise.sln /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 ```
 
 ---
@@ -117,6 +123,9 @@ flutter test --coverage
 Run top-level test suites directly from the repository root:
 
 ```bash
+# Run backend API tests
+make api-test
+
 # Run all mobile tests and analysis
 make mobile-analyze
 make mobile-test
