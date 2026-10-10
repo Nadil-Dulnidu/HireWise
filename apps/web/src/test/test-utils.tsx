@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { type ReactElement, type ReactNode } from "react";
 import { render, type RenderOptions } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,7 +14,7 @@ export function createTestStore(preloadedState?: Partial<RootState>) {
     reducer: {
       ui: uiReducer,
     },
-    preloadedState: preloadedState as any,
+    preloadedState,
   });
 }
 

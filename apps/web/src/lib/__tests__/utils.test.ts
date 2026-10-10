@@ -27,7 +27,8 @@ describe("cn utility", () => {
   });
 
   it("handles arrays and nested class definitions", () => {
-    const result = cn(["px-2", "py-1"], ["text-sm", false && "font-bold"]);
+    const isBold = false;
+    const result = cn(["px-2", "py-1"], ["text-sm", isBold && "font-bold"]);
     expect(result).toBe("px-2 py-1 text-sm");
   });
 });
