@@ -22,6 +22,7 @@ describe("CandidateProfilePage - Form Validation and Error Handling", () => {
     mockUseCurrentUser.mockReturnValue({
       profile: {
         id: "usr-1",
+        clerkUserId: "user_test_clerk",
         firstName: "Jane",
         lastName: "Doe",
         fullName: "Jane Doe",
@@ -30,7 +31,6 @@ describe("CandidateProfilePage - Form Validation and Error Handling", () => {
         role: "CANDIDATE",
         status: "ACTIVE",
         createdAt: "2026-01-01",
-        updatedAt: "2026-01-01",
       },
       refetchProfile: mockRefetchProfile,
       clerkUser: null,
