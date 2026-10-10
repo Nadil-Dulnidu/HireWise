@@ -1,4 +1,4 @@
-.PHONY: help api-run api-build api-test web-install web-dev mobile-install mobile-analyze mobile-test mobile-format mobile-run mobile-run-prod mobile-build-apk mobile-build-appbundle
+.PHONY: help api-run api-build api-test web-install web-dev web-test mobile-install mobile-analyze mobile-test mobile-format mobile-run mobile-run-prod mobile-build-apk mobile-build-appbundle
 
 help:
 	@echo "HireWise Monorepo Commands:"
@@ -7,6 +7,7 @@ help:
 	@echo "  api-test             - Run unit tests for ASP.NET Core API"
 	@echo "  web-install          - Install React web app dependencies"
 	@echo "  web-dev              - Run React web app dev server"
+	@echo "  web-test             - Run unit and component tests for React web app"
 	@echo "  mobile-install       - Run flutter pub get for mobile app"
 	@echo "  mobile-analyze       - Run flutter analyze for mobile app"
 	@echo "  mobile-test          - Run unit and widget tests for mobile app"
@@ -30,6 +31,9 @@ web-install:
 
 web-dev:
 	cd apps/web && npm run dev
+
+web-test:
+	cd apps/web && npm run test
 
 mobile-install:
 	cd apps/mobile && flutter pub get
