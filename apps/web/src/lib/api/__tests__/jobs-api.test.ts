@@ -76,6 +76,7 @@ describe("jobsApi integration", () => {
         description: "Looking for expert React dev.",
         requirements: "5+ years experience",
         status: "OPEN",
+        salaryCurrency: "USD",
       };
 
       const result = await jobsApi.createJob(payload);
@@ -96,6 +97,7 @@ describe("jobsApi integration", () => {
         description: "Short",
         requirements: "None",
         status: "OPEN",
+        salaryCurrency: "USD",
       };
 
       await expect(jobsApi.createJob(payload)).rejects.toThrow(
