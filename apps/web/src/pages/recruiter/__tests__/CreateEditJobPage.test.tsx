@@ -4,8 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { CreateEditJobPage } from "../CreateEditJobPage";
 import { renderWithProviders } from "@/test/test-utils";
 import * as currentUserHook from "@/hooks/useCurrentUser";
-import { jobsApi } from "@/lib/api/jobs-api";
-import { departmentsApi } from "@/lib/api/companies-api";
+import { jobsApi, departmentsApi } from "@/lib/api/jobs-api";
 
 vi.mock("@/hooks/useCurrentUser");
 vi.mock("@/lib/api/jobs-api", () => ({
@@ -14,8 +13,6 @@ vi.mock("@/lib/api/jobs-api", () => ({
     createJob: vi.fn(),
     updateJob: vi.fn(),
   },
-}));
-vi.mock("@/lib/api/companies-api", () => ({
   departmentsApi: {
     getDepartments: vi.fn().mockResolvedValue([]),
   },
